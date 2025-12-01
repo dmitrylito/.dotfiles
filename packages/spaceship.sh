@@ -1,69 +1,46 @@
 #!/bin/bash
 set -e
 
-REAL_HOME=""
+# 1. Cross-Platform Home Directory Logic
+# 'getent' is Linux-only. We use 'eval echo' to expand the tilde,
+# which works on macOS (Darwin), Ubuntu, and Arch.
 if [ -n "${SUDO_USER}" ]; then
-  REAL_HOME=$(getent passwd "${SUDO_USER}" | cut -d: -f6)
+  REAL_HOME=$(eval echo "~${SUDO_USER}")
 else
   REAL_HOME="${HOME}"
 fi
 
-
-# Make sure ZSH_CUSTOM is set consistently
+# 2. Define Paths
 ZSH_CUSTOM="${ZSH_CUSTOM:-${REAL_HOME}/.oh-my-zsh-custom/custom}"
+THEME_DIR="$ZSH_CUSTOM/themes/spaceship-prompt"
 THEME_LINK="$ZSH_CUSTOM/themes/spaceship.zsh-theme"
-THEME_TARGET="$ZSH_CUSTOM/themes/spaceship-prompt/spaceship.zsh-theme"
+THEME_TARGET="$THEME_DIR/spaceship.zsh-theme"
 
-# Remove Spaceship files (only if they actually exist)
-if [ -d "$ZSH_CUSTOM/themes/spaceship-prompt" ]; then
-  echo "Removing existing spaceship-prompt directory at $ZSH_CUSTOM/themes/spaceship-prompt"
-  if ! rm -rf "$ZSH_CUSTOM/themes/spaceship-prompt"; then
-    echo "Failed to remove spaceship-prompt directory" >&2
-    exit 1
-  fi
+echo "Targeting User Home: ${REAL_HOME}"
+
+# 3. Clean up existing Repo
+if [ -d "$THEME_DIR" ]; then
+  echo "Removing existing spaceship-prompt directory at $THEME_DIR"
+  rm -rf "$THEME_DIR"
 fi
 
-if [ -e "$ZSH_CUSTOM/themes/spaceship.zsh-theme" ]; then
-  echo "Removing existing spaceship.zsh-theme at $ZSH_CUSTOM/themes/spaceship.zsh-theme"
-  if ! rm -f "$ZSH_CUSTOM/themes/spaceship.zsh-theme"; then
-    echo "Failed to remove spaceship.zsh-theme" >&2
-    exit 1
-  fi
+# 4. Clean up existing Link/File
+# We remove it proactively to ensure the ln -s command doesn't fail or nest inside a folder
+if [ -e "$THEME_LINK" ] || [ -L "$THEME_LINK" ]; then
+  echo "Removing existing theme file/link..."
+  rm -f "$THEME_LINK"
 fi
 
-echo "Spaceship files removed (or were not present)"
-
-# Spaceship prompt
+# 5. Clone Repo
+echo "Cloning spaceship-prompt..."
 if git clone https://github.com/spaceship-prompt/spaceship-prompt.git \
-  "$ZSH_CUSTOM/themes/spaceship-prompt" --depth=1; then
-  echo "Cloned spaceship-prompt repo"
+  "$THEME_DIR" --depth=1; then
+  echo "Cloned spaceship-prompt repo successfully."
 else
   echo "Failed to clone spaceship-prompt repo" >&2
   exit 1
 fi
 
-if [ -L "$THEME_LINK" ]; then
-  current_target="$(readlink "$THEME_LINK")"
-  if [ "$current_target" = "$THEME_TARGET" ]; then
-    echo "Symlink already correct: $THEME_LINK -> $current_target"
-  else
-    echo "Symlink $THEME_LINK points to $current_target, replacing with $THEME_TARGET"
-    rm "$THEME_LINK" || {
-      echo "Failed to remove existing symlink $THEME_LINK" >&2
-      exit 1
-    }
-    ln -s "$THEME_TARGET" "$THEME_LINK" || {
-      echo "Failed to create symlink $THEME_LINK" >&2
-      exit 1
-    }
-  fi
-elif [ -e "$THEME_LINK" ]; then
-  echo "$THEME_LINK exists and is not a symlink, refusing to overwrite blindly" >&2
-  exit 1
-else
-  ln -s "$THEME_TARGET" "$THEME_LINK" || {
-    echo "Failed to create symlink $THEME_LINK" >&2
-    exit 1
-  }
-  echo "Created spaceship.zsh-theme symlink: $THEME_LINK -> $THEME_TARGET"
-fi
+# 6. Create Symlink
+ln -s "$THEME_TARGET" "$THEME_LINK"
+echo "Created symlink: $THEME_LINK -> $THEME_TARGET"

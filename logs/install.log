@@ -37,3 +37,25 @@ Mon Dec  1 00:24:03 EST 2025 - Install everything
 Mon Dec  1 00:24:11 EST 2025 - Install everything
 Mon Dec  1 00:24:11 EST 2025 - Install everything
 Mon Dec  1 00:24:11 EST 2025 - Creation of config folder for current user:
+Mon Dec  1 00:29:12 EST 2025 - Installation of packages:
+Mon Dec  1 00:29:12 EST 2025 - Skipping ./packages/curl.sh. Not present in the arguments.
+Mon Dec  1 00:29:12 EST 2025 - Skipping ./packages/neovim.sh. Not present in the arguments.
+Mon Dec  1 00:29:12 EST 2025 - Skipping ./packages/oh-my-zsh.sh. Not present in the arguments.
+Mon Dec  1 00:29:12 EST 2025 - Skipping ./packages/spaceship.sh. Not present in the arguments.
+Mon Dec  1 00:29:12 EST 2025 - Skipping ./packages/stow.sh. Not present in the arguments.
+Mon Dec  1 00:29:12 EST 2025 - Skipping ./packages/zsh.sh. Not present in the arguments.
+Mon Dec  1 00:29:12 EST 2025 - Creation of config folder for current user:
+Mon Dec  1 00:35:26 EST 2025 - Installation of packages:
+Mon Dec  1 00:35:26 EST 2025 - Skipping ./packages/curl.sh. Not present in the arguments.
+Mon Dec  1 00:35:26 EST 2025 - Skipping ./packages/neovim.sh. Not present in the arguments.
+Mon Dec  1 00:35:26 EST 2025 - Skipping ./packages/oh-my-zsh.sh. Not present in the arguments.
+Mon Dec  1 00:35:33 EST 2025 - Skipping ./packages/stow.sh. Not present in the arguments.
+Mon Dec  1 00:35:33 EST 2025 - Skipping ./packages/zsh.sh. Not present in the arguments.
+Mon Dec  1 00:35:33 EST 2025 - Creation of config folder for current user:
+Mon Dec  1 00:42:42 EST 2025 - Installation of packages:
+Mon Dec  1 00:42:42 EST 2025 - Skipping ./packages/curl.sh. Not present in the arguments.
+Mon Dec  1 00:42:42 EST 2025 - Skipping ./packages/neovim.sh. Not present in the arguments.
+Mon Dec  1 00:42:42 EST 2025 - Skipping ./packages/oh-my-zsh.sh. Not present in the arguments.
+Mon Dec  1 00:42:48 EST 2025 - Skipping ./packages/stow.sh. Not present in the arguments.
+Mon Dec  1 00:42:48 EST 2025 - Skipping ./packages/zsh.sh. Not present in the arguments.
+Mon Dec  1 00:42:48 EST 2025 - Creation of config folder for current user:
