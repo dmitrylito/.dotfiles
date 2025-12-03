@@ -146,7 +146,9 @@ fi
 if [[ "$(hostname -s)" == "Dmitrys-MacBook-Pro" ]]; then
     
   test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-  
+ # Added by Antigravity
+  export PATH="/Users/dmitrylitoshik/.antigravity/antigravity/bin:$PATH"
+ 
   alias ls="gls -a --color=always"
 else
   alias ls="ls -a --color=always"
@@ -161,3 +163,4 @@ alias py="pythhon3"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
