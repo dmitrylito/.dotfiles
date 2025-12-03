@@ -27,6 +27,13 @@ vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
 vim.scrolloff = 999
 
 Snacks.keymap.set("n", "<leader>ba", function()
-	Snacks.dashboard()
-	Snacks.bufdelete.all()
+  Snacks.dashboard()
+  Snacks.bufdelete.all()
 end)
+
+--vim.keymap.set("n", "<leader>cdc", function()
+--  -- adjust path if you ever move the backend repo
+--  local cmd = "devcontainer exec --workspace-folder /home/dmitrylito/code/backend nvim"
+--  vim.cmd("terminal " .. cmd)
+--  vim.cmd("startinsert")
+--end, { desc = "Connect to backend devcontainer" })
