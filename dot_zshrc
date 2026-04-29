@@ -109,22 +109,19 @@ bindkey -M viins '\es' sesh-sessions
 
 # --- Aliases ---
 alias n="nvim"
-alias gacp="git add . && git commit -m 'Dot files updated' && git push origin main"
 alias py="python3"
-alias run="nocorrect run"
 alias c="clear"
 alias sz="exec zsh"
 alias nz="nvim ~/.zshrc"
-alias cdf="cd ~/.dotfiles"
-alias cdc="cd ~/.dotfiles/settings/.config"
 alias lg="lazygit"
 alias lzd="lazydocker"
-alias kovich-stow-dotfiles="~/.dotfiles/bin/.local/bin/kovich-stow-dotfiles"
-alias sta="kovich-stow-dotfiles all"
-alias sts="kovich-stow-dotfiles settings"
 alias y="yazi"
 alias dvsc="docker-volume-snapshot create fleetchaser_db_volume /home/dmitrylito/Projects/tmp/docker/fleetchaser_db_volume"
 alias dvsr="docker-volume-snapshot restore /home/dmitrylito/Projects/tmp/docker/fleetchaser_db_volume fleetchaser_db_volume"
+
+ce() {
+chezmoi edit --apply "$@"
+}
 
 # ls aliases (use eza if available)
 if command -v eza >/dev/null; then
@@ -166,7 +163,3 @@ if [ -f '/home/dmitrylito/google-cloud-sdk/completion.zsh.inc' ]; then . '/home/
 export PATH=/home/dmitrylito/.opencode/bin:$PATH
 alias lzp='lazypodman'
 
-# Chezmoi Edit & Apply shortcut
-ce() {
-    chezmoi edit --apply "$@"
-}
