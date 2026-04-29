@@ -1,0 +1,6 @@
+{{ if ne .profile "Omarchy" }}
+.config/ghostty/
+.config/hypr/
+.config/waybar/
+.config/swaync/
+{{ end }}
