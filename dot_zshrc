@@ -165,3 +165,8 @@ if [ -f '/home/dmitrylito/google-cloud-sdk/completion.zsh.inc' ]; then . '/home/
 # opencode
 export PATH=/home/dmitrylito/.opencode/bin:$PATH
 alias lzp='lazypodman'
+
+# Chezmoi Edit & Apply shortcut
+ce() {
+    chezmoi edit --apply "$@"
+}
