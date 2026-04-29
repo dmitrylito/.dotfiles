@@ -1,0 +1,11 @@
+discordupdater
+etcher-bin
+google-cloud-cli
+google-cloud-cli-gsutil
+openlinkhub-bin
+sesh-bin
+ventoy-bin
+vesktop-bin
+wootility
+zsa-keymapp-bin
+zsh-you-should-use
