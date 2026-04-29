@@ -34,7 +34,6 @@ omarchy-chromium-bin
 omarchy-keyring
 openbsd-netcat
 opencode
-openlinkhub-bin
 openrgb
 openvpn
 pacman-contrib
@@ -48,8 +47,6 @@ sesh-bin
 shfmt
 solaar
 speech-dispatcher
-spotifyd
-spotify-launcher
 steam
 swaync
 tailscale
@@ -62,8 +59,6 @@ tree-sitter-rust
 ttf-inconsolata-go-nerd
 ttf-nerd-fonts-symbols
 ttf-nerd-fonts-symbols-mono
-ventoy-bin
-vesktop-bin
 vlc-cli
 voxtype-bin
 wev

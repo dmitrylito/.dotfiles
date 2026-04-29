@@ -24,7 +24,6 @@ obsidian
 omarchy-nvim
 sassc
 signal-desktop
-spotify
 thermald
 tiny-dfr
 typora
