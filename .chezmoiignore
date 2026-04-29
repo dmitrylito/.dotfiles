@@ -1,5 +1,6 @@
 .config/hypr/shaders/
 .config/hypr/monitors.conf
+.config/hypr/envs.conf
 
 {{ if ne .profile "Omarchy" }}
 .config/ghostty/
