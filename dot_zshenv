@@ -1,0 +1,57 @@
+# .zshenv is sourced for ALL zsh instances.
+# Keep it light. No output!
+autoload -Uz compinit && compinit
+# XDG Base Directories
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+
+PATH=$PATH:$HOME/.local/bin
+
+# Ensure TERM is set for proper line editing and completion
+if [[ -z "${TERM:-}" || "$TERM" == "dumb" ]] || ! tput longname >/dev/null 2>&1; then
+  export TERM="xterm-256color"
+fi
+
+# Project paths
+export APP_PATH="$HOME/.dotfiles"
+
+# Tooling configuration
+export EDITOR="nvim"
+export VISUAL="nvim"
+export PAGER="less"
+export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship.toml"
+export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
+export HYPRLAND_CONFIG="$XDG_CONFIG_HOME/hypr/hyprland.conf"
+export PATH="/home/dmitrylito/.cache/.bun/bin:$PATH"
+export GOOGLE_CLOUD_PROJECT_ID="billing-474613"
+
+export PATH="$HOME/.local/share/bob/nvim-bin:$PATH"
+
+# Ensure path is unique
+typeset -U path
+
+# Path construction
+path=(
+  $HOME/.local/bin
+  $HOME/go/bin
+  $HOME/.cargo/bin
+  $APP_PATH/bin/.local/bin
+  $XDG_DATA_HOME/bob/nvim-bin
+  /usr/local/bin
+  $path
+
+)
+
+# Linuxbrew
+if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+
+# MacOS specific PATH
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  path=(/Users/dmitrylitoshik/.antigravity/antigravity/bin $path)
+fi
+eval "$(zoxide init --cmd cd zsh)"
+eval "$(bob complete zsh)"

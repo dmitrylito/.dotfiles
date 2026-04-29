@@ -1,0 +1,167 @@
+# Zsh interactive configuration
+# .zshrc is sourced for interactive shells.
+
+# Oh My Zsh settings
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
+zstyle ':omz:update' mode auto
+
+# Completion cache (must be set before oh-my-zsh runs compinit)
+ZCOMPDUMP_DIR="$XDG_CACHE_HOME/zsh"
+mkdir -p "$ZCOMPDUMP_DIR"
+export ZSH_COMPDUMP="$ZCOMPDUMP_DIR/.zcompdump-${HOST:-local}"
+
+# Ensure fpath includes site-functions before compinit
+fpath=(/usr/local/share/zsh/site-functions /usr/share/zsh/site-functions $fpath)
+if [[ -d /home/linuxbrew/.linuxbrew/share/zsh/site-functions ]]; then
+  fpath=(/home/linuxbrew/.linuxbrew/share/zsh/site-functions $fpath)
+fi
+
+# Plugins array
+plugins=(
+  git
+  github
+  archlinux
+  tailscale
+  sudo
+  fzf
+  tmux
+  docker
+  docker-compose
+  gpg-agent
+)
+
+# Load Oh My Zsh
+source "$ZSH/oh-my-zsh.sh"
+
+# Options
+setopt AUTO_CD              # Change to a directory by typing its name
+setopt SHARE_HISTORY        # Share command history across sessions
+setopt HIST_IGNORE_DUPS     # Ignore duplicate entries in history
+setopt HIST_IGNORE_ALL_DUPS # Remove older duplicates from history
+setopt HIST_FIND_NO_DUPS    # Do not display duplicates in history search
+setopt INC_APPEND_HISTORY   # Append to history file immediately
+setopt GLOB_DOTS            # Include dotfiles in filename generation
+setopt PROMPT_SUBST         # Enable prompt substitution
+setopt EXTENDED_GLOB        # Enable extended globbing
+
+# --- Plugins ---
+
+# Helper to source plugins safely
+source_if_exists() {
+  [[ -f "$1" ]] && source "$1"
+}
+
+# Load zsh-autocomplete, zsh-autosuggestions, etc.
+# Priorities: Custom dotfiles > Linuxbrew > System
+source_if_exists "$ZSH_CUSTOM/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ||
+  source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ||
+  source_if_exists "/usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ||
+  source_if_exists "/opt/homebrew/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
+
+source_if_exists "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ||
+  source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ||
+  source_if_exists "/usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh" ||
+  source_if_exists "/opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh"
+
+source_if_exists "/usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh"
+source_if_exists "/usr/share/zsh/plugins/zsh-you-should-use/you-should-use.plugin.zsh" ||
+  source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-you-should-use/you-should-use.plugin.zsh" ||
+  source_if_exists "/opt/homebrew/share/zsh-you-should-use/you-should-use.plugin.zsh"
+
+# fc-cli autocompletion
+source_if_exists "$HOME/Projects/fc-cli/zsh_completion.sh"
+
+# Omarchy functions (zsh-safe)
+# export OMARCHY_PATH="${OMARCHY_PATH:-$HOME/.local/share/omarchy}"
+# if [[ ":$PATH:" != *":$OMARCHY_PATH/bin:"* ]]; then
+#   export PATH="$OMARCHY_PATH/bin:$PATH"
+# fi
+# if [[ -d "$OMARCHY_PATH/default/bash/fns" ]]; then
+#   for f in "$OMARCHY_PATH"/default/bash/fns/*(.N); do
+#     source "$f"
+#   done
+# fi
+
+# fzf (zsh)
+source_if_exists "$HOME/.fzf.zsh" ||
+  source_if_exists "/home/linuxbrew/.linuxbrew/opt/fzf/shell/key-bindings.zsh" ||
+  source_if_exists "/usr/share/fzf/key-bindings.zsh"
+source_if_exists "/home/linuxbrew/.linuxbrew/opt/fzf/shell/completion.zsh" ||
+  source_if_exists "/usr/share/fzf/completion.zsh"
+
+function sesh-sessions() {
+  {
+    exec </dev/tty
+    exec <&1
+    local session
+    session=$(sesh list -t -c | fzf --height 40% --reverse --border-label ' sesh ' --border --prompt '⚡  ')
+    zle reset-prompt >/dev/null 2>&1 || true
+    [[ -z "$session" ]] && return
+    sesh connect $session
+  }
+}
+
+zle -N sesh-sessions
+bindkey -M emacs '\es' sesh-sessions
+bindkey -M vicmd '\es' sesh-sessions
+bindkey -M viins '\es' sesh-sessions
+
+# --- Aliases ---
+alias n="nvim"
+alias gacp="git add . && git commit -m 'Dot files updated' && git push origin main"
+alias py="python3"
+alias run="nocorrect run"
+alias c="clear"
+alias sz="exec zsh"
+alias nz="nvim ~/.zshrc"
+alias cdf="cd ~/.dotfiles"
+alias cdc="cd ~/.dotfiles/settings/.config"
+alias lg="lazygit"
+alias lzd="lazydocker"
+alias kovich-stow-dotfiles="~/.dotfiles/bin/.local/bin/kovich-stow-dotfiles"
+alias sta="kovich-stow-dotfiles all"
+alias sts="kovich-stow-dotfiles settings"
+alias y="yazi"
+alias dvsc="docker-volume-snapshot create fleetchaser_db_volume /home/dmitrylito/Projects/tmp/docker/fleetchaser_db_volume"
+alias dvsr="docker-volume-snapshot restore /home/dmitrylito/Projects/tmp/docker/fleetchaser_db_volume fleetchaser_db_volume"
+
+# ls aliases (use eza if available)
+if command -v eza >/dev/null; then
+  alias ls="eza -T -L=1 --group-directories-first --color=always --icons=always"
+  alias lsa="eza -a -T -L=1 --group-directories-first --color=always --icons=always"
+else
+  alias ls="ls --color=auto"
+  alias lsa="ls -a --color=auto"
+fi
+
+# --- Final Initialization ---
+
+# Starship prompt
+if command -v starship >/dev/null; then
+  eval "$(starship init zsh)"
+fi
+
+# MacOS specific settings
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  source_if_exists "${HOME}/.iterm2_shell_integration.zsh"
+fi
+
+# GPG TTY
+export GPG_TTY=$(tty)
+
+source_if_exists "/usr/share/nvm/init-nvm.sh"
+
+zstyle ':completion:*' menu select
+
+export LISTMAX=0
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/home/dmitrylito/google-cloud-sdk/path.zsh.inc' ]; then . '/home/dmitrylito/google-cloud-sdk/path.zsh.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/home/dmitrylito/google-cloud-sdk/completion.zsh.inc' ]; then . '/home/dmitrylito/google-cloud-sdk/completion.zsh.inc'; fi
+
+# opencode
+export PATH=/home/dmitrylito/.opencode/bin:$PATH
+alias lzp='lazypodman'

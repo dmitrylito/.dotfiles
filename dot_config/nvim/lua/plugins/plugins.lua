@@ -1,0 +1,107 @@
+return {
+  -- Navigate seamlessly between Neovim and tmux panes
+  {
+    "alexghergh/nvim-tmux-navigation",
+    keys = {
+      {
+        "<C-h>",
+        "<Cmd>NvimTmuxNavigateLeft<cr>",
+        desc = "Navigate left",
+      },
+      {
+        "<C-j>",
+        "<Cmd>NvimTmuxNavigateDown<cr>",
+        desc = "Navigate down",
+      },
+      {
+        "<C-k>",
+        "<Cmd>NvimTmuxNavigateUp<cr>",
+        desc = "Navigate up",
+      },
+      {
+        "<C-l>",
+        "<Cmd>NvimTmuxNavigateRight<cr>",
+        desc = "Navigate right",
+      },
+    },
+    config = true,
+  },
+  --
+  --Adds a line in nvim, makes it skiny
+  --
+  {
+    "xiyaowong/virtcolumn.nvim",
+  },
+  --
+  -- Center the cursor vertically when navigating
+  --
+  {
+    "arnamak/stay-centered.nvim",
+    opts = {
+      enable = true,
+      cursorline = true,
+      disable_on_mouse = false,
+      skip_filetypes = { "sidekick_terminal", "snacks_terminal" },
+    },
+  },
+  --
+  -- Enable blink.cmp plugin for enhanced completion navigation
+  --
+  {
+    "saghen/blink.cmp",
+    opts = function(_, opts)
+      opts.keymap = opts.keymap or {}
+      opts.keymap.preset = "enter"
+      -- Removed Tab override to allow native inline completion to handle it
+    end,
+  },
+
+  --
+  -- Configure conform.nvim to use shfmt for zsh files
+  --
+  {
+    "stevearc/conform.nvim",
+    opts = {
+      formatters_by_ft = {
+        zsh = { "shfmt" },
+      },
+    },
+  },
+
+  { "folke/lazy.nvim", version = false },
+
+  {
+    "LazyVim/LazyVim",
+    version = false,
+    opts = {
+      news = {
+        lazyvim = false,
+        neovim = false,
+      },
+    },
+  },
+
+  {
+    "MagicDuck/grug-far.nvim",
+    config = function()
+      require("grug-far").setup({})
+    end,
+  },
+
+  {
+    "folke/sidekick.nvim",
+    opts = {
+      cli = {
+        mux = {
+          backend = "tmux",
+          enabled = true,
+        },
+        tools = {
+          codex = {
+            cmd = { "codex" },
+          },
+        },
+      },
+    },
+  },
+}
