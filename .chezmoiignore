@@ -2,6 +2,7 @@
 .config/hypr/monitors.conf
 .config/hypr/envs.conf
 .config/hypr/workspaces.conf
+.config/nvim/lazy-lock.json
 
 {{ if ne .profile "Omarchy" }}
 .config/ghostty/
