@@ -24,7 +24,8 @@ return {
           layout = { preview = "main" },
           follow = true,
           hidden = true,
-          ignored = false,
+          ignored = true,
+          exclude = { ".git", "node_modules", "vendor", "**/__pycache__" },
         },
         files = {
           follow = true,
