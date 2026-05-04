@@ -5,9 +5,6 @@ Snacks.keymap.set("n", "<leader>ba", function()
 end, { desc = "Open Snacks Dashboard" })
 -- 1. UNIVERSAL MAPPINGS (Work in both)
 vim.keymap.set("i", "jj", "<ESC>", { silent = true })
--- Move selected lines up/down
---vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
---vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 -- System Clipboard
 vim.keymap.set({ "n", "v" }, "<leader>d", '"_d')
 -- Terminal Mode Escape (double-tap Esc)
@@ -48,15 +45,6 @@ if vim.g.vscode then
   end)
   -- 3. TERMINAL NEOVIM ONLY
 else
-  -- Native Inline Completion (Ghost Text) for Neovim 0.12+
-  vim.keymap.set("i", "<Tab>", function()
-    if vim.lsp.inline_completion.get() then
-      vim.lsp.inline_completion.accept()
-    else
-      return "<Tab>"
-    end
-  end, { expr = true, desc = "Accept Native Inline Suggestion" })
-
   vim.keymap.set("i", "<M-n>", function()
     vim.lsp.inline_completion.select()
   end, { desc = "Next Inline Suggestion" })
@@ -64,9 +52,4 @@ else
   vim.keymap.set("i", "<M-p>", function()
     vim.lsp.inline_completion.select({ count = -1 })
   end, { desc = "Previous Inline Suggestion" })
-
-  -- vim.keymap.set("n", "<C-k>", "<cmd>cnext<CR>zz")
-  -- vim.keymap.set("n", "<C-j>", "<cmd>cprev<CR>zz")
-  -- vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz")
-  -- vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
 end

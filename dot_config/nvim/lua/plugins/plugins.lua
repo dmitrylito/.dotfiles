@@ -52,10 +52,8 @@ return {
     opts = function(_, opts)
       opts.keymap = opts.keymap or {}
       opts.keymap.preset = "enter"
-      -- Removed Tab override to allow native inline completion to handle it
     end,
   },
-
   --
   -- Configure conform.nvim to use shfmt for zsh files
   --
