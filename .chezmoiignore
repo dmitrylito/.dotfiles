@@ -3,6 +3,11 @@
 .config/hypr/envs.conf
 .config/hypr/workspaces.conf
 .config/nvim/lazy-lock.json
+packages-added-aur.txt
+packages-added-pacman.txt
+packages-drivers.txt
+packages-removed.txt
+README.md
 
 {{ if ne .profile "Omarchy" }}
 .config/ghostty/

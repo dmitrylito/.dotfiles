@@ -1,3 +1,4 @@
+antigravity
 discordupdater
 etcher-bin
 google-cloud-cli

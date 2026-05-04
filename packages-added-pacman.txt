@@ -1,13 +1,16 @@
+antigravity
 ast-grep
 bc
 bun
 chezmoi
+cliamp
 cmake
 composer
 cpio
 discordupdater
 dolphin
 efibootmgr
+elephant-all
 etcher-bin
 flatpak
 freerdp
@@ -39,9 +42,9 @@ openvpn
 pacman-contrib
 pipewire-session-manager
 prismlauncher
+proton-vpn-gtk-app
 python-pip
 python-wxpython
-qpwgraph
 sbctl
 sesh-bin
 shfmt
@@ -51,6 +54,8 @@ steam
 swaync
 tailscale
 telegram-desktop
+tesseract
+tesseract-data-eng
 trash-cli
 tree-sitter-bash
 tree-sitter-javascript
@@ -61,6 +66,7 @@ ttf-nerd-fonts-symbols
 ttf-nerd-fonts-symbols-mono
 vlc-cli
 voxtype-bin
+walker
 wev
 wlr-randr
 wootility
