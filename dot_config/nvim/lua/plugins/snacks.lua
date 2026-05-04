@@ -20,7 +20,7 @@ return {
       sources = {
         explorer = {
           cycle = true,
-          auto_close = false,
+          auto_close = true,
           layout = { preview = "main" },
           follow = true,
           hidden = true,
