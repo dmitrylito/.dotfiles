@@ -128,8 +128,6 @@ fi
 # GPG TTY
 export GPG_TTY=$(tty)
 
-source_if_exists "/usr/share/nvm/init-nvm.sh"
-
 zstyle ':completion:*' menu select
 
 export LISTMAX=0
