@@ -51,3 +51,4 @@ fi
 eval "$(zoxide init --cmd cd zsh)"
 eval "$(bob complete zsh)"
 eval "$(mise activate zsh)"
+eval "$(mise completion zsd)"
