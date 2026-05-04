@@ -1,6 +1,5 @@
-# .zshenv is sourced for ALL zsh instances.
-# Keep it light. No output!
 autoload -Uz compinit && compinit
+
 # XDG Base Directories
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
@@ -14,9 +13,6 @@ if [[ -z "${TERM:-}" || "$TERM" == "dumb" ]] || ! tput longname >/dev/null 2>&1;
   export TERM="xterm-256color"
 fi
 
-# Project paths
-export APP_PATH="$HOME/.dotfiles"
-
 # Tooling configuration
 export EDITOR="nvim"
 export VISUAL="nvim"
@@ -26,7 +22,6 @@ export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
 export HYPRLAND_CONFIG="$XDG_CONFIG_HOME/hypr/hyprland.conf"
 export PATH="/home/dmitrylito/.cache/.bun/bin:$PATH"
 export GOOGLE_CLOUD_PROJECT_ID="billing-474613"
-
 export PATH="$HOME/.local/share/bob/nvim-bin:$PATH"
 
 # Ensure path is unique
@@ -55,3 +50,4 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 fi
 eval "$(zoxide init --cmd cd zsh)"
 eval "$(bob complete zsh)"
+eval "$(mise activate zsh)"
