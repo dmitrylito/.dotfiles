@@ -108,30 +108,7 @@ bindkey -M vicmd '\es' sesh-sessions
 bindkey -M viins '\es' sesh-sessions
 
 # --- Aliases ---
-alias n="nvim"
-alias py="python3"
-alias c="clear"
-alias cdz="cd ~/.local/share/chezmoi"
-alias sz="exec zsh"
-alias nz="nvim ~/.zshrc"
-alias lg="lazygit"
-alias lzd="lazydocker"
-alias y="yazi"
-alias dvsc="docker-volume-snapshot create fleetchaser_db_volume /home/dmitrylito/Projects/tmp/docker/fleetchaser_db_volume"
-alias dvsr="docker-volume-snapshot restore /home/dmitrylito/Projects/tmp/docker/fleetchaser_db_volume fleetchaser_db_volume"
-
-ce() {
-chezmoi edit --apply "$@"
-}
-
-# ls aliases (use eza if available)
-if command -v eza >/dev/null; then
-  alias ls="eza -T -L=1 --group-directories-first --color=always --icons=always"
-  alias lsa="eza -a -T -L=1 --group-directories-first --color=always --icons=always"
-else
-  alias ls="ls --color=auto"
-  alias lsa="ls -a --color=auto"
-fi
+source_if_exists "$HOME/.aliases"
 
 # --- Final Initialization ---
 
@@ -162,5 +139,5 @@ if [ -f '/home/dmitrylito/google-cloud-sdk/completion.zsh.inc' ]; then . '/home/
 
 # opencode
 export PATH=/home/dmitrylito/.opencode/bin:$PATH
-alias lzp='lazypodman'
+
 
