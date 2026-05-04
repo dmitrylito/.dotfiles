@@ -111,7 +111,7 @@ return {
     },
   },
   {
-    "OXY2DEV/render-markdown.nvim", -- Or whatever the correct github path is for this plugin
+    "MeanderingProgrammer/render-markdown.nvim",
     dependencies = {
       "nvim-treesitter/nvim-treesitter",
       "nvim-tree/nvim-web-devicons",
