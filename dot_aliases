@@ -1,5 +1,6 @@
 # --- Aliases ---
 alias n="nvim"
+alias cz="chezmoi"
 alias py="python3"
 alias c="clear"
 alias cdz="cd ~/.local/share/chezmoi"
