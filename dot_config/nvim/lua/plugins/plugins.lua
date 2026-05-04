@@ -52,6 +52,14 @@ return {
     opts = function(_, opts)
       opts.keymap = opts.keymap or {}
       opts.keymap.preset = "enter"
+      opts.keymap["<Tab>"] = {
+        function(cmp)
+          if vim.lsp.inline_completion and vim.lsp.inline_completion.get() then
+            return true
+          end
+        end,
+        "fallback",
+      }
     end,
   },
   --
@@ -100,6 +108,16 @@ return {
           },
         },
       },
+    },
+  },
+  {
+    "OXY2DEV/render-markdown.nvim", -- Or whatever the correct github path is for this plugin
+    dependencies = {
+      "nvim-treesitter/nvim-treesitter",
+      "nvim-tree/nvim-web-devicons",
+    },
+    opts = {
+      latex = { enabled = false },
     },
   },
 }
