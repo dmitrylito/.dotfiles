@@ -58,4 +58,3 @@ require("lazy").setup({
     },
   },
 })
-require("render-markdown").setup({ latex = { enabled = false } })
