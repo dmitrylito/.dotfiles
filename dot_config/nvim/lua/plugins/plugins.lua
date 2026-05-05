@@ -40,7 +40,7 @@ return {
     opts = {
       enable = true,
       cursorline = true,
-      disable_on_mouse = false,
+      disable_on_mouse = true,
       skip_filetypes = { "sidekick_terminal", "snacks_terminal" },
     },
   },
@@ -101,6 +101,7 @@ return {
         mux = {
           backend = "tmux",
           enabled = true,
+          dump = 5000, -- Increase scrollback dump for better history
         },
         tools = {
           codex = {
