@@ -40,7 +40,7 @@ return {
     opts = {
       enable = true,
       cursorline = true,
-      disable_on_mouse = false,
+      disable_on_mouse = true,
       skip_filetypes = { "sidekick_terminal", "snacks_terminal" },
     },
   },
@@ -109,8 +109,11 @@ return {
           dump = 5000, -- Increase scrollback dump for better history
         },
         tools = {
+          gemini = { native_scroll = true },
+          claude = { native_scroll = true },
           codex = {
             cmd = { "codex" },
+            native_scroll = true,
           },
         },
       },
