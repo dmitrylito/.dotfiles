@@ -14,11 +14,12 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
--- Enable mouse scrolling in terminal mode
+-- Enable natural mouse scrolling in terminal mode
+-- Scrolling up enters Normal mode to browse history
 vim.api.nvim_create_autocmd("TermOpen", {
   group = vim.api.nvim_create_augroup("terminal_scroll", { clear = true }),
   callback = function()
-    vim.keymap.set("t", "<ScrollWheelUp>", [[<C-\><C-o><ScrollWheelUp>]], { buffer = true, silent = true })
-    vim.keymap.set("t", "<ScrollWheelDown>", [[<C-\><C-o><ScrollWheelDown>]], { buffer = true, silent = true })
+    vim.keymap.set("t", "<ScrollWheelUp>", [[<C-\><C-n><C-u>]], { buffer = true, silent = true })
+    vim.keymap.set("t", "<ScrollWheelDown>", [[<C-\><C-n><C-d>]], { buffer = true, silent = true })
   end,
 })

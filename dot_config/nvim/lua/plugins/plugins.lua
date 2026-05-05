@@ -40,7 +40,7 @@ return {
     opts = {
       enable = true,
       cursorline = true,
-      disable_on_mouse = true,
+      disable_on_mouse = false,
       skip_filetypes = { "sidekick_terminal", "snacks_terminal" },
     },
   },
