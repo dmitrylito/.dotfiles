@@ -7,6 +7,8 @@ vim.g.maplocalleader = " "
 
 vim.opt.clipboard = "unnamedplus"
 
+vim.opt.mouse = "a"
+
 vim.opt.mousescroll = "ver:1,hor:1"
 
 -- Add hyprlang filetype detection

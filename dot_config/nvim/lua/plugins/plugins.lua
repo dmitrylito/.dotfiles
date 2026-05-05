@@ -100,10 +100,7 @@ return {
       cli = {
         win = {
           config = function(terminal)
-            -- Scroll the Neovim buffer directly without sending escape codes to the app.
-            -- <C-\><C-o> runs the scroll and stays in Terminal mode.
-            vim.keymap.set("t", "<ScrollWheelUp>", "<C-\\><C-o><ScrollWheelUp>", { buffer = terminal.buf, silent = true })
-            vim.keymap.set("t", "<ScrollWheelDown>", "<C-\\><C-o><ScrollWheelDown>", { buffer = terminal.buf, silent = true })
+            -- Terminal scroll is handled globally in autocmds.lua
           end,
         },
         mux = {

@@ -13,3 +13,12 @@ vim.api.nvim_create_autocmd("FileType", {
     vim.diagnostic.enable(false)
   end,
 })
+
+-- Enable mouse scrolling in terminal mode
+vim.api.nvim_create_autocmd("TermOpen", {
+  group = vim.api.nvim_create_augroup("terminal_scroll", { clear = true }),
+  callback = function()
+    vim.keymap.set("t", "<ScrollWheelUp>", [[<C-\><C-o><ScrollWheelUp>]], { buffer = true, silent = true })
+    vim.keymap.set("t", "<ScrollWheelDown>", [[<C-\><C-o><ScrollWheelDown>]], { buffer = true, silent = true })
+  end,
+})
