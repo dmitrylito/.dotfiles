@@ -1,11 +1,7 @@
-amdsmi
 amd-ucode
 kernel-modules-hook
 lib32-nvidia-utils
 libva-nvidia-driver
 linux-firmware
 nvidia-open-dkms
-nvidia-settings
 nvidia-utils
-vulkan-intel
-vulkan-tools
