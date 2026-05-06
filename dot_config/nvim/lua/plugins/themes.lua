@@ -10,6 +10,7 @@ return {
         functions = {},
       },
       -- disable italic for functions
+      auto_integrations = true,
       on_colors = function(colors)
         colors.hint = colors.orange
         colors.error = "#ff0000"
@@ -19,7 +20,7 @@ return {
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "catppuccin",
+      colorscheme = "tokyonight",
     },
   },
   {
