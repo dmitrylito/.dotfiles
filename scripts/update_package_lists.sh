@@ -17,8 +17,8 @@ if [ -f "$OMARCHY_OTHER" ]; then
 fi
 
 # 2. Get current explicit packages
-pacman -Qeq > /tmp/current_native.txt
-pacman -Qmq > /tmp/current_aur.txt
+pacman -Qenq > /tmp/current_native.txt
+pacman -Qemq > /tmp/current_aur.txt
 cat /tmp/current_native.txt /tmp/current_aur.txt | sort -u > /tmp/current_all.txt
 
 echo "Calculating differences..."

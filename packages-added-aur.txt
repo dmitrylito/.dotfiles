@@ -1,3 +1,4 @@
+antigravity
 discordupdater
 google-cloud-cli
 google-cloud-cli-gsutil

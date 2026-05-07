@@ -29,7 +29,6 @@ qt6-wayland
 sassc
 signal-desktop
 snapper
-spotify
 thermald
 tiny-dfr
 typora
