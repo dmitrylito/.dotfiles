@@ -6,37 +6,41 @@ OMARCHY_BASE="$CHEZMOI_DIR/install/omarchy-base.packages"
 OMARCHY_OTHER="$CHEZMOI_DIR/install/omarchy-other.packages"
 
 # The regex used to identify hardware-specific packages that shouldn't sync across machines
-DRIVER_REGEX='nvidia|amd|intel|vulkan|apple|macbook|t2|tuxedo|firmware|dkms|kernel|modules'
+DRIVER_REGEX='nvidia|amd|intel|vulkan|apple|macbook|t2|tuxedo|firmware|dkms|kernel|modules|asus|broadcom|thermald|ptl|dfr|vpl|debug'
+# The regex used to identify pre-installed packages that can be removed
+PREINSTALL_REGEX='aether|cliamp|typora|spotify|libreoffice-fresh|1password-beta|1password-cli|xournalpp|signal-desktop|pinta|obsidian|obs-studio|kdenlive|lazydocker|opencode|claude-code|alacritty|htop|nvim|dart|jdk-openjdk|sassc|libsass|intltool|autoconf-archive|webp-pixbuf-loader'
 
 echo "Gathering current system state..."
 
-# 1. Build the clean Omarchy reference (excluding hardware drivers)
-grep -v '^#' "$OMARCHY_BASE" | grep -v '^$' | grep -vE "$DRIVER_REGEX" > /tmp/omarchy_ref.txt
+# 1. Build the clean Omarchy reference (excluding hardware drivers and pre-installs)
+grep -v '^#' "$OMARCHY_BASE" | grep -v '^$' | grep -vE "$DRIVER_REGEX" | grep -vE "$PREINSTALL_REGEX" > /tmp/omarchy_ref.txt
 if [ -f "$OMARCHY_OTHER" ]; then
-    grep -v '^#' "$OMARCHY_OTHER" | grep -v '^$' | grep -vE "$DRIVER_REGEX" >> /tmp/omarchy_ref.txt
+    grep -v '^#' "$OMARCHY_OTHER" | grep -v '^$' | grep -vE "$DRIVER_REGEX" | grep -vE "$PREINSTALL_REGEX" >> /tmp/omarchy_ref.txt
 fi
 
-# 2. Get current explicit packages
-pacman -Qenq > /tmp/current_native.txt
-pacman -Qemq > /tmp/current_aur.txt
-cat /tmp/current_native.txt /tmp/current_aur.txt | sort -u > /tmp/current_all.txt
+# 2. Get current system state
+# - Explicit packages (native and AUR) for "Added" lists
+# - ALL installed packages AND provided symbols for "Removed" check
+pacman -Qenq > /tmp/current_native_explicit.txt
+pacman -Qemq > /tmp/current_aur_explicit.txt
+expac -Q '%n %p' | tr ' ' '\n' | sort -u > /tmp/current_all_installed_and_provides.txt
 
 echo "Calculating differences..."
 
 # 3. Generate Drivers List (All explicit packages on THIS system matching the regex)
-grep -iE "$DRIVER_REGEX" /tmp/current_all.txt | sort > "$CHEZMOI_DIR/packages-drivers.txt"
+cat /tmp/current_native_explicit.txt /tmp/current_aur_explicit.txt | grep -iE "$DRIVER_REGEX" | sort > "$CHEZMOI_DIR/packages-drivers.txt"
 
-# 4. Generate Added Pacman (Native in current, NOT in Omarchy, NOT a driver)
-grep -vxFf /tmp/omarchy_ref.txt /tmp/current_native.txt | grep -ivE "$DRIVER_REGEX" | sort > "$CHEZMOI_DIR/packages-added-pacman.txt"
+# 4. Generate Added Pacman (Native in current, NOT in Omarchy, NOT a driver, NOT a pre-install)
+grep -vxFf /tmp/omarchy_ref.txt /tmp/current_native_explicit.txt | grep -ivE "$DRIVER_REGEX" | grep -ivE "$PREINSTALL_REGEX" | sort > "$CHEZMOI_DIR/packages-added-pacman.txt"
 
-# 5. Generate Added AUR (AUR in current, NOT in Omarchy, NOT a driver)
-grep -vxFf /tmp/omarchy_ref.txt /tmp/current_aur.txt | grep -ivE "$DRIVER_REGEX" | sort > "$CHEZMOI_DIR/packages-added-aur.txt"
+# 5. Generate Added AUR (AUR in current, NOT in Omarchy, NOT a driver, NOT a pre-install)
+grep -vxFf /tmp/omarchy_ref.txt /tmp/current_aur_explicit.txt | grep -ivE "$DRIVER_REGEX" | grep -ivE "$PREINSTALL_REGEX" | sort > "$CHEZMOI_DIR/packages-added-aur.txt"
 
-# 6. Generate Removed List (Omarchy packages NOT in current)
-grep -vxFf /tmp/current_all.txt /tmp/omarchy_ref.txt | sort > "$CHEZMOI_DIR/packages-removed.txt"
+# 6. Generate Removed List (Omarchy packages NOT in current or provided by current)
+grep -vxFf /tmp/current_all_installed_and_provides.txt /tmp/omarchy_ref.txt | sort > "$CHEZMOI_DIR/packages-removed.txt"
 
 # Cleanup
-rm /tmp/omarchy_ref.txt /tmp/current_native.txt /tmp/current_aur.txt /tmp/current_all.txt
+rm /tmp/omarchy_ref.txt /tmp/current_native_explicit.txt /tmp/current_aur_explicit.txt /tmp/current_all_installed_and_provides.txt
 
 echo "======================================"
 echo "✅ Package Lists Updated Successfully!"
