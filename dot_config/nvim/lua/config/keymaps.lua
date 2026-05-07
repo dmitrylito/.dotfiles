@@ -1,8 +1,4 @@
 -- keymaps --
-Snacks.keymap.set("n", "<leader>ba", function()
-  Snacks.dashboard()
-  Snacks.bufdelete.all()
-end, { desc = "Open Snacks Dashboard" })
 -- 1. UNIVERSAL MAPPINGS (Work in both)
 vim.keymap.set("i", "jj", "<ESC>", { silent = true })
 -- System Clipboard
