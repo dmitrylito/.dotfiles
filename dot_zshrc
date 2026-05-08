@@ -148,3 +148,5 @@ if [ -f '/home/dmitrylito/google-cloud-sdk/completion.zsh.inc' ]; then . '/home/
 export PATH=/home/dmitrylito/.opencode/bin:$PATH
 
 
+
+. "$HOME/.local/share/../bin/env"
