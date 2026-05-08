@@ -21,5 +21,3 @@ vim.filetype.add({
 vim.g.ai_cmp = false
 
 vim.g.root_spec = { { ".git", "lua", "package.json" }, "cwd" }
-
-vim.g.lazyvim_python_lsp = "basedpyright"
