@@ -108,14 +108,14 @@ return {
           enabled = true,
           dump = 5000, -- Increase scrollback dump for better history
         },
-        tools = {
-          gemini = { native_scroll = true },
-          claude = { native_scroll = true },
-          codex = {
-            cmd = { "codex" },
-            native_scroll = true,
-          },
-        },
+        -- tools = {
+        --   gemini = { native_scroll = true },
+        --   claude = { native_scroll = true },
+        --   codex = {
+        --     cmd = { "codex" },
+        --     native_scroll = true,
+        --   },
+        -- },
       },
     },
   },
