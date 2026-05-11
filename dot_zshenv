@@ -22,6 +22,7 @@ export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
 export HYPRLAND_CONFIG="$XDG_CONFIG_HOME/hypr/hyprland.conf"
 export PATH="/home/dmitrylito/.cache/.bun/bin:$PATH"
 export GOOGLE_CLOUD_PROJECT_ID="billing-474613"
+export GOOGLE_CLOUD_REGION="us-central1"
 export PATH="$HOME/.local/share/bob/nvim-bin:$PATH"
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
 
