@@ -14,7 +14,7 @@ RESET=$'\E[0m'
 # Line 1: Icons and Labels
 LINE1="  ${CYAN} All${RESET}    ${BLUE} Tmux${RESET}    ${MAGENTA} Configs${RESET}    ${CYAN} Zoxide${RESET}    ${BLUE} Find${RESET}    ${BOLD}📐Layouts${RESET}    ${MAGENTA} Kill${RESET}"
 # Line 2: Ctrl + Keybinds
-LINE2=" Ctrl+a     Ctrl+t     Ctrl+g     Ctrl+x     Ctrl+f     Ctrl+l     Ctrl+d"
+LINE2=" Ctrl+a    Ctrl+t     Ctrl+g     Ctrl+x     Ctrl+f     Ctrl+l      Ctrl+d"
 
 # Combine into a 2-line header
 HEADER_STR="$LINE1"$'\n'"$LINE2"
