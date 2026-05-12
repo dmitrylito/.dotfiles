@@ -1,0 +1,42 @@
+{
+  "security": {
+    "auth": {
+      "selectedType": "oauth-personal"
+    },
+    "enablePermanentToolApproval": true
+  },
+  "general": {
+    "vimMode": true,
+    "defaultApprovalMode": "default"
+  },
+  "ui": {
+    "hideTips": true,
+    "errorVerbosity": "low",
+    "showLineNumbers": false,
+    "useAlternateBuffer": true,
+    "footer": {
+      "showLabels": false,
+      "items": [
+        "workspace",
+        "git-branch",
+        "model-name",
+        "quota"
+      ]
+    },
+    "terminalBackgroundPollingInterval": 10,
+    "hideWindowTitle": true,
+    "hideBanner": true,
+    "terminalBuffer": true
+  },
+  "experimental": {
+    "topicUpdateNarration": false,
+    "useOSC52Paste": true,
+    "useOSC52Copy": true
+  },
+  "ide": {
+    "enabled": true
+  },
+  "model": {
+    "name": ""
+  }
+}
