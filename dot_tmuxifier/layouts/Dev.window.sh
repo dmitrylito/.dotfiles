@@ -1,7 +1,7 @@
 # dev.window.sh
 # Custom layout with Nvim (Top Left), Terminal (Bottom Left), and AI (Right)
 
-window_root "#{pane_current_path}"
+window_root "$PWD"
 new_window "Dev"
 
 # 1. Create the Right pane (AI) - 30% width
@@ -17,6 +17,7 @@ split_v 20
 select_pane 1
 run_cmd "nvim"
 
+# Pane 3: Right (AI)
 select_pane 3
 run_cmd "gemini" # Replace with your AI command if needed
 
