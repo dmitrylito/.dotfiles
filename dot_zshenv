@@ -29,6 +29,7 @@ typeset -U path
 
 # Path construction
 path=(
+  $HOME/.tmuxifier/bin
   $HOME/.local/bin
   $HOME/go/bin
   $HOME/.cargo/bin

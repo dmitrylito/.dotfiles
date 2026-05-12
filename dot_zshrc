@@ -85,7 +85,6 @@ if [[ ":$PATH:" != *":$OMARCHY_PATH/bin:"* ]]; then
 fi
 
 # Tmuxifier
-export PATH="$HOME/.tmuxifier/bin:$PATH"
 eval "$(tmuxifier init -)"
 
 # Source Omarchy's core environment and aliases (most are shell-agnostic)
