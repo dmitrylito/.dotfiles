@@ -20,6 +20,7 @@ run_cmd "nvim"
 # Pane 2: Right (AI Terminal)
 select_pane 2
 run_cmd "gemini" # Replace with your AI command if needed
+sleep 1
 
 # Pane 3: Bottom Left (General Terminal)
 select_pane 3
