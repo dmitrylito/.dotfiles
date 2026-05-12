@@ -1,6 +1,8 @@
 git:
   pagers:
     - pager: delta --paging=never --side-by-side --line-numbers --hyperlinks --hyperlinks-file-link-format="lazygit-edit://{path}:{line}";
+  merging:
+    args: "--no-ff"
 
 customCommands:
   - key: "<c-a>" # You can change this keybinding (Ctrl+a in this example)
