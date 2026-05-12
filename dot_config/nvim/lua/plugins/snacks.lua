@@ -25,7 +25,15 @@ return {
           follow = true,
           hidden = true,
           ignored = true,
-          exclude = { ".git", "node_modules", "vendor", "**/__pycache__" },
+          exclude = {
+            ".git",
+            "node_modules",
+            "vendor",
+            "**/__pycache__",
+            "**/.DS_Store",
+            "**/.ruff_cache",
+            "**/.venv",
+          },
         },
         files = {
           follow = true,
