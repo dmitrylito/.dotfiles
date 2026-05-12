@@ -2,62 +2,87 @@
 # https://yazi-rs.github.io/docs/configuration/overview
 
 [manager]
-layout         = [ 1, 4, 3 ]
-sort_by        = "alphabetical"
+layout = [1, 4, 3]
+sort_by = "alphabetical"
 sort_sensitive = false
-sort_reverse   = false
+sort_reverse = false
 sort_dir_first = true
-linemode       = "none"
-show_hidden    = false
-show_symlink   = true
-scrolloff      = 5
+linemode = "none"
+show_hidden = true
+show_symlink = true
+scrolloff = 5
 
 # Set a predictable title format for window managers
-title_format   = "Yazi: {cwd}"
+title_format = "Yazi: {cwd}"
 
 [preview]
-tab_size        = 2
-max_width       = 600
-max_height      = 900
-cache_dir       = ""
-image_filter    = "lanczos3"
-image_quality   = 75
-sixel_fraction  = 15
-ueberzug_scale  = 1
-ueberzug_offset = [ 0, 0, 0, 0 ]
+tab_size = 2
+max_width = 600
+max_height = 900
+cache_dir = ""
+image_filter = "lanczos3"
+image_quality = 75
+sixel_fraction = 15
+ueberzug_scale = 1
+ueberzug_offset = [0, 0, 0, 0]
 
 [opener]
 edit = [
-    { run = '${EDITOR:=vi} "$@"', block = true, desc = "Edit", for = "unix" },
-    { run = 'code "%*"',          orphan = true, desc = "Code", for = "windows" },
+  { run = '${EDITOR:=nvim} "$@"', block = true, desc = "Edit", for = "unix" },
+  { run = 'code "%*"', orphan = true, desc = "Code", for = "windows" },
 ]
 open = [
-    { run = 'xdg-open "$@"', desc = "Open", for = "linux" },
-    { run = 'open "$@"',     desc = "Open", for = "macos" },
-    { run = 'start "" "%1"', orphan = true, desc = "Open", for = "windows" },
+  { run = 'xdg-open "$@"', desc = "Open", for = "linux" },
+  { run = 'open "$@"', desc = "Open", for = "macos" },
+  { run = 'start "" "%1"', orphan = true, desc = "Open", for = "windows" },
 ]
 reveal = [
-    { run = 'xdg-open "$(dirname "$0")"', desc = "Reveal", for = "linux" },
-    { run = 'open -R "$1"',               desc = "Reveal", for = "macos" },
-    { run = 'explorer /select,"%1"',      orphan = true, desc = "Reveal", for = "windows" },
+  { run = 'xdg-open "$(dirname "$0")"', desc = "Reveal", for = "linux" },
+  { run = 'open -R "$1"', desc = "Reveal", for = "macos" },
+  { run = 'explorer /select,"%1"', orphan = true, desc = "Reveal", for = "windows" },
 ]
 extract = [
-    { run = 'unar "$1"', desc = "Extract here", for = "unix" },
-    { run = 'unar "%1"', desc = "Extract here", for = "windows" },
+  { run = 'unar "$1"', desc = "Extract here", for = "unix" },
+  { run = 'unar "%1"', desc = "Extract here", for = "windows" },
 ]
 play = [
-    { run = 'mpv "$@"', orphan = true, for = "unix" },
-    { run = 'mpv "%1"', orphan = true, for = "windows" },
+  { run = 'mpv "$@"', orphan = true, for = "unix" },
+  { run = 'mpv "%1"', orphan = true, for = "windows" },
 ]
 
 [open]
 rules = [
-    { name = "*/", use = [ "edit", "open", "reveal" ] },
-    { mime = "text/*", use = [ "edit", "reveal" ] },
-    { mime = "image/*", use = [ "open", "reveal" ] },
-    { mime = "video/*", use = [ "play", "reveal" ] },
-    { mime = "audio/*", use = [ "play", "reveal" ] },
-    { mime = "inode/x-empty", use = [ "edit", "reveal" ] },
-    { mime = "application/json", use = [ "edit", "reveal" ] },
-    { mime = "*/", use = [ "open", "reveal" ] },
+  { mime = "inode/directory", use = [
+    "edit",
+    "open",
+    "reveal",
+  ] },
+  { mime = "text/*", use = [
+    "edit",
+    "reveal",
+  ] },
+  { mime = "image/*", use = [
+    "open",
+    "reveal",
+  ] },
+  { mime = "video/*", use = [
+    "play",
+    "reveal",
+  ] },
+  { mime = "audio/*", use = [
+    "play",
+    "reveal",
+  ] },
+  { mime = "inode/x-empty", use = [
+    "edit",
+    "reveal",
+  ] },
+  { mime = "application/json", use = [
+    "edit",
+    "reveal",
+  ] },
+  { mime = "*", use = [
+    "open",
+    "reveal",
+  ] },
 ]
