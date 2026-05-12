@@ -13,6 +13,7 @@ zstyle ':omz:update' mode auto
 ZCOMPDUMP_DIR="$XDG_CACHE_HOME/zsh"
 mkdir -p "$ZCOMPDUMP_DIR"
 export ZSH_COMPDUMP="$ZCOMPDUMP_DIR/.zcompdump-${HOST:-local}"
+zstyle ':completion:*' menu select
 
 # Ensure fpath includes site-functions before compinit
 fpath=(/usr/local/share/zsh/site-functions /usr/share/zsh/site-functions $fpath)
@@ -136,4 +137,3 @@ fi
 # GPG TTY
 export GPG_TTY=$(tty)
 
-zstyle ':completion:*' menu select
