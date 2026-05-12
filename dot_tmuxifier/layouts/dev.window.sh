@@ -2,10 +2,10 @@
 # Custom layout with Nvim (Top Left), Terminal (Bottom Left), and AI (Right)
 
 window_root "#{pane_current_path}"
-new_window "dev"
+new_window "Dev"
 
 # 1. Create the Right pane (AI) - 30% width
-split_h 30
+split_h 35
 
 # 2. Go back to Left pane and split it for Nvim (Top) and Terminal (Bottom)
 # split_v 20 means the bottom pane will be 20% height
@@ -19,7 +19,7 @@ run_cmd "nvim"
 
 # Pane 2: Right (AI Terminal)
 select_pane 2
-# run_cmd "ai" # Replace with your AI command if needed
+run_cmd "gemini" # Replace with your AI command if needed
 
 # Pane 3: Bottom Left (General Terminal)
 select_pane 3
