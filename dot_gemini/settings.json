@@ -33,10 +33,7 @@
     "useOSC52Paste": true,
     "useOSC52Copy": true
   },
-  "ide": {
-    "enabled": true
-  },
   "model": {
-    "name": ""
+    "name": "auto-gemini-3"
   }
 }
