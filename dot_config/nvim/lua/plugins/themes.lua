@@ -38,7 +38,7 @@ return {
         -- For more plugins integrations please scroll down (
         "folke/snacks.nvim",
       },
-      auto_integrations = true,
+      auto_integrations = false,
       on_colors = function(colors)
         colors.hint = colors.orange
         colors.error = "#ff0000"
