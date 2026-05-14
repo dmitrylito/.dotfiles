@@ -37,6 +37,7 @@ return {
       integrations = {
         -- For more plugins integrations please scroll down (
         "folke/snacks.nvim",
+        "kdheepack/lazygit.nvim",
       },
       auto_integrations = false,
       on_colors = function(colors)
