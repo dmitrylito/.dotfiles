@@ -28,8 +28,9 @@ list_layouts() {
 
 # Function to list everything for the default view
 list_all() {
+  $SESH_BIN list -t -c --icons
   list_layouts
-  $SESH_BIN list --icons
+  $SESH_BIN list -z --icons | head -n 7
 }
 
 # Run fzf-tmux
@@ -39,7 +40,7 @@ selected=$(list_all | fzf-tmux -p 80%,70% \
   --prompt "⚡  " \
   --header "$HEADER_STR" \
   --bind "tab:down,btab:up" \
-  --bind "ctrl-a:change-prompt(⚡  )+reload(($SESH_BIN list --icons && $TMUXIFIER_BIN lw | sed 's/^/📐 /'))" \
+  --bind "ctrl-a:change-prompt(⚡  )+reload(($SESH_BIN list -t -c --icons && $TMUXIFIER_BIN lw | sed 's/^/📐 /' && $SESH_BIN list -z --icons | head -n 7))" \
   --bind "ctrl-t:change-prompt(🪟  )+reload($SESH_BIN list -t --icons)" \
   --bind "ctrl-g:change-prompt(⚙️  )+reload($SESH_BIN list -c --icons)" \
   --bind "ctrl-x:change-prompt(📁  )+reload($SESH_BIN list -z --icons | head -n 7)" \
