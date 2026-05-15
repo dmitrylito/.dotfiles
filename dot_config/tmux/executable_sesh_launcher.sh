@@ -42,7 +42,7 @@ selected=$(list_all | fzf-tmux -p 80%,70% \
   --bind "ctrl-a:change-prompt(⚡  )+reload(($SESH_BIN list --icons && $TMUXIFIER_BIN lw | sed 's/^/📐 /'))" \
   --bind "ctrl-t:change-prompt(🪟  )+reload($SESH_BIN list -t --icons)" \
   --bind "ctrl-g:change-prompt(⚙️  )+reload($SESH_BIN list -c --icons)" \
-  --bind "ctrl-x:change-prompt(📁  )+reload($SESH_BIN list -z --icons)" \
+  --bind "ctrl-x:change-prompt(📁  )+reload($SESH_BIN list -z --icons | head -n 7)" \
   --bind "ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)" \
   --bind "ctrl-l:change-prompt(📐  )+reload($TMUXIFIER_BIN lw | sed 's/^/📐 /')" \
   --bind "ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(⚡  )+reload($SESH_BIN list --icons)" \
