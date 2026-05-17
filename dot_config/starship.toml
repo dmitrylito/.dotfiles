@@ -169,6 +169,8 @@ min_time_to_notify = 45000
 
 [status]
 disabled = false
+symbol = " "
+success_symbol = ""
 format = "[$symbol$status]($style) "
 
 [jobs]
