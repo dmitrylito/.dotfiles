@@ -142,4 +142,4 @@ fi
 export GPG_TTY=$(tty)
 
 # OpenClaw Completion
-source "/home/dmitrylito/.openclaw/completions/openclaw.zsh"
+source_if_exists "/home/dmitrylito/.openclaw/completions/openclaw.zsh"
