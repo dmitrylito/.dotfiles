@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Use absolute paths to ensure reliability in tmux background shells
-SESH_BIN="/usr/bin/sesh"
+SESH_BIN="sesh"
 TMUXIFIER_BIN="$HOME/.tmuxifier/bin/tmuxifier"
 
 # Colors for the header (ANSI escape sequences)
