@@ -143,3 +143,7 @@ export GPG_TTY=$(tty)
 
 # OpenClaw Completion
 source_if_exists "/home/dmitrylito/.openclaw/completions/openclaw.zsh"
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/dmitrylito/.local/bin:$PATH"
