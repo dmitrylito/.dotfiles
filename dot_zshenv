@@ -40,6 +40,28 @@ path=(
   $path
 
 )
+# Instantly pull gcloud project by reading the config files directly
+_gcloud_config_dir="${CLOUDSDK_CONFIG:-$HOME/.config/gcloud}"
+
+# Check if the active config file exists
+if [[ -f "$_gcloud_config_dir/active_config" ]]; then
+  # Read the name of the active configuration (e.g., "default")
+  _active_config=$(<"$_gcloud_config_dir/active_config")
+  _config_file="$_gcloud_config_dir/configurations/config_${_active_config}"
+  
+  if [[ -f "$_config_file" ]]; then
+    # Extract the project ID using awk
+    _gcp_project=$(awk -F '=' '/^[[:space:]]*project[[:space:]]*=/ {print $2; exit}' "$_config_file" | tr -d ' ')
+    
+    if [[ -n "$_gcp_project" ]]; then
+      export GOOGLE_CLOUD_PROJECT="$_gcp_project"
+      export CLOUDSDK_CORE_PROJECT="$_gcp_project"
+    fi
+  fi
+fi
+
+# Clean up temporary variables so they don't clutter your environment
+unset _gcloud_config_dir _active_config _config_file _gcp_project
 
 # Linuxbrew
 if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
