@@ -124,4 +124,18 @@ return {
       latex = { enabled = false },
     },
   },
+
+  {
+    "folke/noice.nvim",
+    opts = {
+      views = {
+        cmdline_popup = {
+          position = {
+            row = "40%",
+            col = "50%",
+          },
+        },
+      },
+    },
+  },
 }
