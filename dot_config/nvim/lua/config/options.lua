@@ -11,6 +11,8 @@ vim.opt.mouse = "a"
 
 vim.opt.mousescroll = "ver:1,hor:1"
 
+vim.opt.conceallevel = 2
+
 -- Add hyprlang filetype detection
 vim.filetype.add({
   pattern = {
