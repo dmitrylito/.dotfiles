@@ -97,6 +97,11 @@ return {
   {
     "folke/sidekick.nvim",
     opts = {
+      copiloot = {
+        status = {
+          enabled = false
+        },
+      }
       cli = {
         win = {
           config = function(terminal)
