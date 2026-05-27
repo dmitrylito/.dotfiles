@@ -98,6 +98,11 @@ return {
     "folke/sidekick.nvim",
     opts = {
       cli = {
+        tools = {
+          antigravity = {
+            cmd = { "agy" },
+          },
+        },
         win = {
           config = function(terminal) end,
         },
