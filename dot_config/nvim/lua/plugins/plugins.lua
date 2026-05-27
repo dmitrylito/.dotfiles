@@ -97,30 +97,20 @@ return {
   {
     "folke/sidekick.nvim",
     opts = {
-      copiloot = {
+      copilot = {
         status = {
-          enabled = false
+          enabled = false,
         },
-      }
+      },
       cli = {
         win = {
-          config = function(terminal)
-            -- Terminal scroll is handled globally in autocmds.lua
-          end,
+          config = function(terminal) end,
         },
         mux = {
           backend = "tmux",
           enabled = true,
           dump = 5000, -- Increase scrollback dump for better history
         },
-        -- tools = {
-        --   gemini = { native_scroll = true },
-        --   claude = { native_scroll = true },
-        --   codex = {
-        --     cmd = { "codex" },
-        --     native_scroll = true,
-        --   },
-        -- },
       },
     },
   },
