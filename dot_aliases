@@ -15,6 +15,8 @@ alias dvsr="docker-volume-snapshot restore /home/dmitrylito/Projects/tmp/docker/
 alias lzp='lazypodman'
 alias cdz="cd ~/.local/share/chezmoi"
 alias cdp="cd ~/projects/"
+alias cdpc="cd ~/projects/cer-backend/"
+alias cdpf="cd ~/projects/fleetchaser/"
 
 ce() {
   chezmoi edit --apply "$@"
