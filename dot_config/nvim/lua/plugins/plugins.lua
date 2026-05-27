@@ -26,15 +26,15 @@ return {
     },
     config = true,
   },
-  --
+
   --Adds a line in nvim, makes it skiny
-  --
+
   {
     "xiyaowong/virtcolumn.nvim",
   },
-  --
+
   -- Center the cursor vertically when navigating
-  --
+
   {
     "arnamak/stay-centered.nvim",
     opts = {
@@ -44,9 +44,9 @@ return {
       skip_filetypes = { "sidekick_terminal", "snacks_terminal" },
     },
   },
-  --
+
   -- Enable blink.cmp plugin for enhanced completion navigation
-  --
+
   {
     "saghen/blink.cmp",
     opts = function(_, opts)
@@ -62,9 +62,9 @@ return {
       }
     end,
   },
-  --
+
   -- Configure conform.nvim to use shfmt for zsh files
-  --
+
   {
     "stevearc/conform.nvim",
     opts = {
@@ -97,11 +97,6 @@ return {
   {
     "folke/sidekick.nvim",
     opts = {
-      copilot = {
-        status = {
-          enabled = false,
-        },
-      },
       cli = {
         win = {
           config = function(terminal) end,
@@ -114,12 +109,9 @@ return {
       },
     },
   },
+
   {
     "MeanderingProgrammer/render-markdown.nvim",
-    dependencies = {
-      "nvim-treesitter/nvim-treesitter",
-      "nvim-tree/nvim-web-devicons",
-    },
     opts = {
       latex = { enabled = false },
     },
