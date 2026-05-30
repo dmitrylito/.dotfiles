@@ -14,8 +14,8 @@ if [[ -z "${TERM:-}" || "$TERM" == "dumb" ]] || ! tput longname >/dev/null 2>&1;
 fi
 
 # Tooling configuration
-export EDITOR="nvim"
-export VISUAL="nvim"
+export EDITOR="/home/dmitrylito/.local/share/bob/nvim-bin/nvim"
+export VISUAL="/home/dmitrylito/.local/share/bob/nvim-bin/nvim"
 export PAGER="less"
 export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship.toml"
 export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
