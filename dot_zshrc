@@ -94,6 +94,7 @@ fi
 
 # Source functions
 if [[ -d "$OMARCHY_PATH/default/bash/fns" ]]; then
+  unalias ga gd 2>/dev/null
   for f in "$OMARCHY_PATH"/default/bash/fns/*(.N); do
     source "$f"
   done
