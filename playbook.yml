@@ -5,97 +5,135 @@
   gather_facts: false
 
   vars:
-    # chezmoi_source_dir and non_root_user are passed from the Chezmoi execution template
+    # 1. Base terminal essentials defined in YAML (Option B)
+    # These are installed on ANY Linux system (Omarchy or server)
+    common_linux_packages:
+      - git
+      - zsh
+      - tmux
+      - neovim
+      - ripgrep
+      - fzf
+      - bat
+      - eza
+      - yazi
+      - lazygit
+
+    # 2. Base terminal essentials for macOS (mac profile)
+    mac_brew_packages:
+      - git
+      - zsh
+      - tmux
+      - neovim
+      - ripgrep
+      - fzf
+      - bat
+      - eza
+      - yazi
+      - lazygit
+
+    # Paths to Omarchy-specific auto-generated lists (Option A)
     pacman_file: "{{ chezmoi_source_dir }}/packages-added-pacman.txt"
     aur_file: "{{ chezmoi_source_dir }}/packages-added-aur.txt"
     drivers_file: "{{ chezmoi_source_dir }}/packages-drivers.txt"
     removed_file: "{{ chezmoi_source_dir }}/packages-removed.txt"
 
   tasks:
-    - name: Read native packages list
-      ansible.builtin.set_fact:
-        pacman_packages: "{{ lookup('file', pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
-
-    - name: Read drivers list
-      ansible.builtin.set_fact:
-        driver_packages: "{{ lookup('file', drivers_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
-
-    - name: Read AUR packages list
-      ansible.builtin.set_fact:
-        aur_packages: "{{ lookup('file', aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
-
-    - name: Read removed packages list
-      ansible.builtin.set_fact:
-        removed_packages: "{{ lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
-
-    # 1. Install Pacman Native Packages (Runs as root)
-    - name: Install native packages
+    # =========================================================================
+    # SECTION 1: COMMON LINUX PACKAGES (Applied to Omarchy & server profiles)
+    # =========================================================================
+    - name: Install common Linux terminal packages
       community.general.pacman:
-        name: "{{ pacman_packages }}"
+        name: "{{ common_linux_packages }}"
         state: present
         update_cache: true
-      when: pacman_packages | length > 0
+      when: profile in ['Omarchy', 'server']
 
-    # 2. Install Hardware Driver Packages (Runs as root)
-    - name: Install hardware-specific driver packages
-      community.general.pacman:
-        name: "{{ driver_packages }}"
+    # =========================================================================
+    # SECTION 2: MACOS HOMEBREW PACKAGES (Applied only to mac profile)
+    # =========================================================================
+    - name: Install macOS Homebrew packages
+      community.general.homebrew:
+        name: "{{ mac_brew_packages }}"
         state: present
-      when: driver_packages | length > 0
+      when: profile == 'mac'
 
-    # 3. Handle AUR Helper (yay) & AUR Packages (Become non-root user)
-    - name: Ensure git and base-devel are installed (needed for yay)
-      community.general.pacman:
-        name:
-          - git
-          - base-devel
-        state: present
-      when: aur_packages | length > 0
-
-    - name: Check if yay is installed
-      ansible.builtin.command: which yay
-      register: yay_check
-      failed_when: false
-      changed_when: false
-      become: true
-      become_user: "{{ non_root_user }}"
-      when: aur_packages | length > 0
-
-    - name: Bootstrap yay if missing
-      become: true
-      become_user: "{{ non_root_user }}"
-      when: aur_packages | length > 0 and (yay_check.rc | default(1) != 0)
+    # =========================================================================
+    # SECTION 3: OMARCHY DYNAMIC PACKAGES (Applied only to Omarchy profile)
+    # =========================================================================
+    - name: Load Omarchy package lists
+      when: profile == 'Omarchy'
       block:
-        - name: Clone yay-bin
-          ansible.builtin.git:
-            repo: https://aur.archlinux.org/yay-bin.git
-            dest: "/tmp/yay-bin"
-            version: master
-            depth: 1
+        - name: Read added pacman packages list
+          ansible.builtin.set_fact:
+            pacman_packages: "{{ lookup('file', pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
 
-        - name: Build and install yay
+        - name: Read drivers list
+          ansible.builtin.set_fact:
+            driver_packages: "{{ lookup('file', drivers_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+
+        - name: Read AUR packages list
+          ansible.builtin.set_fact:
+            aur_packages: "{{ lookup('file', aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+
+        - name: Read removed packages list
+          ansible.builtin.set_fact:
+            removed_packages: "{{ lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+
+        # 3.1 Install Native Omarchy Packages (Added, Drivers)
+        # Note: We do NOT install the base/other packages because those are
+        # pre-installed in the OS and contain hardware-specific drivers.
+        - name: Install native Omarchy packages (Added, Drivers)
+          community.general.pacman:
+            name: "{{ pacman_packages + driver_packages }}"
+            state: present
+          when: (pacman_packages + driver_packages) | length > 0
+
+        # 3.2 Bootstrap yay & Install AUR Packages
+        - name: Check if yay is installed
+          ansible.builtin.command: which yay
+          register: yay_check
+          failed_when: false
+          changed_when: false
+          become: true
+          become_user: "{{ non_root_user }}"
+          when: aur_packages | length > 0
+
+        - name: Bootstrap yay if missing
+          become: true
+          become_user: "{{ non_root_user }}"
+          when: aur_packages | length > 0 and (yay_check.rc | default(1) != 0)
+          block:
+            - name: Clone yay-bin
+              ansible.builtin.git:
+                repo: https://aur.archlinux.org/yay-bin.git
+                dest: "/tmp/yay-bin"
+                version: master
+                depth: 1
+
+            - name: Build and install yay
+              ansible.builtin.command:
+                cmd: makepkg -si --noconfirm
+                chdir: "/tmp/yay-bin"
+
+            - name: Remove temporary clone directory
+              ansible.builtin.file:
+                path: "/tmp/yay-bin"
+                state: absent
+
+        - name: Install AUR packages
           ansible.builtin.command:
-            cmd: makepkg -si --noconfirm
-            chdir: "/tmp/yay-bin"
+            cmd: "yay -S --needed --noconfirm {{ item }}"
+          loop: "{{ aur_packages }}"
+          become: true
+          become_user: "{{ non_root_user }}"
+          when: aur_packages | length > 0
+          register: aur_result
+          changed_when: "'Installing' in aur_result.stdout or 'Upgrading' in aur_result.stdout"
 
-        - name: Remove temporary clone directory
-          ansible.builtin.file:
-            path: "/tmp/yay-bin"
+        # 3.3 Remove Unwanted Packages
+        - name: Remove unwanted packages
+          community.general.pacman:
+            name: "{{ removed_packages }}"
             state: absent
-
-    - name: Install AUR packages
-      ansible.builtin.command:
-        cmd: "yay -S --needed --noconfirm {{ item }}"
-      loop: "{{ aur_packages }}"
-      become: true
-      become_user: "{{ non_root_user }}"
-      when: aur_packages | length > 0
-      register: aur_result
-      changed_when: "'Installing' in aur_result.stdout or 'Upgrading' in aur_result.stdout"
-
-    # 4. Remove Packages (Runs as root)
-    - name: Remove unwanted packages
-      community.general.pacman:
-        name: "{{ removed_packages }}"
-        state: absent
-      when: removed_packages | length > 0
+          when: removed_packages | length > 0

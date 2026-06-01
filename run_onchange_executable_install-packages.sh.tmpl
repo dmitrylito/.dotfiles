@@ -17,11 +17,6 @@ set -euo pipefail
 
 profile="{{ .profile }}"
 
-if [ "$profile" != "Omarchy" ]; then
-    echo "Profile is '$profile'. Skipping Ansible packages installation."
-    exit 0
-fi
-
 echo "=================================================="
 echo "🚀 Bootstrapping packages with Ansible + Chezmoi..."
 echo "=================================================="
@@ -33,12 +28,12 @@ if ! command -v ansible-playbook >/dev/null 2>&1; then
 fi
 
 # 2. Run the Ansible playbook as root (privilege escalation)
-# It will dynamically downgrade to your local user when installing AUR packages.
+# Passes profile, source directory, and username to allow profile routing.
 echo "📦 Running Ansible playbook..."
 sudo ansible-playbook \
     -i "localhost," \
     -c local \
-    --extra-vars "chezmoi_source_dir={{ .chezmoi.sourceDir }} non_root_user={{ .chezmoi.username }}" \
+    --extra-vars "chezmoi_source_dir={{ .chezmoi.sourceDir }} non_root_user={{ .chezmoi.username }} profile=${profile}" \
     "{{ joinPath .chezmoi.sourceDir "playbook.yml" }}"
 
 echo "=================================================="
