@@ -1,0 +1,21 @@
+{
+  "allowNonWorkspaceAccess": true,
+  "gcp": {
+    "project": "fleetchaser",
+    "location": "global"
+  },
+  "model": "Gemini 3.5 Flash (High)",
+  "runningLightSpeed": "off",
+  "showFeedbackSurvey": false,
+  "showTips": false,
+  "toolPermission": "always-proceed",
+  "trustedWorkspaces": [
+    "/home/dmitrylito/.local/share/chezmoi",
+    "/home/dmitrylito",
+    "/home/dmitrylito/.config",
+    "/home/dmitrylito/.config/voxtype",
+    "/home/dmitrylito/Projects/BulkBid/frontend",
+    "/home/dmitrylito/Projects/BulkBid/backend"
+  ],
+  "verbosity": "low"
+}
