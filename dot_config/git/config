@@ -6,7 +6,7 @@
 	ci = commit
 	st = status
 [init]
-	defaultBranch = master
+	defaultBranch = main
 [pull]
 	rebase = true 			 # Rebase (instead of merge) on pull
 [push]
@@ -29,3 +29,5 @@
 [user]
 	name = Dmitry Litoshik
 	email = dmitrylitoshik15@gmail.com
+[url "git@github.com:"]
+        insteadOf = https://github.com/

@@ -26,25 +26,19 @@ echo "=================================================="
 echo "🚀 Bootstrapping packages with Ansible + Chezmoi..."
 echo "=================================================="
 
-# Ask for the sudo password upfront to cache credentials
-echo "🔑 Please authenticate with sudo to allow package installations:"
-sudo -v
-
-# Keep-alive: update existing sudo time stamp in the background if the script runs long
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
-
 # 1. Ensure Ansible is installed
 if ! command -v ansible-playbook >/dev/null 2>&1; then
     echo "🔧 Installing Ansible..."
     sudo pacman -S --needed --noconfirm ansible
 fi
 
-# 2. Run the Ansible playbook
+# 2. Run the Ansible playbook as root (privilege escalation)
+# It will dynamically downgrade to your local user when installing AUR packages.
 echo "📦 Running Ansible playbook..."
-ansible-playbook \
+sudo ansible-playbook \
     -i "localhost," \
     -c local \
-    --extra-vars "chezmoi_source_dir={{ .chezmoi.sourceDir }}" \
+    --extra-vars "chezmoi_source_dir={{ .chezmoi.sourceDir }} non_root_user={{ .chezmoi.username }}" \
     "{{ joinPath .chezmoi.sourceDir "playbook.yml" }}"
 
 echo "=================================================="
