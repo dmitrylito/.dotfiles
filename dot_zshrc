@@ -94,7 +94,6 @@ fi
 
 # Source functions
 if [[ -d "$OMARCHY_PATH/default/bash/fns" ]]; then
-  unalias ga gd 2>/dev/null
   for f in "$OMARCHY_PATH"/default/bash/fns/*(.N); do
     source "$f"
   done
@@ -148,3 +147,6 @@ source_if_exists "/home/dmitrylito/.openclaw/completions/openclaw.zsh"
 
 # Added by Antigravity CLI installer
 export PATH="/home/dmitrylito/.local/bin:$PATH"
+
+# Added by Antigravity IDE
+export PATH="/Users/dmitrylitoshik/.antigravity-ide/antigravity-ide/bin:$PATH"
