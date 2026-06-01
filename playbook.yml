@@ -1,0 +1,98 @@
+---
+- name: Bootstrap and Sync Packages
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    # chezmoi_source_dir is passed from the Chezmoi execution template
+    pacman_file: "{{ chezmoi_source_dir }}/packages-added-pacman.txt"
+    aur_file: "{{ chezmoi_source_dir }}/packages-added-aur.txt"
+    drivers_file: "{{ chezmoi_source_dir }}/packages-drivers.txt"
+    removed_file: "{{ chezmoi_source_dir }}/packages-removed.txt"
+
+  tasks:
+    - name: Read native packages list
+      ansible.builtin.set_fact:
+        pacman_packages: "{{ lookup('file', pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+
+    - name: Read drivers list
+      ansible.builtin.set_fact:
+        driver_packages: "{{ lookup('file', drivers_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+
+    - name: Read AUR packages list
+      ansible.builtin.set_fact:
+        aur_packages: "{{ lookup('file', aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+
+    - name: Read removed packages list
+      ansible.builtin.set_fact:
+        removed_packages: "{{ lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+
+    # 1. Install Pacman Native Packages
+    - name: Install native packages
+      community.general.pacman:
+        name: "{{ pacman_packages }}"
+        state: present
+        update_cache: true
+      become: true
+      when: pacman_packages | length > 0
+
+    # 2. Install Hardware Driver Packages
+    - name: Install hardware-specific driver packages
+      community.general.pacman:
+        name: "{{ driver_packages }}"
+        state: present
+      become: true
+      when: driver_packages | length > 0
+
+    # 3. Handle AUR Helper (yay) & AUR Packages
+    - name: Check if yay is installed
+      ansible.builtin.command: which yay
+      register: yay_check
+      failed_when: false
+      changed_when: false
+      when: aur_packages | length > 0
+
+    - name: Bootstrap yay if missing
+      when: aur_packages | length > 0 and (yay_check.rc | default(1) != 0)
+      block:
+        - name: Ensure git and base-devel are installed
+          community.general.pacman:
+            name:
+              - git
+              - base-devel
+            state: present
+          become: true
+
+        - name: Clone yay-bin
+          ansible.builtin.git:
+            repo: https://aur.archlinux.org/yay-bin.git
+            dest: /tmp/yay-bin
+            version: master
+            depth: 1
+
+        - name: Build and install yay
+          ansible.builtin.command:
+            cmd: makepkg -si --noconfirm
+            chdir: /tmp/yay-bin
+
+        - name: Remove temporary clone directory
+          ansible.builtin.file:
+            path: /tmp/yay-bin
+            state: absent
+
+    - name: Install AUR packages
+      ansible.builtin.command:
+        cmd: "yay -S --needed --noconfirm {{ item }}"
+      loop: "{{ aur_packages }}"
+      when: aur_packages | length > 0
+      register: aur_result
+      changed_when: "'Installing' in aur_result.stdout or 'Upgrading' in aur_result.stdout"
+
+    # 4. Remove Packages
+    - name: Remove unwanted packages
+      community.general.pacman:
+        name: "{{ removed_packages }}"
+        state: absent
+      become: true
+      when: removed_packages | length > 0

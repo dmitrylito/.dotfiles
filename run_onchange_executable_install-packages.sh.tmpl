@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# Exit immediately if a command exits with a non-zero status,
+# or if an uninitialized variable is used.
+set -euo pipefail
+
+# This script is managed by Chezmoi.
+# It will run automatically when you run 'chezmoi apply' or 'chezmoi init'
+# but ONLY if any of the tracked package list files or the playbook itself changes.
+#
+# Tracked package files and playbook:
+# playbook.yml hash: {{ include "playbook.yml" | sha256sum }}
+# packages-added-pacman.txt hash: {{ include "packages-added-pacman.txt" | sha256sum }}
+# packages-added-aur.txt hash: {{ include "packages-added-aur.txt" | sha256sum }}
+# packages-drivers.txt hash: {{ include "packages-drivers.txt" | sha256sum }}
+# packages-removed.txt hash: {{ include "packages-removed.txt" | sha256sum }}
+
+profile="{{ .profile }}"
+
+if [ "$profile" != "Omarchy" ]; then
+    echo "Profile is '$profile'. Skipping Ansible packages installation."
+    exit 0
+fi
+
+echo "=================================================="
+echo "🚀 Bootstrapping packages with Ansible + Chezmoi..."
+echo "=================================================="
+
+# 1. Ensure Ansible is installed
+if ! command -v ansible-playbook >/dev/null 2>&1; then
+    echo "🔧 Installing Ansible..."
+    sudo pacman -S --needed --noconfirm ansible
+fi
+
+# 2. Run the Ansible playbook
+echo "📦 Running Ansible playbook..."
+ansible-playbook \
+    -i "localhost," \
+    -c local \
+    --extra-vars "chezmoi_source_dir={{ .chezmoi.sourceDir }}" \
+    "{{ joinPath .chezmoi.sourceDir "playbook.yml" }}"
+
+echo "=================================================="
+echo "✅ Package synchronization complete!"
+echo "=================================================="
