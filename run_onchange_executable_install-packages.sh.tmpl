@@ -26,6 +26,13 @@ echo "=================================================="
 echo "🚀 Bootstrapping packages with Ansible + Chezmoi..."
 echo "=================================================="
 
+# Ask for the sudo password upfront to cache credentials
+echo "🔑 Please authenticate with sudo to allow package installations:"
+sudo -v
+
+# Keep-alive: update existing sudo time stamp in the background if the script runs long
+while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
 # 1. Ensure Ansible is installed
 if ! command -v ansible-playbook >/dev/null 2>&1; then
     echo "🔧 Installing Ansible..."
