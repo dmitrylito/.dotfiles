@@ -183,6 +183,7 @@
       "idle": "",
       "recording": "󰍬",
       "transcribing": "󰔟",
+      "streaming": "󰍬",
     },
     "tooltip": true,
     "on-click-right": "omarchy-voxtype-config",

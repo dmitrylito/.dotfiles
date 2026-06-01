@@ -95,7 +95,8 @@ tooltip {
   margin: 0 0 0 7.5px;
 }
 
-#custom-voxtype.recording {
+#custom-voxtype.recording,
+#custom-voxtype.streaming {
   color: #a55555;
 }
 #custom-notification {
