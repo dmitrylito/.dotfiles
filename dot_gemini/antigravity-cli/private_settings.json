@@ -15,7 +15,8 @@
     "/home/dmitrylito/.config",
     "/home/dmitrylito/.config/voxtype",
     "/home/dmitrylito/Projects/BulkBid/frontend",
-    "/home/dmitrylito/Projects/BulkBid/backend"
+    "/home/dmitrylito/Projects/BulkBid/backend",
+    "/home/dmitrylito/Projects/BulkBid"
   ],
   "verbosity": "low"
 }
