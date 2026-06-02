@@ -2,7 +2,7 @@
 # .zshrc is sourced for interactive shells.
 
 if command -v tmux >/dev/null 2>&1 && [ -z "$TMUX" ]; then
-  tmux attach-session -d || tmux new-session
+  tmux -u attach-session -d || tmux -u new-session
 fi
 # Oh My Zsh settings
 export ZSH="$HOME/.oh-my-zsh"

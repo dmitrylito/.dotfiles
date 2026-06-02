@@ -9,8 +9,11 @@ packages-drivers.txt
 packages-removed.txt
 README.md
 
-{{ if ne (.profile | lower) "omarchy" }}
+{{ if and (ne (.profile | lower) "omarchy") (ne (.profile | lower) "mac") }}
 .config/ghostty/
+{{ end }}
+
+{{ if ne (.profile | lower) "omarchy" }}
 .config/hypr/
 .config/waybar/
 .config/swaync/

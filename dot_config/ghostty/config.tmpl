@@ -1,0 +1,84 @@
+# Ghostty Configuration Template managed by Chezmoi
+# Profiles: omarchy (Linux), mac (macOS)
+
+{{ if eq .profile "omarchy" -}}
+# --- Omarchy Profile Configuration ---
+
+# Dynamic theme colors from Omarchy
+config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"
+
+# Font
+font-family = "JetBrainsMono Nerd Font"
+font-style = Regular
+font-size = 12
+
+# Window
+window-theme = ghostty
+window-padding-x = 14
+window-padding-y = 14
+confirm-close-surface = false
+resize-overlay = never
+gtk-toolbar-style = flat
+
+# Cursor styling
+cursor-style = "block"
+cursor-style-blink = false
+
+# Shell integration
+shell-integration-features = no-cursor,ssh-env,no-title
+
+# Keyboard bindings
+keybind = shift+insert=paste_from_clipboard
+keybind = control+insert=copy_to_clipboard
+keybind = super+control+shift+alt+arrow_down=resize_split:down,100
+keybind = super+control+shift+alt+arrow_up=resize_split:up,100
+keybind = super+control+shift+alt+arrow_left=resize_split:left,100
+keybind = super+control+shift+alt+arrow_right=resize_split:right,100
+
+# Mouse
+mouse-scroll-multiplier = 1.1
+
+# Fix general slowness on hyprland (https://github.com/ghostty-org/ghostty/discussions/3224)
+async-backend = epoll
+
+{{- else if eq .profile "mac" -}}
+# --- macOS Profile Configuration ---
+
+# Theme (Built-in "Catppuccin Mocha")
+theme = "Catppuccin Mocha"
+
+# Pure Black Background Override (perfectly overrides the built-in theme background)
+background = 000000
+
+# Font
+font-family = "JetBrainsMono Nerd Font"
+font-style = Regular
+font-size = 13
+
+# Window & Padding
+macos-titlebar-style = hidden
+window-padding-x = 20
+window-padding-y = 20
+confirm-close-surface = false
+resize-overlay = never
+
+# Cursor styling
+cursor-style = "block"
+cursor-style-blink = false
+
+# Shell integration
+shell-integration-features = no-cursor,ssh-env,no-title
+
+# Keyboard bindings
+keybind = super+control+shift+alt+arrow_down=resize_split:down,100
+keybind = super+control+shift+alt+arrow_up=resize_split:up,100
+keybind = super+control+shift+alt+arrow_left=resize_split:left,100
+keybind = super+control+shift+alt+arrow_right=resize_split:right,100
+
+# Option key as Alt (essential for standard command-line navigation/shortcuts)
+macos-option-as-alt = true
+
+# Mouse
+mouse-scroll-multiplier = 1.1
+
+{{- end }}
