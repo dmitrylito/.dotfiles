@@ -148,5 +148,7 @@ source_if_exists "/home/dmitrylito/.openclaw/completions/openclaw.zsh"
 # Added by Antigravity CLI installer
 export PATH="/home/dmitrylito/.local/bin:$PATH"
 
+{{- if eq .chezmoi.os "darwin" }}
 # Added by Antigravity IDE
 export PATH="/Users/dmitrylitoshik/.antigravity-ide/antigravity-ide/bin:$PATH"
+{{- end }}
