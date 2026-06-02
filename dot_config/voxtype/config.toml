@@ -77,7 +77,7 @@ mode = "type"
 driver_order = ["dotool", "clipboard"]
 
 # Compositor integration hooks (modifier key fix)
-pre_recording_command = "hyprctl dispatch submap voxtype_recording"
+# pre_recording_command = "hyprctl dispatch submap voxtype_recording"
 pre_output_command = "hyprctl dispatch submap voxtype_suppress"
 post_output_command = "hyprctl dispatch submap reset"
 
