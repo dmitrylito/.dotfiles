@@ -19,11 +19,9 @@ LINE2=" Ctrl+a    Ctrl+t     Ctrl+g      Ctrl+x     Ctrl+f     Ctrl+l      Ctrl+
 # Combine into a 2-line header
 HEADER_STR="$LINE1"$'\n'"$LINE2"
 
-# Function to list layouts with icons
+# Function to list layouts with icons (uses ultra-fast native file search instead of heavy tmuxifier CLI)
 list_layouts() {
-  $TMUXIFIER_BIN lw 2>/dev/null | while read -r line; do
-    echo "📐 $line"
-  done
+  find "$HOME/.tmuxifier/layouts" -type f -name "*.sh" 2>/dev/null | sed -E 's/.+\/(.+)\.(window|session|pane)\.sh/📐 \1/'
 }
 
 # Function to list everything for the default view
@@ -33,6 +31,9 @@ list_all() {
   $SESH_BIN list -z --icons | head -n 7
 }
 
+# Fast inline command for listing layouts in FZF subshells
+FAST_LAYOUT_CMD="find \$HOME/.tmuxifier/layouts -type f -name '*.sh' 2>/dev/null | sed -E 's/.+\\/(.+)\\.(window|session|pane)\\.sh/📐 \\1/'"
+
 # Run fzf-tmux
 selected=$(list_all | fzf-tmux -p 80%,70% \
   --no-sort --ansi \
@@ -40,12 +41,12 @@ selected=$(list_all | fzf-tmux -p 80%,70% \
   --prompt "⚡  " \
   --header "$HEADER_STR" \
   --bind "tab:down,btab:up" \
-  --bind "ctrl-a:change-prompt(⚡  )+reload(($SESH_BIN list -t -c --icons && $TMUXIFIER_BIN lw | sed 's/^/📐 /' && $SESH_BIN list -z --icons | head -n 7))" \
+  --bind "ctrl-a:change-prompt(⚡  )+reload(($SESH_BIN list -t -c --icons && eval \"$FAST_LAYOUT_CMD\" && $SESH_BIN list -z --icons | head -n 7))" \
   --bind "ctrl-t:change-prompt(🪟  )+reload($SESH_BIN list -t --icons)" \
   --bind "ctrl-g:change-prompt(⚙️  )+reload($SESH_BIN list -c --icons)" \
   --bind "ctrl-x:change-prompt(📁  )+reload($SESH_BIN list -z --icons | head -n 7)" \
   --bind "ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)" \
-  --bind "ctrl-l:change-prompt(📐  )+reload($TMUXIFIER_BIN lw | sed 's/^/📐 /')" \
+  --bind "ctrl-l:change-prompt(📐  )+reload(eval \"$FAST_LAYOUT_CMD\")" \
   --bind "ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(⚡  )+reload($SESH_BIN list --icons)" \
   --preview-window "right:55%" \
   --preview "[[ {} == 📐* ]] && echo 'Tmuxifier Layout' || $SESH_BIN preview {}")
