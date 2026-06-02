@@ -101,7 +101,7 @@ shift_enter_newlines = false
 # On any failure (timeout, error), falls back to original transcription.
 #
 [output.post_process]
-command = "sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'"
+command = "perl -0777 -Mutf8 -CS -pe 's/^\\s+//; s/\\s+$//'"
 timeout_ms = 1000
 
 [output.notification]
