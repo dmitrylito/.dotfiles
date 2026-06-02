@@ -1,4 +1,6 @@
-autoload -Uz compinit && compinit
+if [[ -o interactive ]]; then
+  autoload -Uz compinit && compinit
+fi
 
 # XDG Base Directories
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -88,10 +90,12 @@ fi
 
 # opencode
 export PATH=/home/dmitrylito/.opencode/bin:$PATH
+if [[ -o interactive ]]; then
+  eval "$(zoxide init --cmd cd zsh)"
+  eval "$(bob complete zsh)"
+  eval "$(mise activate zsh)"
+  eval "$(mise completion zsh)"
+  eval "$(sesh completion zsh)"
+  eval "$(tmuxifier init -)"
+fi
 
-eval "$(zoxide init --cmd cd zsh)"
-eval "$(bob complete zsh)"
-eval "$(mise activate zsh)"
-eval "$(mise completion zsh)"
-eval "$(sesh completion zsh)"
-eval "$(tmuxifier init -)"
