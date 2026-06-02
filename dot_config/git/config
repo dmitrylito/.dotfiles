@@ -28,6 +28,6 @@
 	autoupdate = true        # Apply stored conflict resolutions automatically
 [user]
 	name = Dmitry Litoshik
-	email = dmitrylitoshik15@gmail.com
+	email = dmitrylitoshik@fleetchaser.com
 [url "git@github.com:"]
         insteadOf = https://github.com/

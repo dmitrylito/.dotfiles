@@ -16,7 +16,8 @@
     "/home/dmitrylito/.config/voxtype",
     "/home/dmitrylito/Projects/BulkBid/frontend",
     "/home/dmitrylito/Projects/BulkBid/backend",
-    "/home/dmitrylito/Projects/BulkBid"
+    "/home/dmitrylito/Projects/BulkBid",
+    "/home/dmitrylito/.openclaw/workspace-fleetchaser"
   ],
   "verbosity": "low"
 }
