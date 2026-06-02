@@ -1,6 +1,6 @@
 {{- $profile := promptStringOnce . "profile" "Machine profile (Omarchy, server, mac)" -}}
 [data]
-    profile = {{ $profile | quote }}
+    profile = {{ $profile | lower | quote }}
 
 [git]
     autoCommit = true

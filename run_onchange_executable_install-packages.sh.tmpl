@@ -15,7 +15,18 @@ set -euo pipefail
 # packages-drivers.txt hash: {{ include "packages-drivers.txt" | sha256sum }}
 # packages-removed.txt hash: {{ include "packages-removed.txt" | sha256sum }}
 
-profile="{{ .profile }}"
+profile="{{ .profile | lower }}"
+
+# Fallback/normalization of profile
+if [ -z "${profile}" ]; then
+    if [ "$(uname)" = "Darwin" ]; then
+        echo "⚠️ Warning: No machine profile set! Detected macOS, defaulting to 'mac' profile."
+        profile="mac"
+    else
+        echo "⚠️ Warning: No machine profile set! Defaulting to 'server' profile."
+        profile="server"
+    fi
+fi
 
 echo "=================================================="
 echo "🚀 Bootstrapping packages with Ansible + Chezmoi..."
@@ -24,17 +35,35 @@ echo "=================================================="
 # 1. Ensure Ansible is installed
 if ! command -v ansible-playbook >/dev/null 2>&1; then
     echo "🔧 Installing Ansible..."
-    sudo pacman -S --needed --noconfirm ansible
+    if [ "${profile}" = "mac" ]; then
+        if command -v brew >/dev/null 2>&1; then
+            brew install ansible
+        else
+            echo "❌ Error: Homebrew is not installed. Please install Homebrew or install Ansible manually." >&2
+            exit 1
+        fi
+    else
+        sudo pacman -S --needed --noconfirm ansible
+    fi
 fi
 
-# 2. Run the Ansible playbook as root (privilege escalation)
-# Passes profile, source directory, and username to allow profile routing.
+# 2. Run the Ansible playbook
+# We only use sudo (privilege escalation) for Linux profiles (Omarchy/server)
+# because Homebrew on macOS cannot and should not be run as root.
 echo "📦 Running Ansible playbook..."
-sudo ansible-playbook \
-    -i "localhost," \
-    -c local \
-    --extra-vars "chezmoi_source_dir={{ .chezmoi.sourceDir }} non_root_user={{ .chezmoi.username }} profile=${profile}" \
-    "{{ joinPath .chezmoi.sourceDir "playbook.yml" }}"
+if [ "${profile}" = "mac" ]; then
+    ansible-playbook \
+        -i "localhost," \
+        -c local \
+        --extra-vars "chezmoi_source_dir={{ .chezmoi.sourceDir }} non_root_user={{ .chezmoi.username }} profile=${profile}" \
+        "{{ joinPath .chezmoi.sourceDir "playbook.yml" }}"
+else
+    sudo ansible-playbook \
+        -i "localhost," \
+        -c local \
+        --extra-vars "chezmoi_source_dir={{ .chezmoi.sourceDir }} non_root_user={{ .chezmoi.username }} profile=${profile}" \
+        "{{ joinPath .chezmoi.sourceDir "playbook.yml" }}"
+fi
 
 echo "=================================================="
 echo "✅ Package synchronization complete!"

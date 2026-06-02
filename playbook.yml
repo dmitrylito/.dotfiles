@@ -47,7 +47,7 @@
         name: "{{ common_linux_packages }}"
         state: present
         update_cache: true
-      when: profile in ['Omarchy', 'server']
+      when: (profile | lower) in ['omarchy', 'server']
 
     # =========================================================================
     # SECTION 2: MACOS HOMEBREW PACKAGES (Applied only to mac profile)
@@ -56,13 +56,13 @@
       community.general.homebrew:
         name: "{{ mac_brew_packages }}"
         state: present
-      when: profile == 'mac'
+      when: (profile | lower) == 'mac'
 
     # =========================================================================
     # SECTION 3: OMARCHY DYNAMIC PACKAGES (Applied only to Omarchy profile)
     # =========================================================================
     - name: Load Omarchy package lists
-      when: profile == 'Omarchy'
+      when: (profile | lower) == 'omarchy'
       block:
         - name: Read added pacman packages list
           ansible.builtin.set_fact:

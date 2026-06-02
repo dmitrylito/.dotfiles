@@ -9,7 +9,7 @@ packages-drivers.txt
 packages-removed.txt
 README.md
 
-{{ if ne .profile "Omarchy" }}
+{{ if ne (.profile | lower) "omarchy" }}
 .config/ghostty/
 .config/hypr/
 .config/waybar/
