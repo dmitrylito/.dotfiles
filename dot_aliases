@@ -18,9 +18,15 @@ alias cdp="cd ~/projects/"
 alias cdpc="cd ~/projects/cer-backend/"
 alias cdpf="cd ~/projects/fleetchaser/"
 
+# Homebrew update & upgrade (buu)
+if command -v brew >/dev/null; then
+  alias buu="brew update && brew upgrade"
+fi
+
 ce() {
   chezmoi edit --apply "$@"
 }
+
 
 # ls aliases (use eza if available)
 if command -v eza >/dev/null; then
