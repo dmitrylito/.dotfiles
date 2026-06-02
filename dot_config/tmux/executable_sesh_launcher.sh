@@ -34,8 +34,8 @@ list_all() {
 # Fast inline command for listing layouts in FZF subshells
 FAST_LAYOUT_CMD="find \$HOME/.tmuxifier/layouts -type f -name '*.sh' 2>/dev/null | sed -E 's/.+\\/(.+)\\.(window|session|pane)\\.sh/📐 \\1/'"
 
-# Run fzf-tmux
-selected=$(list_all | fzf-tmux -p 80%,70% \
+# Run fzf
+selected=$(list_all | fzf \
   --no-sort --ansi \
   --border-label "   sesh " \
   --prompt "⚡  " \
