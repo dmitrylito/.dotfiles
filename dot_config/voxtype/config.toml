@@ -163,7 +163,7 @@ icon_theme = "emoji"
 
 [vad]
 # Enable Voice Activity Detection to filter out empty recordings
-enabled = true
+enabled = false
 
 # Auto-stop recording if silence is detected for this many seconds (e.g. 2.0)
 # Set to 0.0 to disable silence-based auto-stop
