@@ -15,8 +15,15 @@ mkdir -p "$ZCOMPDUMP_DIR"
 export ZSH_COMPDUMP="$ZCOMPDUMP_DIR/.zcompdump-${HOST:-local}"
 zstyle ':completion:*' menu select
 
-# Ensure fpath includes site-functions before compinit
-fpath=(/usr/local/share/zsh/site-functions /usr/share/zsh/site-functions $fpath)
+# Ensure local and site completion directories exist and are in fpath before compinit
+mkdir -p "$HOME/.zsh/completions" "$HOME/.local/share/zsh/site-functions"
+fpath=(
+  $HOME/.zsh/completions
+  $HOME/.local/share/zsh/site-functions
+  /usr/local/share/zsh/site-functions
+  /usr/share/zsh/site-functions
+  $fpath
+)
 if [[ -d /home/linuxbrew/.linuxbrew/share/zsh/site-functions ]]; then
   fpath=(/home/linuxbrew/.linuxbrew/share/zsh/site-functions $fpath)
 fi

@@ -64,7 +64,6 @@ if [[ -f "$_gcloud_config_dir/active_config" ]]; then
   fi
 fi
 
-
 # Clean up temporary variables so they don't clutter your environment
 unset _gcloud_config_dir _active_config _config_file _gcp_project
 
