@@ -86,10 +86,10 @@ fallback_to_clipboard = true
 
 # Delay between typed characters in milliseconds
 # 0 = fastest possible, increase if characters are dropped
-type_delay_ms = 4
+type_delay_ms = 10
 
 # Delay before typing starts (ms), helps prevent first character drop
-pre_type_delay_ms = 100
+pre_type_delay_ms = 200
 auto_submit = false
 shift_enter_newlines = false
 
