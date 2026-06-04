@@ -119,7 +119,7 @@ show_engine_icon = false
 # replacements = { "hyperwhisper" = "hyprwhspr" }
 
 [parakeet]
-model = "parakeet-tdt-0.6b-v3"
+model = "parakeet-unified-en-0.6b"
 on_demand_loading = false
 streaming = true
 
