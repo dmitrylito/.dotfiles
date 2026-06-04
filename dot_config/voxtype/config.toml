@@ -96,7 +96,7 @@ shift_enter_newlines = false
 # Useful for LLM-based text cleanup, grammar correction, filler word removal.
 # On any failure (timeout, error), falls back to original transcription.
 #
-[output.post_process]
+# [output.post_process]
 # command = "perl -0777 -Mutf8 -CS -pe 's/^\\s+//; s/\\s+$//'"
 # timeout_ms = 1000
 
