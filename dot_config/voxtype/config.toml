@@ -35,7 +35,7 @@ pause_media = true
 [audio.feedback]
 enabled = false
 theme = "default"
-volume = 0.699999988079071
+volume = 0.7
 
 # [audio.feedback]
 # Enable audio feedback sounds (beeps when recording starts/stops)
