@@ -122,6 +122,9 @@ show_engine_icon = false
 model = "parakeet-unified-en-0.6b"
 on_demand_loading = false
 streaming = true
+streaming_chunk_secs = 0.32
+streaming_left_context_secs = 5.6
+streaming_right_context_secs = 0.32
 
 [osd]
 enabled = false
