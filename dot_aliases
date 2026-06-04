@@ -36,3 +36,26 @@ else
   alias ls="ls --color=auto"
   alias lsa="ls -a --color=auto"
 fi
+
+# --- Hyprland Environment Sync ---
+# Automatically synchronize HYPRLAND_INSTANCE_SIGNATURE with systemd user session
+# to prevent "Couldn't connect to .../.socket.sock" errors when Hyprland is restarted.
+_sync_hypr_signature() {
+  if command -v systemctl >/dev/null 2>&1; then
+    local _sys_sig
+    _sys_sig=$(systemctl --user show-environment 2>/dev/null | awk -F= '$1 == "HYPRLAND_INSTANCE_SIGNATURE" {print $2}')
+    if [[ -n "$_sys_sig" && "$HYPRLAND_INSTANCE_SIGNATURE" != "$_sys_sig" ]]; then
+      export HYPRLAND_INSTANCE_SIGNATURE="$_sys_sig"
+    fi
+  fi
+}
+
+# Run once at startup to fix any stale or missing signature
+_sync_hypr_signature
+
+# Wrap hyprctl to auto-sync before execution in case Hyprland restarted during the terminal session
+hyprctl() {
+  _sync_hypr_signature
+  command hyprctl "$@"
+}
+
