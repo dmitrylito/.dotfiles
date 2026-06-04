@@ -15,6 +15,8 @@ state_file = "auto"
 [hotkey]
 # Hotkey is configured in Hyprland. Default is Super + Ctrl + X
 enabled = false
+key = "HOME"
+mode = "toggle"
 
 [audio]
 # Audio input device ("default" uses system default)
@@ -29,6 +31,11 @@ max_duration_secs = 60
 
 # Pause MPRIS media players during recording
 pause_media = true
+
+[audio.feedback]
+enabled = false
+theme = "default"
+volume = 0.699999988079071
 
 # [audio.feedback]
 # Enable audio feedback sounds (beeps when recording starts/stops)
@@ -70,6 +77,11 @@ pause_media = true
 # - clipboard: Copies text to clipboard (requires wl-copy)
 mode = "type"
 
+# Compositor integration hooks (modifier key fix)
+pre_recording_command = "hyprctl dispatch submap voxtype_recording"
+pre_output_command = "hyprctl dispatch submap voxtype_suppress"
+post_output_command = "hyprctl dispatch submap reset"
+
 # Preferred driver order: prioritize dotool (via persistent dotoold daemon)
 # to avoid Wayland device-churn and focus jitter under streaming mode.
 driver_order = ["dotool", "clipboard"]
@@ -83,7 +95,7 @@ fallback_to_clipboard = true
 type_delay_ms = 1
 
 # Delay before typing starts (ms), helps prevent first character drop
-pre_type_delay_ms = 200
+pre_type_delay_ms = 150
 auto_submit = false
 shift_enter_newlines = false
 
@@ -158,3 +170,15 @@ icon_theme = "emoji"
 [vad]
 # Enable Voice Activity Detection to filter out empty recordings
 enabled = false
+backend = "auto"
+threshold = 0.5
+
+[whisper]
+gpu_isolation = false
+on_demand_loading = false
+flash_attention = false
+eager_processing = false
+model = ""
+mode = "local"
+language = "auto"
+translate = false
