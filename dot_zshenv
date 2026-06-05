@@ -48,7 +48,6 @@ path=(
 
 )
 # Instantly pull gcloud project by reading the config files directly
-
 # Linuxbrew
 if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
