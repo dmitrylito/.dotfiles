@@ -15,8 +15,8 @@ state_file = "auto"
 [hotkey]
 # Hotkey is configured in Hyprland. Default is Super + Ctrl + X
 enabled = false
-key = "HOME"
-mode = "toggle"
+# key = "HOME"
+# mode = "toggle"
 
 [audio]
 # Audio input device ("default" uses system default)
