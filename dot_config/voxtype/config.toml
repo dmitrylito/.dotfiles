@@ -77,9 +77,9 @@ volume = 0.7
 mode = "type"
 
 # Compositor integration hooks (modifier key fix)
-pre_recording_command = "hyprctl dispatch submap voxtype_recording"
-pre_output_command = "hyprctl dispatch submap voxtype_suppress"
-post_output_command = "hyprctl dispatch submap reset"
+# pre_recording_command = "hyprctl dispatch submap voxtype_recording"
+# pre_output_command = "hyprctl dispatch submap voxtype_suppress"
+# post_output_command = "hyprctl dispatch submap reset"
 
 # Preferred driver order: prioritize dotool (via persistent dotoold daemon)
 # to avoid Wayland device-churn and focus jitter under streaming mode.
