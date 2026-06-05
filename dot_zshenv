@@ -25,9 +25,11 @@ export HYPRLAND_CONFIG="$XDG_CONFIG_HOME/hypr/hyprland.conf"
 export PATH="/home/dmitrylito/.cache/.bun/bin:$PATH"
 export PATH="$HOME/.local/share/bob/nvim-bin:$PATH"
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
-export GOOGLE_APPLICATION_CREDENTIALS="/home/dmitrylito/.config/gcloud/application_default_credentials.json"
-export GOOGLE_CLOUD_LOCATION="us-east1"
-export GOOGLE_CLOUD_PROJECT="fleetchaser"
+export GOOGLE_CLOUD_LOCATION=$(gcloud config get compute/zone)
+export GOOGLE_CLOUD_PROJECT=$(gcloud config get project)
+if [ -f "$HOME/.config/gcloud/application_default_credentials.json" ]; then
+    export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/gcloud/application_default_credentials.json"
+fi
 
 # Ensure path is unique
 typeset -U path
@@ -45,27 +47,6 @@ path=(
 
 )
 # Instantly pull gcloud project by reading the config files directly
-_gcloud_config_dir="${CLOUDSDK_CONFIG:-$HOME/.config/gcloud}"
-
-# Check if the active config file exists
-if [[ -f "$_gcloud_config_dir/active_config" ]]; then
-  # Read the name of the active configuration (e.g., "default")
-  _active_config=$(<"$_gcloud_config_dir/active_config")
-  _config_file="$_gcloud_config_dir/configurations/config_${_active_config}"
-  
-  if [[ -f "$_config_file" ]]; then
-    # Extract the project ID using awk
-    _gcp_project=$(awk -F '=' '/^[[:space:]]*project[[:space:]]*=/ {print $2; exit}' "$_config_file" | tr -d ' ')
-    
-    if [[ -n "$_gcp_project" ]]; then
-      export GOOGLE_CLOUD_PROJECT="$_gcp_project"
-      export CLOUDSDK_CORE_PROJECT="$_gcp_project"
-    fi
-  fi
-fi
-
-# Clean up temporary variables so they don't clutter your environment
-unset _gcloud_config_dir _active_config _config_file _gcp_project
 
 # Linuxbrew
 if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
