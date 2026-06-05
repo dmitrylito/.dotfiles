@@ -27,6 +27,7 @@ export PATH="$HOME/.local/share/bob/nvim-bin:$PATH"
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
 export GOOGLE_CLOUD_LOCATION=$(gcloud config get compute/zone)
 export GOOGLE_CLOUD_PROJECT=$(gcloud config get project)
+
 if [ -f "$HOME/.config/gcloud/application_default_credentials.json" ]; then
     export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/gcloud/application_default_credentials.json"
 fi
