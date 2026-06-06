@@ -16,21 +16,20 @@ if [[ -z "${TERM:-}" || "$TERM" == "dumb" ]] || ! tput longname >/dev/null 2>&1;
 fi
 
 # Tooling configuration
-export EDITOR="/home/dmitrylito/.local/share/bob/nvim-bin/nvim"
-export VISUAL="/home/dmitrylito/.local/share/bob/nvim-bin/nvim"
+export EDITOR="$HOME/.local/share/bob/nvim-bin/nvim"
+export VISUAL="$HOME/.local/share/bob/nvim-bin/nvim"
 export PAGER="less"
 export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship.toml"
 export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
 export HYPRLAND_CONFIG="$XDG_CONFIG_HOME/hypr/hyprland.conf"
-export PATH="/home/dmitrylito/.cache/.bun/bin:$PATH"
+export PATH="$HOME/.cache/.bun/bin:$PATH"
 export PATH="$HOME/.local/share/bob/nvim-bin:$PATH"
+{{- if eq .profile "omarchy" }}
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
-export GOOGLE_CLOUD_LOCATION=$(gcloud config get compute/zone)
-export GOOGLE_CLOUD_PROJECT=$(gcloud config get project)
-
-if [ -f "$HOME/.config/gcloud/application_default_credentials.json" ]; then
-    export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/gcloud/application_default_credentials.json"
-fi
+{{- end }}
+export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/gcloud/application_default_credentials.json"
+export GOOGLE_CLOUD_LOCATION="us-east1"
+export GOOGLE_CLOUD_PROJECT="fleetchaser"
 
 # Ensure path is unique
 typeset -U path
@@ -45,7 +44,6 @@ path=(
   $XDG_DATA_HOME/bob/nvim-bin
   /usr/local/bin
   $path
-
 )
 # Instantly pull gcloud project by reading the config files directly
 # Linuxbrew
@@ -54,10 +52,11 @@ if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
 fi
 
 # MacOS specific PATH
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  path=(/Users/dmitrylitoshik/.antigravity/antigravity/bin $path)
-fi
+{{- if eq .profile "mac" }}
+path=($HOME/.antigravity/antigravity/bin $path)
+{{- end }}
 
+{{- if eq .profile "omarchy" }}
 # The next line updates PATH for the Google Cloud SDK.
 if [[ -f /home/dmitrylito/google-cloud-sdk/path.zsh.inc ]]; then
   . /home/dmitrylito/google-cloud-sdk/path.zsh.inc
@@ -67,9 +66,10 @@ fi
 if [[ -f /home/dmitrylito/google-cloud-sdk/completion.zsh.inc ]]; then
   . /home/dmitrylito/google-cloud-sdk/completion.zsh.inc
 fi
+{{- end }}
 
 # opencode
-export PATH=/home/dmitrylito/.opencode/bin:$PATH
+export PATH="$HOME/.opencode/bin:$PATH"
 if [[ -o interactive ]]; then
   eval "$(zoxide init --cmd cd zsh)"
   eval "$(bob complete zsh)"
@@ -78,4 +78,3 @@ if [[ -o interactive ]]; then
   eval "$(sesh completion zsh)"
   eval "$(tmuxifier init -)"
 fi
-
