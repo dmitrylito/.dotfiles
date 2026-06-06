@@ -8,6 +8,10 @@
   "runningLightSpeed": "off",
   "showFeedbackSurvey": false,
   "showTips": false,
+  "statusLine": {
+    "type": "command",
+    "command": "~/.gemini/antigravity-cli/statusline.sh"
+  },
   "toolPermission": "always-proceed",
   "trustedWorkspaces": [
     "/home/dmitrylito/.local/share/chezmoi",
