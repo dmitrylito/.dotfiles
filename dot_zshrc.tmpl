@@ -72,12 +72,12 @@ source_if_exists() {
 source_if_exists "$ZSH_CUSTOM/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ||
   source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ||
   source_if_exists "/usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ||
-  source_if_exists "/opt/homebrew/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
+  source_if_exists "/opt/homebrew/share/zsh-autocomplete/zsh-autocomplete.zsh"
 
 source_if_exists "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ||
   source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ||
   source_if_exists "/usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh" ||
-  source_if_exists "/opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh"
+  source_if_exists "/opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
 source_if_exists "/usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh" ||
   source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh" ||
@@ -85,11 +85,11 @@ source_if_exists "/usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-high
 
 source_if_exists "/usr/share/zsh/plugins/zsh-you-should-use/you-should-use.plugin.zsh" ||
   source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-you-should-use/you-should-use.plugin.zsh" ||
-  source_if_exists "/opt/homebrew/share/zsh-you-should-use/you-should-use.plugin.zsh"
+  source_if_exists "/opt/homebrew/share/zsh-you-should-use/you-should-use.zsh"
 
 source_if_exists "/usr/share/zsh/plugins/zsh-uv-env/zsh-uv-env.plugin.zsh" ||
   source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-uv-env/zsh-uv-env.plugin.zsh" ||
-  source_if_exists "/opt/homebrew/share/zsh-uv-env/zsh-uv-env.plugin.zsh"
+  source_if_exists "/opt/homebrew/share/zsh-uv-env/zsh-uv-env.zsh"
 # fc-cli autocompletion
 source_if_exists "$HOME/Projects/fc-cli/zsh_completion.sh"
 
