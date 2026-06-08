@@ -78,6 +78,8 @@ source_if_exists "$HOME/.fzf.zsh" ||
 source_if_exists "/opt/homebrew/opt/fzf/shell/completion.zsh" ||
   source_if_exists "/usr/share/fzf/completion.zsh"
 
+bindkey '^[[A' fzf-history-widget
+
 function sesh-sessions() {
   {
     exec </dev/tty
