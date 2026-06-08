@@ -25,11 +25,6 @@ fpath=(
   /usr/share/zsh/site-functions
   $fpath
 )
-if [[ -d /home/linuxbrew/.linuxbrew/share/zsh/site-functions ]]; then
-  fpath=(/home/linuxbrew/.linuxbrew/share/zsh/site-functions $fpath)
-elif [[ -d /opt/homebrew/share/zsh/site-functions ]]; then
-  fpath=(/opt/homebrew/share/zsh/site-functions $fpath)
-fi
 
 # Plugins array
 plugins=(
@@ -46,12 +41,11 @@ plugins=(
   gpg-agent
   gcloud
   uv
-  {{if or (eq .profile "omarchy") (eq .profile "server")}}
-  archlinux
-  {{end}}
-  {{if eq .profile "omarchy"}}
   ollama
-  {{end}}
+  # zsh-autocomplete
+  zsh-autosuggestions
+  you-should-use
+  zsh-syntax-highlighting
 )
 
 # Load Oh My Zsh
@@ -77,30 +71,11 @@ source_if_exists() {
 # fc-cli autocompletion
 source_if_exists "$HOME/Projects/fc-cli/zsh_completion.sh"
 
-# Omarchy environment, aliases, and functions
-export OMARCHY_PATH="${OMARCHY_PATH:-$HOME/.local/share/omarchy}"
-if [[ ":$PATH:" != *":$OMARCHY_PATH/bin:"* ]]; then
-  export PATH="$OMARCHY_PATH/bin:$PATH"
-fi
-
-# Source Omarchy's core environment and aliases (most are shell-agnostic)
-[[ -f "$OMARCHY_PATH/default/bash/envs" ]] && source "$OMARCHY_PATH/default/bash/envs"
-[[ -f "$OMARCHY_PATH/default/bash/aliases" ]] && source "$OMARCHY_PATH/default/bash/aliases"
-
-# Source functions
-if [[ -d "$OMARCHY_PATH/default/bash/fns" ]]; then
-  for f in "$OMARCHY_PATH"/default/bash/fns/*(.N); do
-    source "$f"
-  done
-fi
-
 # fzf (zsh)
 source_if_exists "$HOME/.fzf.zsh" ||
   source_if_exists "/opt/homebrew/opt/fzf/shell/key-bindings.zsh" ||
-  source_if_exists "/home/linuxbrew/.linuxbrew/opt/fzf/shell/key-bindings.zsh" ||
   source_if_exists "/usr/share/fzf/key-bindings.zsh"
 source_if_exists "/opt/homebrew/opt/fzf/shell/completion.zsh" ||
-  source_if_exists "/home/linuxbrew/.linuxbrew/opt/fzf/shell/completion.zsh" ||
   source_if_exists "/usr/share/fzf/completion.zsh"
 
 function sesh-sessions() {
@@ -142,9 +117,36 @@ if [[ -o interactive ]]; then
   eval "$(tmuxifier init -)"
 fi
 
+# Omarchy environment, aliases, and functions
+{{ if eq .profile "omarchy" }}
+
+# Omarchy environment, aliases, and functions
+export OMARCHY_PATH="${OMARCHY_PATH:-$HOME/.local/share/omarchy}"
+if [[ ":$PATH:" != *":$OMARCHY_PATH/bin:"* ]]; then
+  export PATH="$OMARCHY_PATH/bin:$PATH"
+fi
+
+# Source Omarchy's core environment and aliases (most are shell-agnostic)
+[[ -f "$OMARCHY_PATH/default/bash/envs" ]] && source "$OMARCHY_PATH/default/bash/envs"
+[[ -f "$OMARCHY_PATH/default/bash/aliases" ]] && source "$OMARCHY_PATH/default/bash/aliases"
+
+# Source functions
+if [[ -d "$OMARCHY_PATH/default/bash/fns" ]]; then
+  for f in "$OMARCHY_PATH"/default/bash/fns/*(.N); do
+    source "$f"
+  done
+fi
+{{- end }}
+
+# macOS-specific configuration
 {{if eq .profile "mac" }}
-# Added by Antigravity IDE
+
 export PATH="$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
+
 source_if_exists "${HOME}/.iterm2_shell_integration.zsh"
+
+if [[ -d /opt/homebrew/share/zsh/site-functions ]]; then
+  fpath=(/opt/homebrew/share/zsh/site-functions $fpath)
+fi
 
 {{- end }}

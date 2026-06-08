@@ -7,4 +7,3 @@ google-cloud-cli-gsutil
 sesh-bin
 zsa-keymapp-bin
 zsh-uv-env-git
-zsh-you-should-use

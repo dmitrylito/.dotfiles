@@ -33,7 +33,3 @@ wget
 yazi
 zoxide
 zsh
-zsh-autocomplete
-zsh-autosuggestions
-zsh-syntax-highlighting
-zsh-you-should-use
