@@ -1,6 +1,5 @@
 # vim: set filetype=zsh:
-#
-
+autoload -U compinit && compinit
 # XDG Base Directories
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
@@ -71,4 +70,3 @@ fi
 
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
-
