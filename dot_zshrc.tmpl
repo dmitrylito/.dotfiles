@@ -78,7 +78,9 @@ source_if_exists "$HOME/.fzf.zsh" ||
 source_if_exists "/opt/homebrew/opt/fzf/shell/completion.zsh" ||
   source_if_exists "/usr/share/fzf/completion.zsh"
 
+# Override zsh-autocomplete's Up Arrow with fzf history search
 bindkey '^[[A' fzf-history-widget
+bindkey '^[OA' fzf-history-widget
 
 function sesh-sessions() {
   {
@@ -93,7 +95,6 @@ function sesh-sessions() {
 }
 
 zle -N sesh-sessions
-bindkey -M emacs '\es' sesh-sessions
 bindkey -M vicmd '\es' sesh-sessions
 bindkey -M viins '\es' sesh-sessions
 
