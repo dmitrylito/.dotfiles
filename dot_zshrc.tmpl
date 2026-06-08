@@ -44,6 +44,9 @@ plugins=(
   gpg-agent
   gcloud
   uv
+  {{if or (eq .profile "omarchy") (eq .profile "server")}}
+  archlinux
+  {{end}}
   {{if eq .profile "omarchy"}}
   ollama
   {{end}}
@@ -69,30 +72,6 @@ setopt EXTENDED_GLOB        # Enable extended globbing
 source_if_exists() {
   [[ -f "$1" ]] && source "$1"
 }
-
-# Load zsh-autocomplete, zsh-autosuggestions, etc.
-# Priorities: Custom dotfiles > Linuxbrew > System
-source_if_exists "$ZSH_CUSTOM/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ||
-  source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ||
-  source_if_exists "/usr/share/zsh/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ||
-  source_if_exists "/opt/homebrew/share/zsh-autocomplete/zsh-autocomplete.zsh"
-
-source_if_exists "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ||
-  source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ||
-  source_if_exists "/usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh" ||
-  source_if_exists "/opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-
-source_if_exists "/usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh" ||
-  source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh" ||
-  source_if_exists "/opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-
-source_if_exists "/usr/share/zsh/plugins/zsh-you-should-use/you-should-use.plugin.zsh" ||
-  source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-you-should-use/you-should-use.plugin.zsh" ||
-  source_if_exists "/opt/homebrew/share/zsh-you-should-use/you-should-use.zsh"
-
-source_if_exists "/usr/share/zsh/plugins/zsh-uv-env/zsh-uv-env.plugin.zsh" ||
-  source_if_exists "/home/linuxbrew/.linuxbrew/share/zsh-uv-env/zsh-uv-env.plugin.zsh" ||
-  source_if_exists "/opt/homebrew/share/zsh-uv-env/zsh-uv-env.zsh"
 # fc-cli autocompletion
 source_if_exists "$HOME/Projects/fc-cli/zsh_completion.sh"
 
@@ -147,22 +126,16 @@ if command -v starship >/dev/null; then
   eval "$(starship init zsh)"
 fi
 
-# MacOS specific settings
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  source_if_exists "${HOME}/.iterm2_shell_integration.zsh"
-fi
-
 # GPG TTY
 export GPG_TTY=$(tty)
 
 # OpenClaw Completion
 source_if_exists "$HOME/.openclaw/completions/openclaw.zsh"
 
-
-# Added by Antigravity CLI installer
-export PATH="$HOME/.local/bin:$PATH"
-
 {{- if eq .chezmoi.os "darwin" }}
 # Added by Antigravity IDE
 export PATH="$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
+source $(brew --prefix)/share/zsh/site-functions
+source_if_exists "${HOME}/.iterm2_shell_integration.zsh"
+
 {{- end }}
