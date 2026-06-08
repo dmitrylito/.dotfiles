@@ -1,3 +1,4 @@
+# vim: set filetype=zsh:
 # --- Aliases ---
 alias n="nvim"
 alias lg="lazygit"
