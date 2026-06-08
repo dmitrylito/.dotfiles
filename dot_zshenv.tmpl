@@ -1,8 +1,5 @@
 # vim: set filetype=zsh:
 #
-if [[ -o interactive ]]; then
-  autoload -Uz compinit && compinit
-fi
 
 # XDG Base Directories
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -48,9 +45,11 @@ path=(
   $path
 )
 # Instantly pull gcloud project by reading the config files directly
-# Linuxbrew
+# Linuxbrew / Homebrew
 if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+elif [[ -f /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
 # MacOS specific PATH
@@ -72,11 +71,4 @@ fi
 
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
-if [[ -o interactive ]]; then
-  eval "$(zoxide init --cmd cd zsh)"
-  eval "$(bob complete zsh)"
-  eval "$(mise activate zsh)"
-  eval "$(mise completion zsh)"
-  eval "$(sesh completion zsh)"
-  eval "$(tmuxifier init -)"
-fi
+

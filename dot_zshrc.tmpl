@@ -13,7 +13,7 @@ zstyle ':omz:update' mode auto
 # Completion cache (must be set before oh-my-zsh runs compinit)
 ZCOMPDUMP_DIR="$XDG_CACHE_HOME/zsh"
 mkdir -p "$ZCOMPDUMP_DIR"
-export ZSH_COMPDUMP="$ZCOMPDUMP_DIR/.zcompdump-${HOST:-local}"
+export ZSH_COMPDUMP="$ZCOMPDUMP_DIR/.zcompdump-${HOST:-local}-${ZSH_VERSION}"
 zstyle ':completion:*' menu select
 
 # Ensure local and site completion directories exist and are in fpath before compinit
@@ -94,9 +94,11 @@ fi
 
 # fzf (zsh)
 source_if_exists "$HOME/.fzf.zsh" ||
+  source_if_exists "/opt/homebrew/opt/fzf/shell/key-bindings.zsh" ||
   source_if_exists "/home/linuxbrew/.linuxbrew/opt/fzf/shell/key-bindings.zsh" ||
   source_if_exists "/usr/share/fzf/key-bindings.zsh"
-source_if_exists "/home/linuxbrew/.linuxbrew/opt/fzf/shell/completion.zsh" ||
+source_if_exists "/opt/homebrew/opt/fzf/shell/completion.zsh" ||
+  source_if_exists "/home/linuxbrew/.linuxbrew/opt/fzf/shell/completion.zsh" ||
   source_if_exists "/usr/share/fzf/completion.zsh"
 
 function sesh-sessions() {
@@ -128,6 +130,15 @@ fi
 
 # OpenClaw Completion
 source_if_exists "$HOME/.openclaw/completions/openclaw.zsh"
+
+if [[ -o interactive ]]; then
+  eval "$(zoxide init --cmd cd zsh)"
+  eval "$(bob complete zsh)"
+  eval "$(mise activate zsh)"
+  eval "$(mise completion zsh)"
+  eval "$(sesh completion zsh)"
+  eval "$(tmuxifier init -)"
+fi
 
 {{if eq .profile "mac" }}
 # Added by Antigravity IDE
