@@ -1,0 +1,250 @@
+# Place a copy of this config to ~/.aerospace.toml
+# After that, you can edit ~/.aerospace.toml to your liking
+
+# Config version for compatibility and deprecations
+# Fallback value (if you omit the key): config-version = 1
+config-version = 2
+
+# You can use it to add commands that run after AeroSpace startup.
+# Available commands : https://nikitabobko.github.io/AeroSpace/commands
+after-startup-command = []
+
+# Start AeroSpace at login
+start-at-login = true
+
+# Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+# See: https://nikitabobko.github.io/AeroSpace/guide#layouts
+# The 'accordion-padding' specifies the size of accordion padding
+# You can set 0 to disable the padding feature
+accordion-padding = 30
+
+# Possible values: tiles|accordion
+default-root-container-layout = 'tiles'
+
+# Possible values: horizontal|vertical|auto
+# 'auto' means: wide monitor (anything wider than high) gets horizontal orientation,
+#               tall monitor (anything higher than wide) gets vertical orientation
+default-root-container-orientation = 'auto'
+
+# Mouse focus configurations:
+# Mouse follows focus when window focus changes (moves pointer to window center)
+on-focus-changed = ['move-mouse window-lazy-center']
+
+# Mouse follows focus when focused monitor changes
+# See https://nikitabobko.github.io/AeroSpace/guide#on-focus-changed-callbacks
+# See https://nikitabobko.github.io/AeroSpace/commands#move-mouse
+# Fallback value (if you omit the key): on-focused-monitor-changed = []
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+# You can effectively turn off macOS "Hide application" (cmd-h) feature by toggling this flag
+# Useful if you don't use this macOS feature, but accidentally hit cmd-h or cmd-cmd-h key
+# Also see: https://nikitabobko.github.io/AeroSpace/goodies#disable-hide-app
+automatically-unhide-macos-hidden-apps = true
+
+# List of workspaces that should stay alive even when they contain no windows,
+# even when they are invisible.
+# This config version is only available since 'config-version = 2'
+# Fallback value (if you omit the key): persistent-workspaces = []
+persistent-workspaces = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+
+# A callback that runs every time binding mode changes
+# See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
+# See: https://nikitabobko.github.io/AeroSpace/commands#mode
+on-mode-changed = []
+
+# Notify Sketchybar when the active workspace changes
+exec-on-workspace-change = [
+    '/bin/bash', '-c',
+    'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
+]
+
+[workspace-to-monitor-force-assignment]
+     1 = ['secondary', 'main']
+     2 = ['secondary', 'main']
+     3 = ['secondary', 'main']
+     4 = ['secondary', 'main']
+     5 = ['secondary', 'main']
+     6 = ['built-in', 'main']
+     7 = ['built-in', 'main']
+     8 = ['built-in', 'main']
+     9 = ['built-in', 'main']
+     10 = ['built-in', 'main']
+
+# Possible values: (qwerty|dvorak|colemak)
+# See https://nikitabobko.github.io/AeroSpace/guide#key-mapping
+[key-mapping]
+    preset = 'qwerty'
+
+# Gaps between windows (inner-*) and between monitor edges (outer-*).
+# Possible values:
+# - Constant:     gaps.outer.top = 8
+# - Per monitor:  gaps.outer.top = [{ monitor.main = 16 }, { monitor."some-pattern" = 32 }, 24]
+#                 In this example, 24 is a default value when there is no match.
+#                 Monitor pattern is the same as for 'workspace-to-monitor-force-assignment'.
+#                 See:
+#                 https://nikitabobko.github.io/AeroSpace/guide#assign-workspaces-to-monitors
+[gaps]
+    inner.horizontal = 8
+    inner.vertical =   8
+    outer.left =       8
+    outer.bottom =     8
+    outer.top =        8
+    outer.right =      8
+
+# 'main' binding mode declaration
+# See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
+# 'main' binding mode must be always presented
+# Fallback value (if you omit the key): mode.main.binding = {}
+[mode.main.binding]
+
+    # Main bindings using the 'cmd' key (aligned with the Super key in Hyprland)
+
+    # Launch Terminal
+    cmd-enter = 'exec-and-forget open -n /Applications/Ghostty.app'
+
+    # Layout changes
+    cmd-slash = 'layout tiles horizontal vertical'
+    cmd-comma = 'layout accordion horizontal vertical'
+
+    # Focus Movement (Vim motions + Super/Cmd)
+    cmd-h = 'focus left'
+    cmd-j = 'focus down'
+    cmd-k = 'focus up'
+    cmd-l = 'focus right'
+
+    # Window Movement (Vim motions + Shift + Super/Cmd)
+    cmd-shift-h = 'move left'
+    cmd-shift-j = 'move down'
+    cmd-shift-k = 'move up'
+    cmd-shift-l = 'move right'
+
+    # Resize Windows
+    cmd-minus = 'resize smart -50'
+    cmd-equal = 'resize smart +50'
+
+    # Workspace Switching (Numbers + Super/Cmd)
+    cmd-1 = 'workspace 1'
+    cmd-2 = 'workspace 2'
+    cmd-3 = 'workspace 3'
+    cmd-4 = 'workspace 4'
+    cmd-5 = 'workspace 5'
+    cmd-6 = 'workspace 6'
+    cmd-7 = 'workspace 7'
+    cmd-8 = 'workspace 8'
+    cmd-9 = 'workspace 9'
+    cmd-0 = 'workspace 10'
+
+    # Move Window to Workspace (Numbers + Shift + Super/Cmd)
+    cmd-shift-1 = ['move-node-to-workspace 1', 'workspace 1']
+    cmd-shift-2 = ['move-node-to-workspace 2', 'workspace 2']
+    cmd-shift-3 = ['move-node-to-workspace 3', 'workspace 3']
+    cmd-shift-4 = ['move-node-to-workspace 4', 'workspace 4']
+    cmd-shift-5 = ['move-node-to-workspace 5', 'workspace 5']
+    cmd-shift-6 = ['move-node-to-workspace 6', 'workspace 6']
+    cmd-shift-7 = ['move-node-to-workspace 7', 'workspace 7']
+    cmd-shift-8 = ['move-node-to-workspace 8', 'workspace 8']
+    cmd-shift-9 = ['move-node-to-workspace 9', 'workspace 9']
+    cmd-shift-0 = ['move-node-to-workspace 10', 'workspace 10']
+
+    # Go Back and Forth (Tab + Super/Cmd)
+    cmd-tab = 'workspace-back-and-forth'
+    # Move Workspace to Next Monitor (Tab + Shift + Super/Cmd)
+    cmd-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+    # Workspace Sequential Navigation (Vim motions + Ctrl + Super/Cmd)
+    cmd-ctrl-l = 'workspace next --wrap-around'
+    cmd-ctrl-h = 'workspace prev --wrap-around'
+    cmd-ctrl-shift-l = 'move-node-to-workspace next --wrap-around'
+    cmd-ctrl-shift-h = 'move-node-to-workspace prev --wrap-around'
+
+    # Fullscreen State (Shift + f + Super/Cmd)
+    cmd-shift-f = 'fullscreen'
+
+    # Enter Service Mode (Shift + Semicolon + Super/Cmd)
+    cmd-shift-semicolon = 'mode service'
+
+# 'service' binding mode declaration
+[mode.service.binding]
+    esc = ['reload-config', 'mode main']
+    r = ['flatten-workspace-tree', 'mode main'] # Reset layout
+    f = ['layout floating tiling', 'mode main'] # Toggle float/tile layout
+    backspace = ['close-all-windows-but-current', 'mode main']
+
+    cmd-shift-h = ['join-with left', 'mode main']
+    cmd-shift-j = ['join-with down', 'mode main']
+    cmd-shift-k = ['join-with up', 'mode main']
+    cmd-shift-l = ['join-with right', 'mode main']
+
+
+# ==============================================================================
+# Window Rules & Automation
+# ==============================================================================
+
+# Auto-float utility and system applications that don't tile well (Apple stuff & dialogs)
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+run = 'layout floating' # Floats all Finder windows (info, transfer, etc.)
+
+[[on-window-detected]]
+if.app-id = 'com.apple.systempreferences' # System Settings / Preferences
+run = ['layout floating', 'move-node-to-workspace 9']
+
+[[on-window-detected]]
+if.app-id = 'com.apple.calculator' # Calculator
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.ActivityMonitor' # Activity Monitor
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.keychainaccess' # Keychain Access
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.ScreenSharing' # Screen Sharing
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.archiveutility' # Archive Utility (zip extraction)
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.DiskUtility' # Disk Utility
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.quicklook.ui.helper' # Quick Look popups
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.print.PrinterProxy' # Printer utility
+run = 'layout floating'
+
+# User specific routing:
+# 1. Arc to always be on workspace 1
+[[on-window-detected]]
+if.app-id = 'company.thebrowser.Browser'
+run = 'move-node-to-workspace 1'
+
+# 2. Ghostty to be on workspace 2
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = 'move-node-to-workspace 2'
+
+# 3. Dialpad and Messages to be on workspace 3
+[[on-window-detected]]
+if.app-id = 'com.electron.dialpad'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.MobileSMS'
+run = 'move-node-to-workspace 3'
+
+# 4. Spotify on workspace 10
+[[on-window-detected]]
+if.app-id = 'com.spotify.client'
+run = 'move-node-to-workspace 10'

@@ -21,16 +21,50 @@
 
     # 2. Base terminal essentials for macOS (mac profile)
     mac_brew_packages:
-      - git
-      - zsh
-      - tmux
-      - neovim
-      - ripgrep
-      - fzf
+      - ansible
       - bat
+      - bob
+      - chezmoi
       - eza
-      - yazi
+      - fd
+      - felixkratz/formulae/borders
+      - felixkratz/formulae/sketchybar
+      - ffmpeg
+      - fzf
+      - ghostscript
+      - git
+      - go
+      - imagemagick
+      - jq
+      - lazydocker
       - lazygit
+      - luarocks
+      - mise
+      - neovim
+      - node
+      - poppler
+      - resvg
+      - ripgrep
+      - sesh
+      - sevenzip
+      - starship
+      - stow
+      - tectonic
+      - tmux
+      - tree-sitter-cli
+      - wget
+      - yazi
+      - zoxide
+      - zsh
+      - zsh-autocomplete
+      - zsh-autosuggestions
+      - zsh-syntax-highlighting
+      - zsh-you-should-use
+
+    mac_brew_casks:
+      - aerospace
+      - font-jetbrains-mono-nerd-font
+      - font-symbols-only-nerd-font
 
     # Paths to Omarchy-specific auto-generated lists (Option A)
     pacman_file: "{{ chezmoi_source_dir }}/packages-added-pacman.txt"
@@ -55,6 +89,12 @@
     - name: Install macOS Homebrew packages
       community.general.homebrew:
         name: "{{ mac_brew_packages }}"
+        state: present
+      when: (profile | lower) == 'mac'
+
+    - name: Install macOS Homebrew casks
+      community.general.homebrew_cask:
+        name: "{{ mac_brew_casks }}"
         state: present
       when: (profile | lower) == 'mac'
 
