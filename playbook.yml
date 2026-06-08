@@ -167,6 +167,8 @@
         dest: "~/{{ item.dest }}"
         depth: 1
         update: true
+      become: "{{ true if (profile | lower) != 'mac' else false }}"
+      become_user: "{{ non_root_user }}"
       loop:
         - { repo: 'https://github.com/marlonrichert/zsh-autocomplete.git', dest: '.oh-my-zsh/custom/plugins/zsh-autocomplete' }
         - { repo: 'https://github.com/zsh-users/zsh-autosuggestions.git', dest: '.oh-my-zsh/custom/plugins/zsh-autosuggestions' }
