@@ -122,17 +122,14 @@ source_if_exists "$HOME/.aliases"
 # --- Final Initialization ---
 
 # Starship prompt
-if command -v starship >/dev/null; then
+if command -v starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
 fi
-
-# GPG TTY
-export GPG_TTY=$(tty)
 
 # OpenClaw Completion
 source_if_exists "$HOME/.openclaw/completions/openclaw.zsh"
 
-{{- if eq .chezmoi.os "darwin" }}
+{{if eq .profile "mac" }}
 # Added by Antigravity IDE
 export PATH="$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
 source $(brew --prefix)/share/zsh/site-functions
