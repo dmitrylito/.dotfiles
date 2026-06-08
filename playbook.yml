@@ -22,6 +22,7 @@
     # Paths to Mac-specific auto-generated lists
     mac_brew_file: "{{ chezmoi_source_dir }}/packages-mac-brew.txt"
     mac_cask_file: "{{ chezmoi_source_dir }}/packages-mac-casks.txt"
+    mac_taps_file: "{{ chezmoi_source_dir }}/packages-mac-taps.txt"
 
     # Paths to Omarchy-specific auto-generated lists (Option A)
     pacman_file: "{{ chezmoi_source_dir }}/packages-added-pacman.txt"
@@ -46,6 +47,10 @@
     - name: Load Mac package lists
       when: (profile | lower) == 'mac'
       block:
+        - name: Read mac brew taps list
+          ansible.builtin.set_fact:
+            mac_brew_taps: "{{ lookup('file', mac_taps_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+
         - name: Read mac brew packages list
           ansible.builtin.set_fact:
             mac_brew_packages: "{{ lookup('file', mac_brew_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
@@ -53,6 +58,13 @@
         - name: Read mac brew casks list
           ansible.builtin.set_fact:
             mac_brew_casks: "{{ lookup('file', mac_cask_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+
+        - name: Add macOS Homebrew taps
+          community.general.homebrew_tap:
+            name: "{{ item }}"
+            state: present
+          loop: "{{ mac_brew_taps }}"
+          when: mac_brew_taps | length > 0
 
         - name: Install macOS Homebrew packages
           community.general.homebrew:
