@@ -15,6 +15,8 @@ vim.opt.conceallevel = 2
 
 vim.opt.spell = false
 
+vim.opt.modeline = true
+
 -- Add hyprlang filetype detection
 vim.filetype.add({
   pattern = {
