@@ -4,14 +4,10 @@
     "project": "fleetchaser",
     "location": "global"
   },
-  "model": "Gemini 3.5 Flash (High)",
+  "model": "Gemini 3.1 Pro (High)",
   "runningLightSpeed": "off",
   "showFeedbackSurvey": false,
   "showTips": false,
-  "statusLine": {
-    "type": "command",
-    "command": "~/.gemini/antigravity-cli/statusline.sh"
-  },
   "toolPermission": "always-proceed",
   "trustedWorkspaces": [
     "/home/dmitrylito/.local/share/chezmoi",
@@ -21,8 +17,7 @@
     "/home/dmitrylito/Projects/BulkBid/frontend",
     "/home/dmitrylito/Projects/BulkBid/backend",
     "/home/dmitrylito/Projects/BulkBid",
-    "/home/dmitrylito/.openclaw/workspace-fleetchaser",
-    "/Users/dmitrylitoshik"
+    "/home/dmitrylito/.openclaw/workspace-fleetchaser"
   ],
   "verbosity": "low"
 }
