@@ -18,7 +18,8 @@
     "/home/dmitrylito/Projects/BulkBid/backend",
     "/home/dmitrylito/Projects/BulkBid",
     "/home/dmitrylito/.openclaw/workspace-fleetchaser",
-    "/Users/dmitrylitoshik/.local/share/chezmoi"
+    "/Users/dmitrylitoshik/.local/share/chezmoi",
+    "/Users/dmitrylitoshik"
   ],
   "verbosity": "low"
 }
