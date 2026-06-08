@@ -30,7 +30,6 @@ ce() {
   chezmoi edit --apply "$@"
 }
 
-
 # ls aliases (use eza if available)
 if command -v eza >/dev/null; then
   alias ls="eza -T -L=1 --group-directories-first --color=always --icons=always"
@@ -41,8 +40,6 @@ else
 fi
 
 # --- Hyprland Environment Sync ---
-# Automatically synchronize HYPRLAND_INSTANCE_SIGNATURE with systemd user session
-# to prevent "Couldn't connect to .../.socket.sock" errors when Hyprland is restarted.
 _sync_hypr_signature() {
   if command -v systemctl >/dev/null 2>&1; then
     local _sys_sig
@@ -61,4 +58,3 @@ hyprctl() {
   _sync_hypr_signature
   command hyprctl "$@"
 }
-
