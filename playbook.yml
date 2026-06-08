@@ -19,52 +19,9 @@
       - yazi
       - lazygit
 
-    # 2. Base terminal essentials for macOS (mac profile)
-    mac_brew_packages:
-      - ansible
-      - bat
-      - bob
-      - chezmoi
-      - eza
-      - fd
-      - felixkratz/formulae/borders
-      - felixkratz/formulae/sketchybar
-      - ffmpeg
-      - fzf
-      - ghostscript
-      - git
-      - go
-      - imagemagick
-      - jq
-      - lazydocker
-      - lazygit
-      - luarocks
-      - mise
-      - neovim
-      - node
-      - poppler
-      - resvg
-      - ripgrep
-      - sesh
-      - sevenzip
-      - starship
-      - stow
-      - tectonic
-      - tmux
-      - tree-sitter-cli
-      - wget
-      - yazi
-      - zoxide
-      - zsh
-      - zsh-autocomplete
-      - zsh-autosuggestions
-      - zsh-syntax-highlighting
-      - zsh-you-should-use
-
-    mac_brew_casks:
-      - aerospace
-      - font-jetbrains-mono-nerd-font
-      - font-symbols-only-nerd-font
+    # Paths to Mac-specific auto-generated lists
+    mac_brew_file: "{{ chezmoi_source_dir }}/packages-mac-brew.txt"
+    mac_cask_file: "{{ chezmoi_source_dir }}/packages-mac-casks.txt"
 
     # Paths to Omarchy-specific auto-generated lists (Option A)
     pacman_file: "{{ chezmoi_source_dir }}/packages-added-pacman.txt"
@@ -86,17 +43,28 @@
     # =========================================================================
     # SECTION 2: MACOS HOMEBREW PACKAGES (Applied only to mac profile)
     # =========================================================================
-    - name: Install macOS Homebrew packages
-      community.general.homebrew:
-        name: "{{ mac_brew_packages }}"
-        state: present
+    - name: Load Mac package lists
       when: (profile | lower) == 'mac'
+      block:
+        - name: Read mac brew packages list
+          ansible.builtin.set_fact:
+            mac_brew_packages: "{{ lookup('file', mac_brew_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
 
-    - name: Install macOS Homebrew casks
-      community.general.homebrew_cask:
-        name: "{{ mac_brew_casks }}"
-        state: present
-      when: (profile | lower) == 'mac'
+        - name: Read mac brew casks list
+          ansible.builtin.set_fact:
+            mac_brew_casks: "{{ lookup('file', mac_cask_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+
+        - name: Install macOS Homebrew packages
+          community.general.homebrew:
+            name: "{{ mac_brew_packages }}"
+            state: present
+          when: mac_brew_packages | length > 0
+
+        - name: Install macOS Homebrew casks
+          community.general.homebrew_cask:
+            name: "{{ mac_brew_casks }}"
+            state: present
+          when: mac_brew_casks | length > 0
 
     # =========================================================================
     # SECTION 3: OMARCHY DYNAMIC PACKAGES (Applied only to Omarchy profile)

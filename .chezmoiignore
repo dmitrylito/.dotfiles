@@ -18,3 +18,7 @@ README.md
 .config/waybar/
 .config/swaync/
 {{ end }}
+
+{{ if ne (.profile | lower) "mac"}}
+.config/aerospace/
+{{ end }}
