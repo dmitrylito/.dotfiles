@@ -43,7 +43,9 @@ plugins=(
   gpg-agent
   gcloud
   uv
+  {{if eq .profile "omarchy"}}
   ollama
+  {{end}}
 )
 
 # Load Oh My Zsh
