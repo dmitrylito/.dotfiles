@@ -23,7 +23,7 @@
   "navigation.tab": ["tab"],
   "prompt.insert_newline": ["alt+enter", "shift+enter"],
   "subagent.approve_fast": ["ctrl+k"],
-  "subagent.jump_to_waiting": ["alt+j"],
+  "subagent.jump_to_waiting": ["ctrl+j"],
   "view.review_artifact": ["ctrl+r"],
   "view.toggle_trajectory": ["ctrl+o"]
 }
