@@ -1,7 +1,7 @@
 # Yazi Configuration File
 # https://yazi-rs.github.io/docs/configuration/overview
 
-[manager]
+[mgr]
 layout = [1, 4, 3]
 sort_by = "alphabetical"
 sort_sensitive = false
