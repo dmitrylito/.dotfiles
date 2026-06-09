@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "model": "claude-fable-5[1m]",
+  "effortLevel": "high",
+  "promptSuggestionEnabled": false,
+  "awaySummaryEnabled": false,
+  "theme": "auto",
+  "editorMode": "vim",
+  "remoteControlAtStartup": true,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true
+}
