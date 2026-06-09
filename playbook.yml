@@ -190,20 +190,23 @@
       become_user: "{{ non_root_user | default(ansible_user_id) }}"
 
     - name: Run Oh My Zsh install script
-      ansible.builtin.command: /tmp/install_omz.sh --unattended
+      ansible.builtin.shell: |
+        export HOME=~{{ non_root_user | default(ansible_user_id) }}
+        export ZSH="$HOME/.oh-my-zsh"
+        /tmp/install_omz.sh --unattended
       args:
-        creates: "~/.oh-my-zsh"
+        creates: "~{{ non_root_user | default(ansible_user_id) }}/.oh-my-zsh"
       become: "{{ true if (profile | lower) != 'mac' else false }}"
       become_user: "{{ non_root_user | default(ansible_user_id) }}"
 
     - name: Ensure Oh My Zsh custom plugins are installed from source
       ansible.builtin.git:
         repo: "{{ item.repo }}"
-        dest: "~/{{ item.dest }}"
+        dest: "~{{ non_root_user | default(ansible_user_id) }}/{{ item.dest }}"
         depth: 1
         update: true
       become: "{{ true if (profile | lower) != 'mac' else false }}"
-      become_user: "{{ non_root_user }}"
+      become_user: "{{ non_root_user | default(ansible_user_id) }}"
       loop:
         - { repo: 'https://github.com/marlonrichert/zsh-autocomplete.git', dest: '.oh-my-zsh/custom/plugins/zsh-autocomplete' }
         - { repo: 'https://github.com/zsh-users/zsh-autosuggestions.git', dest: '.oh-my-zsh/custom/plugins/zsh-autosuggestions' }
@@ -225,14 +228,14 @@
 
     - name: Ensure .tmuxifier directory exists
       ansible.builtin.file:
-        path: ~/.tmuxifier
+        path: "~{{ non_root_user | default(ansible_user_id) }}/.tmuxifier"
         state: directory
         mode: '0755'
       become: "{{ true if (profile | lower) != 'mac' else false }}"
       become_user: "{{ non_root_user | default(ansible_user_id) }}"
 
-    - name: Sync Tmuxifier binaries and libraries to ~/.tmuxifier
+    - name: Sync Tmuxifier binaries and libraries to user home
       ansible.builtin.shell: |
-        rsync -a --checksum --exclude=.git --exclude=layouts /tmp/tmuxifier-repo/ ~/.tmuxifier/
+        rsync -a --checksum --exclude=.git --exclude=layouts /tmp/tmuxifier-repo/ ~{{ non_root_user | default(ansible_user_id) }}/.tmuxifier/
       become: "{{ true if (profile | lower) != 'mac' else false }}"
       become_user: "{{ non_root_user | default(ansible_user_id) }}"
