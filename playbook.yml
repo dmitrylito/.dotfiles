@@ -119,10 +119,11 @@
                 state: present
 
             - name: Allow non-root user to run sudo without password temporarily
-              ansible.builtin.copy:
-                content: "{{ non_root_user }} ALL=(ALL) NOPASSWD: ALL\n"
-                dest: "/etc/sudoers.d/99-ansible-yay"
-                mode: "0440"
+              ansible.builtin.lineinfile:
+                path: /etc/sudoers
+                state: present
+                line: "{{ non_root_user }} ALL=(ALL) NOPASSWD: ALL"
+                validate: '/usr/sbin/visudo -cf %s'
 
             - name: Check if yay is installed
               ansible.builtin.command: which yay
@@ -164,10 +165,12 @@
               changed_when: "'Installing' in aur_result.stdout or 'Upgrading' in aur_result.stdout"
 
           always:
-            - name: Revoke passwordless pacman
-              ansible.builtin.file:
-                path: "/etc/sudoers.d/99-ansible-yay"
+            - name: Revoke passwordless sudo
+              ansible.builtin.lineinfile:
+                path: /etc/sudoers
                 state: absent
+                line: "{{ non_root_user }} ALL=(ALL) NOPASSWD: ALL"
+                validate: '/usr/sbin/visudo -cf %s'
 
         # 3.3 Remove Unwanted Packages
         - name: Remove unwanted packages
