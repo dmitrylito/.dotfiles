@@ -180,8 +180,23 @@
           when: removed_packages | length > 0
 
     # =========================================================================
-    # SECTION 4: OH MY ZSH CUSTOM PLUGINS (All Profiles)
+    # SECTION 4: OH MY ZSH AND CUSTOM PLUGINS (All Profiles)
     # =========================================================================
+    - name: Download Oh My Zsh install script
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+        dest: /tmp/install_omz.sh
+        mode: '0755'
+      become: "{{ true if (profile | lower) != 'mac' else false }}"
+      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+
+    - name: Run Oh My Zsh install script
+      ansible.builtin.command: /tmp/install_omz.sh --unattended
+      args:
+        creates: "~/.oh-my-zsh"
+      become: "{{ true if (profile | lower) != 'mac' else false }}"
+      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+
     - name: Ensure Oh My Zsh custom plugins are installed from source
       ansible.builtin.git:
         repo: "{{ item.repo }}"
@@ -196,3 +211,15 @@
         - { repo: 'https://github.com/ocodo/ollama_zsh_completion.git', dest: '.oh-my-zsh/custom/plugins/ollama' }
         - { repo: 'https://github.com/MichaelAquilina/zsh-you-should-use.git', dest: '.oh-my-zsh/custom/plugins/you-should-use' }
         - { repo: 'https://github.com/zsh-users/zsh-syntax-highlighting.git', dest: '.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' }
+
+    # =========================================================================
+    # SECTION 5: TMUX AND TOOLS
+    # =========================================================================
+    - name: Install Tmuxifier
+      ansible.builtin.git:
+        repo: https://github.com/jimeh/tmuxifier.git
+        dest: ~/.tmuxifier
+        depth: 1
+        update: true
+      become: "{{ true if (profile | lower) != 'mac' else false }}"
+      become_user: "{{ non_root_user | default(ansible_user_id) }}"
