@@ -131,14 +131,14 @@ fi
 
 # Source Omarchy's core environment and aliases (most are shell-agnostic)
 [[ -f "$OMARCHY_PATH/default/bash/envs" ]] && source "$OMARCHY_PATH/default/bash/envs"
-# [[ -f "$OMARCHY_PATH/default/bash/aliases" ]] && source "$OMARCHY_PATH/default/bash/aliases"
+[[ -f "$OMARCHY_PATH/default/bash/aliases" ]] && source "$OMARCHY_PATH/default/bash/aliases"
 
 # Source functions
-if [[ -d "$OMARCHY_PATH/default/bash/fns" ]]; then
-  for f in "$OMARCHY_PATH"/default/bash/fns/*(.N); do
-    source "$f"
-  done
-fi
+# if [[ -d "$OMARCHY_PATH/default/bash/fns" ]]; then
+#   for f in "$OMARCHY_PATH"/default/bash/fns/*(.N); do
+#     source "$f"
+#   done
+# fi
 {{- end }}
 
 # macOS-specific configuration
