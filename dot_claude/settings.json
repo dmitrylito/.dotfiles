@@ -8,7 +8,7 @@
   "awaySummaryEnabled": false,
   "theme": "auto",
   "editorMode": "vim",
-  "remoteControlAtStartup": true,
+  "remoteControlAtStartup": false,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true
 }
