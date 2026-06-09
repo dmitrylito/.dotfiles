@@ -118,10 +118,10 @@
                 name: base-devel
                 state: present
 
-            - name: Allow non-root user to run pacman without password
+            - name: Allow non-root user to run sudo without password temporarily
               ansible.builtin.copy:
-                content: "{{ non_root_user }} ALL=(ALL) NOPASSWD: /usr/bin/pacman\n"
-                dest: "/etc/sudoers.d/ansible-yay"
+                content: "{{ non_root_user }} ALL=(ALL) NOPASSWD: ALL\n"
+                dest: "/etc/sudoers.d/99-ansible-yay"
                 mode: "0440"
 
             - name: Check if yay is installed
@@ -166,7 +166,7 @@
           always:
             - name: Revoke passwordless pacman
               ansible.builtin.file:
-                path: "/etc/sudoers.d/ansible-yay"
+                path: "/etc/sudoers.d/99-ansible-yay"
                 state: absent
 
         # 3.3 Remove Unwanted Packages
