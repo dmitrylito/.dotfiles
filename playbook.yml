@@ -215,11 +215,32 @@
     # =========================================================================
     # SECTION 5: TMUX AND TOOLS
     # =========================================================================
-    - name: Install Tmuxifier
+    - name: Clone Tmuxifier repository
       ansible.builtin.git:
         repo: https://github.com/jimeh/tmuxifier.git
-        dest: ~/.tmuxifier
+        dest: /tmp/tmuxifier-repo
         depth: 1
         update: true
+      become: "{{ true if (profile | lower) != 'mac' else false }}"
+      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+
+    - name: Ensure .tmuxifier directory exists
+      ansible.builtin.file:
+        path: ~/.tmuxifier
+        state: directory
+        mode: '0755'
+      become: "{{ true if (profile | lower) != 'mac' else false }}"
+      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+
+    - name: Sync Tmuxifier binaries and libraries to ~/.tmuxifier
+      ansible.posix.synchronize:
+        src: /tmp/tmuxifier-repo/
+        dest: ~/.tmuxifier/
+        checksum: true
+        recursive: true
+        # We exclude layouts/ and .git/ so it doesn't overwrite your personal configs
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=layouts"
       become: "{{ true if (profile | lower) != 'mac' else false }}"
       become_user: "{{ non_root_user | default(ansible_user_id) }}"
