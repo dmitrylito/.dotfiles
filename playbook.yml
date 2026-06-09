@@ -110,46 +110,64 @@
           when: (pacman_packages + driver_packages) | length > 0
 
         # 3.2 Bootstrap yay & Install AUR Packages
-        - name: Check if yay is installed
-          ansible.builtin.command: which yay
-          register: yay_check
-          failed_when: false
-          changed_when: false
-          become: true
-          become_user: "{{ non_root_user }}"
+        - name: Handle AUR packages
           when: aur_packages | length > 0
-
-        - name: Bootstrap yay if missing
-          become: true
-          become_user: "{{ non_root_user }}"
-          when: aur_packages | length > 0 and (yay_check.rc | default(1) != 0)
           block:
-            - name: Clone yay-bin
-              ansible.builtin.git:
-                repo: https://aur.archlinux.org/yay-bin.git
-                dest: "/tmp/yay-bin"
-                version: master
-                depth: 1
+            - name: Ensure base-devel is installed (required for makepkg)
+              community.general.pacman:
+                name: base-devel
+                state: present
 
-            - name: Build and install yay
+            - name: Allow non-root user to run pacman without password
+              ansible.builtin.copy:
+                content: "{{ non_root_user }} ALL=(ALL) NOPASSWD: /usr/bin/pacman\n"
+                dest: "/etc/sudoers.d/ansible-yay"
+                mode: "0440"
+
+            - name: Check if yay is installed
+              ansible.builtin.command: which yay
+              register: yay_check
+              failed_when: false
+              changed_when: false
+              become: true
+              become_user: "{{ non_root_user }}"
+
+            - name: Bootstrap yay if missing
+              become: true
+              become_user: "{{ non_root_user }}"
+              when: yay_check.rc | default(1) != 0
+              block:
+                - name: Clone yay-bin
+                  ansible.builtin.git:
+                    repo: https://aur.archlinux.org/yay-bin.git
+                    dest: "/tmp/yay-bin"
+                    version: master
+                    depth: 1
+
+                - name: Build and install yay
+                  ansible.builtin.command:
+                    cmd: makepkg -si --noconfirm
+                    chdir: "/tmp/yay-bin"
+
+                - name: Remove temporary clone directory
+                  ansible.builtin.file:
+                    path: "/tmp/yay-bin"
+                    state: absent
+
+            - name: Install AUR packages
               ansible.builtin.command:
-                cmd: makepkg -si --noconfirm
-                chdir: "/tmp/yay-bin"
+                cmd: "yay -S --needed --noconfirm {{ item }}"
+              loop: "{{ aur_packages }}"
+              become: true
+              become_user: "{{ non_root_user }}"
+              register: aur_result
+              changed_when: "'Installing' in aur_result.stdout or 'Upgrading' in aur_result.stdout"
 
-            - name: Remove temporary clone directory
+          always:
+            - name: Revoke passwordless pacman
               ansible.builtin.file:
-                path: "/tmp/yay-bin"
+                path: "/etc/sudoers.d/ansible-yay"
                 state: absent
-
-        - name: Install AUR packages
-          ansible.builtin.command:
-            cmd: "yay -S --needed --noconfirm {{ item }}"
-          loop: "{{ aur_packages }}"
-          become: true
-          become_user: "{{ non_root_user }}"
-          when: aur_packages | length > 0
-          register: aur_result
-          changed_when: "'Installing' in aur_result.stdout or 'Upgrading' in aur_result.stdout"
 
         # 3.3 Remove Unwanted Packages
         - name: Remove unwanted packages
