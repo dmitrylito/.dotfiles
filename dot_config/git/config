@@ -30,4 +30,4 @@
 	name = Dmitry Litoshik
 	email = dmitrylitoshik@fleetchaser.com
 [url "git@github.com:"]
-        insteadOf = https://github.com/
+        pushInsteadOf = https://github.com/   # Clone/fetch over HTTPS (no key needed); push over SSH
