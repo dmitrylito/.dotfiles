@@ -260,50 +260,23 @@
     # =========================================================================
     # SECTION 6: AI CLI TOOLS
     # =========================================================================
-    - name: Download Claude install script
-      ansible.builtin.get_url:
-        url: https://claude.ai/install.sh
-        dest: /tmp/install_claude.sh
-        mode: '0755'
+    - name: Install Claude CLI
+      ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | bash
+      args:
+        creates: "~{{ non_root_user | default(ansible_user_id) }}/.local/bin/claude"
+      become: "{{ true if (profile | lower) != 'mac' else false }}"
+      become_user: "{{ non_root_user | default(ansible_user_id) }}"
 
-    - name: Check if Claude CLI is installed
-      ansible.builtin.command: which claude
-      register: claude_check
-      failed_when: false
-      changed_when: false
+    - name: Install Antigravity CLI
+      ansible.builtin.shell: curl -fsSL https://antigravity.google/cli/install.sh | bash
+      args:
+        creates: "~{{ non_root_user | default(ansible_user_id) }}/.local/bin/agy"
+      become: "{{ true if (profile | lower) != 'mac' else false }}"
+      become_user: "{{ non_root_user | default(ansible_user_id) }}"
 
-    - name: Run Claude install script
-      ansible.builtin.command: bash /tmp/install_claude.sh
-      when: claude_check.rc != 0
-
-    - name: Download Antigravity install script
-      ansible.builtin.get_url:
-        url: https://antigravity.google/cli/install.sh
-        dest: /tmp/install_antigravity.sh
-        mode: '0755'
-
-    - name: Check if Antigravity CLI is installed
-      ansible.builtin.command: which antigravity
-      register: antigravity_check
-      failed_when: false
-      changed_when: false
-
-    - name: Run Antigravity install script
-      ansible.builtin.command: bash /tmp/install_antigravity.sh
-      when: antigravity_check.rc != 0
-
-    - name: Download ChatGPT Codex install script
-      ansible.builtin.get_url:
-        url: https://chatgpt.com/codex/install.sh
-        dest: /tmp/install_codex.sh
-        mode: '0755'
-
-    - name: Check if ChatGPT Codex CLI is installed
-      ansible.builtin.command: which codex
-      register: codex_check
-      failed_when: false
-      changed_when: false
-
-    - name: Run ChatGPT Codex install script
-      ansible.builtin.command: sh /tmp/install_codex.sh
-      when: codex_check.rc != 0
+    - name: Install ChatGPT Codex CLI
+      ansible.builtin.shell: curl -fsSL https://chatgpt.com/codex/install.sh | sh
+      args:
+        creates: "~{{ non_root_user | default(ansible_user_id) }}/.local/bin/codex"
+      become: "{{ true if (profile | lower) != 'mac' else false }}"
+      become_user: "{{ non_root_user | default(ansible_user_id) }}"
