@@ -1,6 +1,6 @@
 {
   "permissions": {
-    "defaultMode": "auto"
+    "defaultMode": "acceptEdits"
   },
   "model": "claude-fable-5[1m]",
   "effortLevel": "high",
