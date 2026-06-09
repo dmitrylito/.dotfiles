@@ -14,6 +14,8 @@ set -euo pipefail
 # packages-added-aur.txt hash: {{ include "packages-added-aur.txt" | sha256sum }}
 # packages-drivers.txt hash: {{ include "packages-drivers.txt" | sha256sum }}
 # packages-removed.txt hash: {{ include "packages-removed.txt" | sha256sum }}
+# packages-server-pacman.txt hash: {{ include "packages-server-pacman.txt" | sha256sum }}
+# packages-server-aur.txt hash: {{ include "packages-server-aur.txt" | sha256sum }}
 
 profile="{{ .profile | lower }}"
 

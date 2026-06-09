@@ -11,7 +11,6 @@
       - git
       - zsh
       - tmux
-      - neovim
       - ripgrep
       - fzf
       - bat
@@ -29,6 +28,11 @@
     aur_file: "{{ chezmoi_source_dir }}/packages-added-aur.txt"
     drivers_file: "{{ chezmoi_source_dir }}/packages-drivers.txt"
     removed_file: "{{ chezmoi_source_dir }}/packages-removed.txt"
+
+    # Paths to server-specific auto-generated lists
+    # (regenerate with scripts/update_server_package_lists.sh on the server)
+    server_pacman_file: "{{ chezmoi_source_dir }}/packages-server-pacman.txt"
+    server_aur_file: "{{ chezmoi_source_dir }}/packages-server-aur.txt"
 
   tasks:
     # =========================================================================
@@ -79,31 +83,36 @@
           when: mac_brew_casks | length > 0
 
     # =========================================================================
-    # SECTION 3: OMARCHY DYNAMIC PACKAGES (Applied only to Omarchy profile)
+    # SECTION 3: DYNAMIC PACKAGES (Applied to Omarchy & server profiles)
     # =========================================================================
-    - name: Load Omarchy package lists
-      when: (profile | lower) == 'omarchy'
+    - name: Load dynamic package lists
+      when: (profile | lower) in ['omarchy', 'server']
       block:
+        - name: Select package lists for this profile
+          ansible.builtin.set_fact:
+            profile_pacman_file: "{{ server_pacman_file if (profile | lower) == 'server' else pacman_file }}"
+            profile_aur_file: "{{ server_aur_file if (profile | lower) == 'server' else aur_file }}"
+
         - name: Read added pacman packages list
           ansible.builtin.set_fact:
-            pacman_packages: "{{ lookup('file', pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+            pacman_packages: "{{ lookup('file', profile_pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
 
-        - name: Read drivers list
+        - name: Read drivers list (Omarchy only)
           ansible.builtin.set_fact:
-            driver_packages: "{{ lookup('file', drivers_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+            driver_packages: "{{ (lookup('file', drivers_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if (profile | lower) == 'omarchy' else [] }}"
 
         - name: Read AUR packages list
           ansible.builtin.set_fact:
-            aur_packages: "{{ lookup('file', aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+            aur_packages: "{{ lookup('file', profile_aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
 
-        - name: Read removed packages list
+        - name: Read removed packages list (Omarchy only)
           ansible.builtin.set_fact:
-            removed_packages: "{{ lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+            removed_packages: "{{ (lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if (profile | lower) == 'omarchy' else [] }}"
 
-        # 3.1 Install Native Omarchy Packages (Added, Drivers)
+        # 3.1 Install Native Packages (Added, Drivers)
         # Note: We do NOT install the base/other packages because those are
         # pre-installed in the OS and contain hardware-specific drivers.
-        - name: Install native Omarchy packages (Added, Drivers)
+        - name: Install native packages (Added, Drivers)
           community.general.pacman:
             name: "{{ pacman_packages + driver_packages }}"
             state: present
