@@ -21,4 +21,5 @@ README.md
 
 {{ if ne (.profile | lower) "mac"}}
 .config/aerospace/
+.config/sketchybar/
 {{ end }}
