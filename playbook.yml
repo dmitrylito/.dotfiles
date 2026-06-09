@@ -195,7 +195,7 @@
         export ZSH="$HOME/.oh-my-zsh"
         /tmp/install_omz.sh --unattended
       args:
-        creates: "~{{ non_root_user | default(ansible_user_id) }}/.oh-my-zsh"
+        creates: "~{{ non_root_user | default(ansible_user_id) }}/.oh-my-zsh/oh-my-zsh.sh"
       become: "{{ true if (profile | lower) != 'mac' else false }}"
       become_user: "{{ non_root_user | default(ansible_user_id) }}"
 
