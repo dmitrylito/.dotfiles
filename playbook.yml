@@ -191,11 +191,15 @@
 
     - name: Run Oh My Zsh install script
       ansible.builtin.shell: |
-        export HOME=~{{ non_root_user | default(ansible_user_id) }}
+        export HOME=$(getent passwd {{ non_root_user | default(ansible_user_id) }} | cut -d: -f6)
         export ZSH="$HOME/.oh-my-zsh"
-        /tmp/install_omz.sh --unattended
-      args:
-        creates: "~{{ non_root_user | default(ansible_user_id) }}/.oh-my-zsh/oh-my-zsh.sh"
+        export KEEP_ZSHRC=yes
+        if [ ! -f "$ZSH/oh-my-zsh.sh" ]; then
+          /tmp/install_omz.sh --unattended
+          echo "CHANGED"
+        fi
+      register: omz_install
+      changed_when: "'CHANGED' in omz_install.stdout"
       become: "{{ true if (profile | lower) != 'mac' else false }}"
       become_user: "{{ non_root_user | default(ansible_user_id) }}"
 
