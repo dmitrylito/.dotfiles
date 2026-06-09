@@ -1,8 +1,11 @@
+ansible
 ast-grep
 bob
 chezmoi
 cmake
 cpio
+cuda
+cudnn
 efibootmgr
 fwupd
 gamescope
@@ -11,6 +14,7 @@ ghostty
 gimp
 git-delta
 go
+neovim
 nwg-displays
 omarchy-keyring
 omazed
@@ -27,9 +31,13 @@ telegram-desktop
 tesseract
 tesseract-data-eng
 voxtype-bin
+wayvnc
 wev
 wtype
 yazi
 zed
 zsh
+zsh-autocomplete
+zsh-autosuggestions
 zsh-completions
+zsh-syntax-highlighting

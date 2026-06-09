@@ -1,9 +1,13 @@
 antigravity
 antigravity-ide
+coolercontrol-bin
 discordupdater
 dotool
+gogcli
 google-cloud-cli
 google-cloud-cli-gsutil
+hyprmon-bin
 sesh-bin
 zsa-keymapp-bin
 zsh-uv-env-git
+zsh-you-should-use
