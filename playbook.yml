@@ -157,8 +157,7 @@
 
             - name: Install AUR packages
               ansible.builtin.command:
-                cmd: "yay -S --needed --noconfirm {{ item }}"
-              loop: "{{ aur_packages }}"
+                cmd: "yay -S --needed --noconfirm {{ aur_packages | join(' ') }}"
               become: true
               become_user: "{{ non_root_user }}"
               register: aur_result
@@ -233,14 +232,7 @@
       become_user: "{{ non_root_user | default(ansible_user_id) }}"
 
     - name: Sync Tmuxifier binaries and libraries to ~/.tmuxifier
-      ansible.posix.synchronize:
-        src: /tmp/tmuxifier-repo/
-        dest: ~/.tmuxifier/
-        checksum: true
-        recursive: true
-        # We exclude layouts/ and .git/ so it doesn't overwrite your personal configs
-        rsync_opts:
-          - "--exclude=.git"
-          - "--exclude=layouts"
+      ansible.builtin.shell: |
+        rsync -a --checksum --exclude=.git --exclude=layouts /tmp/tmuxifier-repo/ ~/.tmuxifier/
       become: "{{ true if (profile | lower) != 'mac' else false }}"
       become_user: "{{ non_root_user | default(ansible_user_id) }}"
