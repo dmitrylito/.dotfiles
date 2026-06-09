@@ -92,7 +92,7 @@ inner.horizontal = 8
 inner.vertical = 8
 outer.left = 8
 outer.bottom = 8
-outer.top = [{ monitor."built-in" = 10 }, { monitor."main" = 50 }, 50]
+outer.top = [{ monitor."built-in" = 10 }, { monitor."main" = 35 }, 50]
 outer.right = 8
 
 # 'main' binding mode declaration
