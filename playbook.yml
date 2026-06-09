@@ -194,10 +194,23 @@
         export HOME=$(getent passwd {{ non_root_user | default(ansible_user_id) }} | cut -d: -f6)
         export ZSH="$HOME/.oh-my-zsh"
         export KEEP_ZSHRC=yes
-        if [ ! -f "$ZSH/oh-my-zsh.sh" ]; then
-          /tmp/install_omz.sh --unattended
-          echo "CHANGED"
+        
+        if [ -f "$ZSH/oh-my-zsh.sh" ]; then
+          exit 0
         fi
+        
+        if [ -d "$ZSH" ]; then
+          mv "$ZSH" "${ZSH}.chezmoi_bak"
+        fi
+        
+        /tmp/install_omz.sh --unattended
+        
+        if [ -d "${ZSH}.chezmoi_bak" ]; then
+          rsync -a "${ZSH}.chezmoi_bak/" "$ZSH/"
+          rm -rf "${ZSH}.chezmoi_bak"
+        fi
+        
+        echo "CHANGED"
       register: omz_install
       changed_when: "'CHANGED' in omz_install.stdout"
       become: "{{ true if (profile | lower) != 'mac' else false }}"
