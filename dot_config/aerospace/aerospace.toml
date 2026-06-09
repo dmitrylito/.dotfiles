@@ -57,26 +57,27 @@ on-mode-changed = []
 
 # Notify Sketchybar when the active workspace changes
 exec-on-workspace-change = [
-    '/bin/bash', '-c',
-    'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
+  '/bin/bash',
+  '-c',
+  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
 
 [workspace-to-monitor-force-assignment]
-     1 = ['secondary', 'main']
-     2 = ['secondary', 'main']
-     3 = ['secondary', 'main']
-     4 = ['secondary', 'main']
-     5 = ['secondary', 'main']
-     6 = ['built-in', 'main']
-     7 = ['built-in', 'main']
-     8 = ['built-in', 'main']
-     9 = ['built-in', 'main']
-     10 = ['built-in', 'main']
+1 = ['secondary', 'main']
+2 = ['secondary', 'main']
+3 = ['secondary', 'main']
+4 = ['secondary', 'main']
+5 = ['secondary', 'main']
+6 = ['built-in', 'main']
+7 = ['built-in', 'main']
+8 = ['built-in', 'main']
+9 = ['built-in', 'main']
+10 = ['built-in', 'main']
 
 # Possible values: (qwerty|dvorak|colemak)
 # See https://nikitabobko.github.io/AeroSpace/guide#key-mapping
 [key-mapping]
-    preset = 'qwerty'
+preset = 'qwerty'
 
 # Gaps between windows (inner-*) and between monitor edges (outer-*).
 # Possible values:
@@ -87,12 +88,12 @@ exec-on-workspace-change = [
 #                 See:
 #                 https://nikitabobko.github.io/AeroSpace/guide#assign-workspaces-to-monitors
 [gaps]
-    inner.horizontal = 8
-    inner.vertical =   8
-    outer.left =       8
-    outer.bottom =     8
-    outer.top =        8
-    outer.right =      8
+inner.horizontal = 8
+inner.vertical = 8
+outer.left = 8
+outer.bottom = 8
+outer.top = [{ monitor."built-in" = 10 }, { monitor."main" = 50 }, 50]
+outer.right = 8
 
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
@@ -100,83 +101,83 @@ exec-on-workspace-change = [
 # Fallback value (if you omit the key): mode.main.binding = {}
 [mode.main.binding]
 
-    # Main bindings using the 'cmd' key (aligned with the Super key in Hyprland)
+# Main bindings using the 'cmd' key (aligned with the Super key in Hyprland)
 
-    # Launch Terminal
-    cmd-enter = 'exec-and-forget open -n /Applications/Ghostty.app'
+# Launch Terminal
+cmd-enter = 'exec-and-forget open -n /Applications/Ghostty.app'
 
-    # Layout changes
-    cmd-slash = 'layout tiles horizontal vertical'
-    cmd-comma = 'layout accordion horizontal vertical'
+# Layout changes
+cmd-slash = 'layout tiles horizontal vertical'
+cmd-comma = 'layout accordion horizontal vertical'
 
-    # Focus Movement (Vim motions + Super/Cmd)
-    cmd-h = 'focus left'
-    cmd-j = 'focus down'
-    cmd-k = 'focus up'
-    cmd-l = 'focus right'
+# Focus Movement (Vim motions + Super/Cmd)
+cmd-h = 'focus left'
+cmd-j = 'focus down'
+cmd-k = 'focus up'
+cmd-l = 'focus right'
 
-    # Window Movement (Vim motions + Shift + Super/Cmd)
-    cmd-shift-h = 'move left'
-    cmd-shift-j = 'move down'
-    cmd-shift-k = 'move up'
-    cmd-shift-l = 'move right'
+# Window Movement (Vim motions + Shift + Super/Cmd)
+cmd-shift-h = 'move left'
+cmd-shift-j = 'move down'
+cmd-shift-k = 'move up'
+cmd-shift-l = 'move right'
 
-    # Resize Windows
-    cmd-minus = 'resize smart -50'
-    cmd-equal = 'resize smart +50'
+# Resize Windows
+cmd-minus = 'resize smart -50'
+cmd-equal = 'resize smart +50'
 
-    # Workspace Switching (Numbers + Super/Cmd)
-    cmd-1 = 'workspace 1'
-    cmd-2 = 'workspace 2'
-    cmd-3 = 'workspace 3'
-    cmd-4 = 'workspace 4'
-    cmd-5 = 'workspace 5'
-    cmd-6 = 'workspace 6'
-    cmd-7 = 'workspace 7'
-    cmd-8 = 'workspace 8'
-    cmd-9 = 'workspace 9'
-    cmd-0 = 'workspace 10'
+# Workspace Switching (Numbers + Super/Cmd)
+cmd-1 = 'workspace 1'
+cmd-2 = 'workspace 2'
+cmd-3 = 'workspace 3'
+cmd-4 = 'workspace 4'
+cmd-5 = 'workspace 5'
+cmd-6 = 'workspace 6'
+cmd-7 = 'workspace 7'
+cmd-8 = 'workspace 8'
+cmd-9 = 'workspace 9'
+cmd-0 = 'workspace 10'
 
-    # Move Window to Workspace (Numbers + Shift + Super/Cmd)
-    cmd-shift-1 = ['move-node-to-workspace 1', 'workspace 1']
-    cmd-shift-2 = ['move-node-to-workspace 2', 'workspace 2']
-    cmd-shift-3 = ['move-node-to-workspace 3', 'workspace 3']
-    cmd-shift-4 = ['move-node-to-workspace 4', 'workspace 4']
-    cmd-shift-5 = ['move-node-to-workspace 5', 'workspace 5']
-    cmd-shift-6 = ['move-node-to-workspace 6', 'workspace 6']
-    cmd-shift-7 = ['move-node-to-workspace 7', 'workspace 7']
-    cmd-shift-8 = ['move-node-to-workspace 8', 'workspace 8']
-    cmd-shift-9 = ['move-node-to-workspace 9', 'workspace 9']
-    cmd-shift-0 = ['move-node-to-workspace 10', 'workspace 10']
+# Move Window to Workspace (Numbers + Shift + Super/Cmd)
+cmd-shift-1 = ['move-node-to-workspace 1', 'workspace 1']
+cmd-shift-2 = ['move-node-to-workspace 2', 'workspace 2']
+cmd-shift-3 = ['move-node-to-workspace 3', 'workspace 3']
+cmd-shift-4 = ['move-node-to-workspace 4', 'workspace 4']
+cmd-shift-5 = ['move-node-to-workspace 5', 'workspace 5']
+cmd-shift-6 = ['move-node-to-workspace 6', 'workspace 6']
+cmd-shift-7 = ['move-node-to-workspace 7', 'workspace 7']
+cmd-shift-8 = ['move-node-to-workspace 8', 'workspace 8']
+cmd-shift-9 = ['move-node-to-workspace 9', 'workspace 9']
+cmd-shift-0 = ['move-node-to-workspace 10', 'workspace 10']
 
-    # Go Back and Forth (Tab + Super/Cmd)
-    cmd-tab = 'workspace-back-and-forth'
-    # Move Workspace to Next Monitor (Tab + Shift + Super/Cmd)
-    cmd-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+# Go Back and Forth (Tab + Super/Cmd)
+cmd-tab = 'workspace-back-and-forth'
+# Move Workspace to Next Monitor (Tab + Shift + Super/Cmd)
+cmd-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
-    # Workspace Sequential Navigation (Vim motions + Ctrl + Super/Cmd)
-    cmd-ctrl-l = 'workspace next --wrap-around'
-    cmd-ctrl-h = 'workspace prev --wrap-around'
-    cmd-ctrl-shift-l = 'move-node-to-workspace next --wrap-around'
-    cmd-ctrl-shift-h = 'move-node-to-workspace prev --wrap-around'
+# Workspace Sequential Navigation (Vim motions + Ctrl + Super/Cmd)
+cmd-ctrl-l = 'workspace next --wrap-around'
+cmd-ctrl-h = 'workspace prev --wrap-around'
+cmd-ctrl-shift-l = 'move-node-to-workspace next --wrap-around'
+cmd-ctrl-shift-h = 'move-node-to-workspace prev --wrap-around'
 
-    # Fullscreen State (Shift + f + Super/Cmd)
-    cmd-shift-f = 'fullscreen'
+# Fullscreen State (Shift + f + Super/Cmd)
+cmd-shift-f = 'fullscreen'
 
-    # Enter Service Mode (Shift + Semicolon + Super/Cmd)
-    cmd-shift-semicolon = 'mode service'
+# Enter Service Mode (Shift + Semicolon + Super/Cmd)
+cmd-shift-semicolon = 'mode service'
 
 # 'service' binding mode declaration
 [mode.service.binding]
-    esc = ['reload-config', 'mode main']
-    r = ['flatten-workspace-tree', 'mode main'] # Reset layout
-    f = ['layout floating tiling', 'mode main'] # Toggle float/tile layout
-    backspace = ['close-all-windows-but-current', 'mode main']
+esc = ['reload-config', 'mode main']
+r = ['flatten-workspace-tree', 'mode main']                # Reset layout
+f = ['layout floating tiling', 'mode main']                # Toggle float/tile layout
+backspace = ['close-all-windows-but-current', 'mode main']
 
-    cmd-shift-h = ['join-with left', 'mode main']
-    cmd-shift-j = ['join-with down', 'mode main']
-    cmd-shift-k = ['join-with up', 'mode main']
-    cmd-shift-l = ['join-with right', 'mode main']
+cmd-shift-h = ['join-with left', 'mode main']
+cmd-shift-j = ['join-with down', 'mode main']
+cmd-shift-k = ['join-with up', 'mode main']
+cmd-shift-l = ['join-with right', 'mode main']
 
 
 # ==============================================================================
@@ -186,10 +187,10 @@ exec-on-workspace-change = [
 # Auto-float utility and system applications that don't tile well (Apple stuff & dialogs)
 [[on-window-detected]]
 if.app-id = 'com.apple.finder'
-run = 'layout floating' # Floats all Finder windows (info, transfer, etc.)
+run = 'layout floating'        # Floats all Finder windows (info, transfer, etc.)
 
 [[on-window-detected]]
-if.app-id = 'com.apple.systempreferences' # System Settings / Preferences
+if.app-id = 'com.apple.systempreferences'             # System Settings / Preferences
 run = ['layout floating', 'move-node-to-workspace 9']
 
 [[on-window-detected]]
