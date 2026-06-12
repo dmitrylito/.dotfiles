@@ -164,11 +164,40 @@
                     path: "/tmp/yay-bin"
                     state: absent
 
-            - name: Install AUR packages
-              ansible.builtin.command:
-                cmd: "yay -S --needed --noconfirm {{ aur_packages | join(' ') }}"
+            # yay-bin is bootstrapped above; feeding it back into yay is a no-op
+            - name: Filter packages yay should not install onto itself
+              ansible.builtin.set_fact:
+                aur_install_packages: "{{ aur_packages | reject('equalto', 'yay-bin') | list }}"
+
+            # Signed AUR sources (e.g. zfs-dkms) need their PGP keys fetched at
+            # build time; the default keyserver can stall dirmngr indefinitely.
+            - name: Ensure ~/.gnupg exists for the build user
+              ansible.builtin.file:
+                path: "~{{ non_root_user }}/.gnupg"
+                state: directory
+                mode: '0700'
               become: true
               become_user: "{{ non_root_user }}"
+
+            - name: Point GPG at a reliable keyserver for AUR key imports
+              ansible.builtin.lineinfile:
+                path: "~{{ non_root_user }}/.gnupg/gpg.conf"
+                line: "keyserver hkps://keyserver.ubuntu.com"
+                create: true
+                mode: '0600'
+              become: true
+              become_user: "{{ non_root_user }}"
+
+            # One package per task so progress is visible, with a hard timeout
+            # so a stalled build/keyserver can never hang the playbook forever.
+            - name: Install AUR packages
+              ansible.builtin.command:
+                cmd: "yay -S --needed --noconfirm --noprogressbar {{ item }}"
+              loop: "{{ aur_install_packages }}"
+              become: true
+              become_user: "{{ non_root_user }}"
+              async: 3600
+              poll: 15
               register: aur_result
               changed_when: "'Installing' in aur_result.stdout or 'Upgrading' in aur_result.stdout"
 
