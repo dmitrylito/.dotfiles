@@ -15,6 +15,8 @@ state_file = "auto"
 [hotkey]
 # Hotkey is configured in Hyprland. Default is Super + Ctrl + X
 enabled = false
+key = "HOME"
+mode = "toggle"
 # key = "HOME"
 # mode = "toggle"
 
@@ -132,7 +134,7 @@ show_engine_icon = false
 [parakeet]
 model = "parakeet-unified-en-0.6b"
 on_demand_loading = false
-streaming = false
+streaming = true
 streaming_chunk_secs = 0.48
 streaming_left_context_secs = 8.0
 streaming_right_context_secs = 0.32
