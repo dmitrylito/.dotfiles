@@ -5,7 +5,7 @@ vim.opt.guicursor = "n-v-c-t-sm:block,i-ci-ve:ver25,r-cr-o:hor20"
 
 local clipboard_cache = { {}, "v" } -- Initialize empty
 
-if vim.env.SSH_TTY then
+if vim.env.SSH_TTY or vim.env.SSH_CONNECTION or vim.env.TMUX then
   vim.g.clipboard = {
     name = "OSC 52 (Cached)",
     copy = {

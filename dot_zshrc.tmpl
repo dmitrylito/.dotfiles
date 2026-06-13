@@ -111,6 +111,21 @@ fi
 # OpenClaw Completion
 source_if_exists "$HOME/.openclaw/completions/openclaw.zsh"
 
+# OpenClaw CLI auth: load the gateway's secret env (all SECRET_* SecretRef values)
+# only for openclaw invocations, in a subshell so nothing leaks into the shell.
+# This lets the CLI resolve every config SecretRef (gateway password, telegram,
+# ollama, etc.) the same way the gateway service does.
+openclaw() {
+  (
+    set -a
+    [ -r "$HOME/.openclaw/gateway.systemd.env" ] && . "$HOME/.openclaw/gateway.systemd.env"
+    set +a
+    : "${OPENCLAW_GATEWAY_PASSWORD:=${SECRET_GW_PASSWORD:-}}"
+    export OPENCLAW_GATEWAY_PASSWORD
+    command openclaw "$@"
+  )
+}
+
 if [[ -o interactive ]]; then
   eval "$(zoxide init --cmd cd zsh)"
   eval "$(bob complete zsh)"
