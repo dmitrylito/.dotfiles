@@ -2,7 +2,6 @@
   "permissions": {
     "defaultMode": "acceptEdits"
   },
-  "model": "claude-fable-5[1m]",
   "effortLevel": "high",
   "promptSuggestionEnabled": false,
   "awaySummaryEnabled": false,
