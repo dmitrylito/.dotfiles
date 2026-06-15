@@ -52,7 +52,7 @@ ncdu
 networkmanager
 nfs-utils
 nvidia-container-toolkit
-nvidia-open-dkms
+nvidia-open-lts
 openbsd-netcat
 openssh
 packagekit
