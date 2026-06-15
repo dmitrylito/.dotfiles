@@ -4,6 +4,7 @@
   },
   "effortLevel": "high",
   "promptSuggestionEnabled": false,
+  "spinnerTipsEnabled": false,
   "awaySummaryEnabled": false,
   "theme": "auto",
   "editorMode": "vim",
