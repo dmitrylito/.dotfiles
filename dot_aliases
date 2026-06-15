@@ -19,7 +19,7 @@ alias lzp='lazypodman'
 alias cdz="cd ~/.local/share/chezmoi/"
 alias cdp="cd ~/Projects/"
 alias cdpc="cd ~/Projects/cer-backend/"
-alias cdpf="cd ~/Projects/fleetchaser/"
+alias cdpfb="cd ~/Projects/backend/"
 
 # Homebrew update & upgrade (buu)
 if command -v brew >/dev/null; then
