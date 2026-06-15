@@ -34,6 +34,12 @@
     server_pacman_file: "{{ chezmoi_source_dir }}/packages/server/pacman.txt"
     server_aur_file: "{{ chezmoi_source_dir }}/packages/server/aur.txt"
 
+    # archzfs unofficial binary repo (server ZFS — see SECTION 2.5).
+    # Current signing key after the 2024 maintainer change; the old
+    # ...F75D9D76 key is deprecated.
+    archzfs_key: "3A9917BF0DED5C13F69AC68FABEC0A1208037BE9"
+    archzfs_server: "https://github.com/archzfs/archzfs/releases/download/experimental"
+
   tasks:
     # =========================================================================
     # SECTION 1: COMMON LINUX PACKAGES (Applied to Omarchy & server profiles)
@@ -81,6 +87,54 @@
             name: "{{ mac_brew_casks }}"
             state: present
           when: mac_brew_casks | length > 0
+
+    # =========================================================================
+    # SECTION 2.5: ZFS VIA ARCHZFS BINARY REPO (server profile only)
+    # =========================================================================
+    # zfs-dkms/zfs-utils used to be AUR source builds, which failed reliably
+    # only on the headless server (PGP key import under makepkg --noconfirm,
+    # plus DKMS module builds breaking on kernel/header mismatch). The archzfs
+    # repo ships prebuilt, signed binaries instead.
+    #
+    # IMPORTANT: zfs-linux-lts is a precompiled module for the LTS kernel.
+    # The server must BOOT linux-lts (not the regular `linux` kernel) for the
+    # module to load — make linux-lts the default boot entry. archzfs is also
+    # tagged "experimental" upstream and is version-locked to a specific
+    # linux-lts release, so a kernel bump may have to wait for an archzfs build.
+    - name: Set up archzfs binary repo and install ZFS (server)
+      when: (profile | lower) == 'server'
+      block:
+        - name: Check whether the archzfs signing key is already trusted
+          ansible.builtin.command: "pacman-key --list-keys {{ archzfs_key }}"
+          register: archzfs_key_check
+          failed_when: false
+          changed_when: false
+
+        - name: Receive and locally sign the archzfs signing key
+          ansible.builtin.command: "{{ item }}"
+          loop:
+            - "pacman-key --recv-keys {{ archzfs_key }} --keyserver hkps://keyserver.ubuntu.com"
+            - "pacman-key --lsign-key {{ archzfs_key }}"
+          when: archzfs_key_check.rc != 0
+
+        - name: Add the archzfs repository to pacman.conf
+          ansible.builtin.blockinfile:
+            path: /etc/pacman.conf
+            marker: "# {mark} ARCHZFS REPO (managed by chezmoi/ansible)"
+            block: |
+              [archzfs]
+              Server = {{ archzfs_server }}
+
+        - name: Refresh package databases now that archzfs is configured
+          community.general.pacman:
+            update_cache: true
+
+        - name: Install ZFS from archzfs (prebuilt, matched to linux-lts)
+          community.general.pacman:
+            name:
+              - zfs-linux-lts
+              - zfs-utils
+            state: present
 
     # =========================================================================
     # SECTION 3: DYNAMIC PACKAGES (Applied to Omarchy & server profiles)

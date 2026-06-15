@@ -3,5 +3,3 @@
 cockpit-sensors
 sesh-bin
 yay-bin
-zfs-dkms
-zfs-utils

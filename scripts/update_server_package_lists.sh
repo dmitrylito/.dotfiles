@@ -24,16 +24,22 @@ fi
 
 echo "Gathering current system state..."
 
+# ZFS is provisioned separately from the archzfs binary repo in playbook.yml
+# (SECTION 2.5), so keep these packages out of the generated lists to avoid
+# double-management. Once installed from archzfs they are repo (not foreign)
+# packages, so they'd otherwise leak into the native list on regeneration.
+ZFS_EXCLUDE='^(zfs-linux(-lts)?|zfs-utils|zfs-dkms)$'
+
 {
     echo "# Explicitly installed native packages (auto-generated, do not edit by hand)"
     echo "# Regenerate with: scripts/update_server_package_lists.sh"
-    pacman -Qenq | sort
+    pacman -Qenq | grep -vE "$ZFS_EXCLUDE" | sort
 } > "$PACMAN_LIST"
 
 {
     echo "# Explicitly installed AUR/foreign packages (auto-generated, do not edit by hand)"
     echo "# Regenerate with: scripts/update_server_package_lists.sh"
-    pacman -Qemq | sort
+    pacman -Qemq | grep -vE "$ZFS_EXCLUDE" | sort
 } > "$AUR_LIST"
 
 echo "======================================"
