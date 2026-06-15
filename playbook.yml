@@ -156,6 +156,29 @@
             state: present
 
     # =========================================================================
+    # SECTION 2.6: DRIVER MIGRATIONS (server profile only)
+    # =========================================================================
+    # nvidia-open-lts (prebuilt for the LTS kernel) provides NVIDIA-MODULE and
+    # conflicts with the DKMS package it replaces. pacman --noconfirm can't
+    # answer the "Remove nvidia-open-dkms?" prompt, so remove it ourselves
+    # first. Guarded on the DKMS package being present, so it's a one-time
+    # migration and a no-op afterwards.
+    - name: Detect leftover nvidia-open-dkms (server)
+      ansible.builtin.command: pacman -Qq nvidia-open-dkms
+      register: nvidia_dkms_present
+      failed_when: false
+      changed_when: false
+      when: (profile | lower) == 'server'
+
+    - name: Remove nvidia-open-dkms so nvidia-open-lts can take over (server)
+      community.general.pacman:
+        name: nvidia-open-dkms
+        state: absent
+      when:
+        - (profile | lower) == 'server'
+        - nvidia_dkms_present.rc | default(1) == 0
+
+    # =========================================================================
     # SECTION 3: DYNAMIC PACKAGES (Applied to Omarchy & server profiles)
     # =========================================================================
     - name: Load dynamic package lists
