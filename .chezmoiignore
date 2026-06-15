@@ -1,13 +1,19 @@
+# Repo tooling — lives in the chezmoi source dir, never deployed to $HOME
+README.md
+package-lock.json
+playbook.yml
+packages/
+scripts/
+
+# WM / editor state that is machine-specific or generated
 .config/hypr/shaders/
 .config/hypr/monitors.conf
 .config/hypr/envs.conf
 .config/hypr/workspaces.conf
 .config/nvim/lazy-lock.json
-packages-added-aur.txt
-packages-added-pacman.txt
-packages-drivers.txt
-packages-removed.txt
-README.md
+
+# tmux plugins are installed and managed by tpm, not chezmoi
+.config/tmux/plugins/
 
 {{ if and (ne (.profile | lower) "omarchy") (ne (.profile | lower) "mac") }}
 .config/ghostty/

@@ -6,8 +6,8 @@
 set -euo pipefail
 
 CHEZMOI_DIR="$HOME/.local/share/chezmoi"
-PACMAN_LIST="$CHEZMOI_DIR/packages-server-pacman.txt"
-AUR_LIST="$CHEZMOI_DIR/packages-server-aur.txt"
+PACMAN_LIST="$CHEZMOI_DIR/packages/server/pacman.txt"
+AUR_LIST="$CHEZMOI_DIR/packages/server/aur.txt"
 
 if ! command -v pacman >/dev/null 2>&1; then
     echo "❌ pacman not found — this script must run on the Arch server." >&2

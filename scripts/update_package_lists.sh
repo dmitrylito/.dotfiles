@@ -2,8 +2,8 @@
 # Automatically regenerates the package sync lists for Ansible
 
 CHEZMOI_DIR="$HOME/.local/share/chezmoi"
-OMARCHY_BASE="$CHEZMOI_DIR/install/omarchy-base.packages"
-OMARCHY_OTHER="$CHEZMOI_DIR/install/omarchy-other.packages"
+OMARCHY_BASE="$CHEZMOI_DIR/packages/omarchy/base.packages"
+OMARCHY_OTHER="$CHEZMOI_DIR/packages/omarchy/other.packages"
 
 # The regex used to identify hardware-specific packages that shouldn't sync across machines
 DRIVER_REGEX='nvidia|amd|intel|vulkan|apple|macbook|t2|tuxedo|firmware|dkms|kernel|modules|asus|broadcom|thermald|ptl|dfr|vpl|debug'
@@ -28,24 +28,24 @@ expac -Q '%n %p' | tr ' ' '\n' | sort -u > /tmp/current_all_installed_and_provid
 echo "Calculating differences..."
 
 # 3. Generate Drivers List (All explicit packages on THIS system matching the regex)
-cat /tmp/current_native_explicit.txt /tmp/current_aur_explicit.txt | grep -iE "$DRIVER_REGEX" | sort > "$CHEZMOI_DIR/packages-drivers.txt"
+cat /tmp/current_native_explicit.txt /tmp/current_aur_explicit.txt | grep -iE "$DRIVER_REGEX" | sort > "$CHEZMOI_DIR/packages/omarchy/drivers.txt"
 
 # 4. Generate Added Pacman (Native in current, NOT in Omarchy, NOT a driver, NOT a pre-install)
-grep -vxFf /tmp/omarchy_ref.txt /tmp/current_native_explicit.txt | grep -ivE "$DRIVER_REGEX" | grep -ivE "$PREINSTALL_REGEX" | sort > "$CHEZMOI_DIR/packages-added-pacman.txt"
+grep -vxFf /tmp/omarchy_ref.txt /tmp/current_native_explicit.txt | grep -ivE "$DRIVER_REGEX" | grep -ivE "$PREINSTALL_REGEX" | sort > "$CHEZMOI_DIR/packages/omarchy/added-pacman.txt"
 
 # 5. Generate Added AUR (AUR in current, NOT in Omarchy, NOT a driver, NOT a pre-install)
-grep -vxFf /tmp/omarchy_ref.txt /tmp/current_aur_explicit.txt | grep -ivE "$DRIVER_REGEX" | grep -ivE "$PREINSTALL_REGEX" | sort > "$CHEZMOI_DIR/packages-added-aur.txt"
+grep -vxFf /tmp/omarchy_ref.txt /tmp/current_aur_explicit.txt | grep -ivE "$DRIVER_REGEX" | grep -ivE "$PREINSTALL_REGEX" | sort > "$CHEZMOI_DIR/packages/omarchy/added-aur.txt"
 
 # 6. Generate Removed List (Omarchy packages NOT in current or provided by current)
-grep -vxFf /tmp/current_all_installed_and_provides.txt /tmp/omarchy_ref.txt | sort > "$CHEZMOI_DIR/packages-removed.txt"
+grep -vxFf /tmp/current_all_installed_and_provides.txt /tmp/omarchy_ref.txt | sort > "$CHEZMOI_DIR/packages/omarchy/removed.txt"
 
 # Cleanup
 rm /tmp/omarchy_ref.txt /tmp/current_native_explicit.txt /tmp/current_aur_explicit.txt /tmp/current_all_installed_and_provides.txt
 
 echo "======================================"
 echo "✅ Package Lists Updated Successfully!"
-echo "Added Pacman:  $(wc -l < "$CHEZMOI_DIR/packages-added-pacman.txt") packages"
-echo "Added AUR:     $(wc -l < "$CHEZMOI_DIR/packages-added-aur.txt") packages"
-echo "Removed:       $(wc -l < "$CHEZMOI_DIR/packages-removed.txt") packages"
-echo "Local Drivers: $(wc -l < "$CHEZMOI_DIR/packages-drivers.txt") packages"
+echo "Added Pacman:  $(wc -l < "$CHEZMOI_DIR/packages/omarchy/added-pacman.txt") packages"
+echo "Added AUR:     $(wc -l < "$CHEZMOI_DIR/packages/omarchy/added-aur.txt") packages"
+echo "Removed:       $(wc -l < "$CHEZMOI_DIR/packages/omarchy/removed.txt") packages"
+echo "Local Drivers: $(wc -l < "$CHEZMOI_DIR/packages/omarchy/drivers.txt") packages"
 echo "======================================"

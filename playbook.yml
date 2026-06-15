@@ -19,20 +19,20 @@
       - lazygit
 
     # Paths to Mac-specific auto-generated lists
-    mac_brew_file: "{{ chezmoi_source_dir }}/packages-mac-brew.txt"
-    mac_cask_file: "{{ chezmoi_source_dir }}/packages-mac-casks.txt"
-    mac_taps_file: "{{ chezmoi_source_dir }}/packages-mac-taps.txt"
+    mac_brew_file: "{{ chezmoi_source_dir }}/packages/mac/brew.txt"
+    mac_cask_file: "{{ chezmoi_source_dir }}/packages/mac/casks.txt"
+    mac_taps_file: "{{ chezmoi_source_dir }}/packages/mac/taps.txt"
 
     # Paths to Omarchy-specific auto-generated lists (Option A)
-    pacman_file: "{{ chezmoi_source_dir }}/packages-added-pacman.txt"
-    aur_file: "{{ chezmoi_source_dir }}/packages-added-aur.txt"
-    drivers_file: "{{ chezmoi_source_dir }}/packages-drivers.txt"
-    removed_file: "{{ chezmoi_source_dir }}/packages-removed.txt"
+    pacman_file: "{{ chezmoi_source_dir }}/packages/omarchy/added-pacman.txt"
+    aur_file: "{{ chezmoi_source_dir }}/packages/omarchy/added-aur.txt"
+    drivers_file: "{{ chezmoi_source_dir }}/packages/omarchy/drivers.txt"
+    removed_file: "{{ chezmoi_source_dir }}/packages/omarchy/removed.txt"
 
     # Paths to server-specific auto-generated lists
     # (regenerate with scripts/update_server_package_lists.sh on the server)
-    server_pacman_file: "{{ chezmoi_source_dir }}/packages-server-pacman.txt"
-    server_aur_file: "{{ chezmoi_source_dir }}/packages-server-aur.txt"
+    server_pacman_file: "{{ chezmoi_source_dir }}/packages/server/pacman.txt"
+    server_aur_file: "{{ chezmoi_source_dir }}/packages/server/aur.txt"
 
   tasks:
     # =========================================================================
