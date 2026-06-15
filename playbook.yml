@@ -129,6 +129,25 @@
           community.general.pacman:
             update_cache: true
 
+        # One-time migration off the old AUR build. The AUR zfs-dkms pins an
+        # exact zfs-utils version; if archzfs ships an older zfs-utils, pacman
+        # refuses to install the archzfs stack until zfs-dkms is gone. We only
+        # remove the pair when zfs-dkms is still present, so this is a no-op on
+        # every subsequent run (and never touches the archzfs zfs-utils).
+        - name: Detect leftover AUR-built zfs-dkms (server)
+          ansible.builtin.command: pacman -Qq zfs-dkms
+          register: zfs_dkms_present
+          failed_when: false
+          changed_when: false
+
+        - name: Remove the old AUR ZFS stack so archzfs can take over (server)
+          community.general.pacman:
+            name:
+              - zfs-dkms
+              - zfs-utils
+            state: absent
+          when: zfs_dkms_present.rc == 0
+
         - name: Install ZFS from archzfs (prebuilt, matched to linux-lts)
           community.general.pacman:
             name:
