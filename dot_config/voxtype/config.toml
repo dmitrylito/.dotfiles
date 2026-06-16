@@ -136,7 +136,7 @@ model = "parakeet-unified-en-0.6b"
 on_demand_loading = false
 streaming = true
 streaming_chunk_secs = 0.16
-streaming_left_context_secs = 2.0
+streaming_left_context_secs = 1.0
 streaming_right_context_secs = 0.16
 
 [osd]
