@@ -132,12 +132,17 @@ show_engine_icon = false
 # replacements = { "hyperwhisper" = "hyprwhspr" }
 
 [parakeet]
-model = "parakeet-unified-en-0.6b"
-on_demand_loading = false
+model = "parakeet-unified-en-0.6b" # only streaming-capable Parakeet model (int8 is batch-only)
+on_demand_loading = false          # keep model resident for low latency
 streaming = true
-streaming_chunk_secs = 0.64
-streaming_left_context_secs = 2.0
-streaming_right_context_secs = 0.16
+# Encoder frame = 80 ms (subsampling_factor = 8) -> keep values as multiples of 0.08.
+# Floor latency ~= chunk + right + one forward pass.
+# TODO(human): set the three streaming windows. Recommended (floor ~0.56 s):
+#   chunk 0.48 (6 frames), left 1.6, right 0.08
+# Aggressive (floor ~0.32 s, test accuracy): chunk 0.32, left 1.28, right 0.0
+streaming_chunk_secs = 0.48
+streaming_left_context_secs = 1.28
+streaming_right_context_secs = 0.08
 
 [osd]
 enabled = false
