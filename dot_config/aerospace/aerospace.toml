@@ -103,8 +103,8 @@ outer.right = 8
 
 # Main bindings using the 'cmd' key (aligned with the Super key in Hyprland)
 
-# Launch Terminal
-cmd-enter = 'exec-and-forget open -n /Applications/Ghostty.app'
+# Launch Terminal (focus existing Ghostty window, else launch it)
+cmd-semicolon = 'exec-and-forget wid=$(aerospace list-windows --all --format "%{window-id}|%{app-bundle-id}" | grep "com.mitchellh.ghostty" | head -1 | cut -d"|" -f1 | tr -d " "); if [ -n "$wid" ]; then aerospace focus --window-id "$wid"; else open -a Ghostty; fi'
 
 # Layout changes
 cmd-slash = 'layout tiles horizontal vertical'
