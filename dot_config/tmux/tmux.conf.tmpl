@@ -150,7 +150,11 @@ set -g @plugin 'tmux-plugins/tmux-continuum'
 set -g @plugin 'alexwforsythe/tmux-which-key'
 
 # Plugin settings
-set -g @tmux-which-key-xdg-enable 1
+# NOTE: disable XDG on macOS only. The plugin's XDG path code uses
+# `realpath --relative-to` (GNU coreutils only); macOS BSD realpath fails
+# under `set -e`, aborting the plugin so tpm reports "returned 1". Linux
+# ships GNU coreutils, so XDG works fine there.
+set -g @tmux-which-key-xdg-enable {{ if eq (.profile | lower) "mac" }}0{{ else }}1{{ end }}
 set -g @suspend_suspended_options "status::off,pane-border-status::off"
 set -g @continuum-restore 'on'
 set -g @resurrect-capture-pane-contents 'on'
