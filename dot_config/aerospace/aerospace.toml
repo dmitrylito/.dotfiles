@@ -68,11 +68,11 @@ exec-on-workspace-change = [
 3 = ['main', 'secondary']
 4 = ['main', 'secondary']
 5 = ['main', 'secondary']
-6 = ['built-in', 'main']
-7 = ['built-in', 'main']
-8 = ['built-in', 'main']
-9 = ['built-in', 'main']
-10 = ['built-in', 'main']
+6 = ['secondary', 'built-in', 'main']
+7 = ['secondary', 'built-in', 'main']
+8 = ['secondary', 'built-in', 'main']
+9 = ['built-in', 'secondary', 'main']
+10 = ['built-in', 'secondary', 'main']
 
 # Possible values: (qwerty|dvorak|colemak)
 # See https://nikitabobko.github.io/AeroSpace/guide#key-mapping
