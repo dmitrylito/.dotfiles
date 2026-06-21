@@ -24,6 +24,11 @@ set -g focus-events on
 # Reload config
 bind q source-file ~/.config/tmux/tmux.conf \; display "Reloaded!"
 
+# Recover a pane stuck in mouse-reporting mode (e.g. after a dropped SSH
+# session leaks mouse bytes as garbage on the prompt). Aborts the current
+# line, then disables all mouse-tracking modes.
+bind M send-keys C-c "printf '\\033[?1000l\\033[?1002l\\033[?1003l\\033[?1006l\\033[?1015l'; clear" Enter \; display "mouse reset"
+
 bind g display-popup -d "#{pane_current_path}" -E -w 90% -h 90% "lazygit"
 
 # Vi mode for copy
