@@ -1,0 +1,16 @@
+[Unit]
+Description=dotool daemon (persistent uinput device for fast typing)
+Documentation=https://sr.ht/~geb/dotool/
+PartOf=graphical-session.target
+After=graphical-session.target
+# voxtype's dotool driver writes to this daemon's pipe; have it up first.
+Before=voxtype.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/dotoold
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

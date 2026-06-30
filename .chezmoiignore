@@ -24,6 +24,7 @@ scripts/
 .config/hypr/
 .config/waybar/
 .config/swaync/
+.config/systemd/
 {{ end }}
 
 {{ if ne (.profile | lower) "mac"}}

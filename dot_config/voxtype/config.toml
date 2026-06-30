@@ -93,8 +93,11 @@ fallback_to_clipboard = true
 # 0 = fastest possible, increase if characters are dropped
 type_delay_ms = 0
 
-# Delay before typing starts (ms), helps prevent first character drop
-pre_type_delay_ms = 10
+# Delay before typing starts (ms), helps prevent first character drop.
+# Safe at 0 because the persistent dotoold daemon keeps one uinput device alive,
+# so there's no per-output device-settle race to guard against. Bump to ~5 only
+# if you ever see the first character dropped.
+pre_type_delay_ms = 0
 auto_submit = false
 shift_enter_newlines = false
 
@@ -130,16 +133,23 @@ show_engine_icon = false
 # replacements = { "hyperwhisper" = "hyprwhspr" }
 
 [parakeet]
-model = "parakeet-unified-en-0.6b" # only streaming-capable Parakeet model (int8 is batch-only)
-on_demand_loading = false          # keep model resident for low latency
+# only streaming-capable Parakeet model (int8 is batch-only)
+model = "parakeet-unified-en-0.6b"
+# keep model resident for low latency
+on_demand_loading = false
 streaming = true
 # Encoder frame = 80 ms (subsampling_factor = 8) -> keep values as multiples of 0.08.
-# Floor latency ~= chunk + right + one forward pass = 0.48 + 0.16 = 0.64 s.
-# chunk kept low for latency; left/right restored so word onsets aren't clipped.
-# left context is free on latency (compute only) -> keep it generous.
-streaming_chunk_secs = 0.48
-streaming_left_context_secs = 2.0
-streaming_right_context_secs = 0.16
+# Floor latency ~= chunk + right + one forward pass = 0.16 + 0.80 = ~0.96 s.
+# CHUNK is the latency-only knob: it's how much new audio is swallowed per inference
+# step, NOT the model's context. Every output frame still sees the full left+right
+# window regardless of chunk, so shrinking it lowers latency with ZERO accuracy or
+# punctuation cost -- it just runs more forward passes (cheap on this GPU).
+# RIGHT context = the lookahead that drives accuracy + punctuation -> keep at 0.80.
+#   0.80 s = 10 frames; ~1.04 (13 frames) is the practical ceiling for this model.
+# LEFT context is ~free on latency (compute only) -> 5.6 s = 70 frames.
+streaming_chunk_secs = 0.16
+streaming_left_context_secs = 5.6
+streaming_right_context_secs = 0.80
 
 [osd]
 enabled = false
