@@ -26,6 +26,7 @@ scripts/
 .config/swaync/
 .config/systemd/
 .local/share/applications/
+.XCompose
 {{ end }}
 
 {{ if ne (.profile | lower) "mac"}}
