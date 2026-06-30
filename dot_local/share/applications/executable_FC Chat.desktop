@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=FC Chat
+Comment=FC Chat
+Exec=omarchy-launch-webapp "https://console.fleetchaser.com/chats" --profile-directory="Profile 3"
+Terminal=false
+Type=Application
+Icon=/home/dmitrylito/.local/share/applications/icons/FC Chat.png
+StartupNotify=true

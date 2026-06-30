@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=FC Gmail
+Comment=FC Gmail
+Exec=omarchy-launch-webapp "https://mail.google.com/mail/u/0/#inbox" --profile-directory="Profile 1"
+Terminal=false
+Type=Application
+Icon=/home/dmitrylito/.local/share/applications/icons/FC Gmail.png
+StartupNotify=true

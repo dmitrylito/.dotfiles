@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Linear
+Comment=Linear
+Exec=omarchy-launch-webapp "https://linear.app/fleetchaser/agent" --profile-directory="Profile 1"
+Terminal=false
+Type=Application
+Icon=/home/dmitrylito/.local/share/applications/icons/Linear.png
+StartupNotify=true

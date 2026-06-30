@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Claude
+Comment=Claude
+Exec=xdg-terminal-exec --app-id=TUI.tile -e sh -c "cd ~/FleetChaser && exec tmux new-session -A -s Claude claude"
+Terminal=false
+Type=Application
+Icon=/home/dmitrylito/.local/share/applications/icons/Claude.png
+StartupNotify=true

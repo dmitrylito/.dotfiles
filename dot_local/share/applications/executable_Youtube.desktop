@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Youtube
+Comment=Youtube
+Exec=omarchy-launch-webapp "https://youtube.com" --profile-directory="Default"
+Terminal=false
+Type=Application
+Icon=/home/dmitrylito/.local/share/applications/icons/Youtube.png
+StartupNotify=true
