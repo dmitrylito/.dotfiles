@@ -25,6 +25,7 @@ scripts/
 .config/waybar/
 .config/swaync/
 .config/systemd/
+.local/share/applications/
 {{ end }}
 
 {{ if ne (.profile | lower) "mac"}}
