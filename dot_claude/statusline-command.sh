@@ -4,6 +4,8 @@ input=$(cat)
 model=$(echo "$input" | jq -r '.model.display_name // empty')
 # Drop the trailing context-window note, e.g. "Claude Opus 4.8 (1M context)" -> "Claude Opus 4.8"
 model="${model%% (*}"
+ctx_used=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
+[ -n "$ctx_used" ] && model="$model ($(printf '%.0f' "$ctx_used")%)"
 five=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
 week=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
 
