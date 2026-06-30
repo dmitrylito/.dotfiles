@@ -85,7 +85,7 @@ mode = "type"
 
 # Preferred driver order: prioritize dotool (via persistent dotoold daemon)
 # to avoid Wayland device-churn and focus jitter under streaming mode.
-driver_order = ["dotool", "clipboard"]
+driver_order = ["wtype", "dotool", "clipboard"]
 
 
 # Fall back to clipboard if typing fails
