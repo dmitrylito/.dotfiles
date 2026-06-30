@@ -83,9 +83,7 @@ mode = "type"
 # pre_output_command = "hyprctl dispatch submap voxtype_suppress"
 # post_output_command = "hyprctl dispatch submap reset"
 
-# Preferred driver order: prioritize dotool (via persistent dotoold daemon)
-# to avoid Wayland device-churn and focus jitter under streaming mode.
-driver_order = ["wtype", "dotool", "clipboard"]
+driver_order = ["dotool", "clipboard"]
 
 
 # Fall back to clipboard if typing fails
@@ -187,3 +185,5 @@ model = ""
 mode = "local"
 language = "auto"
 translate = false
+# Preferred driver order: prioritize dotool (via persistent dotoold daemon)
+# to avoid Wayland device-churn and focus jitter under streaming mode.
