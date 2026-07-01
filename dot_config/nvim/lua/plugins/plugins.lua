@@ -98,11 +98,6 @@ return {
     "folke/sidekick.nvim",
     opts = {
       cli = {
-        tools = {
-          antigravity = {
-            cmd = { "agy" },
-          },
-        },
         win = {
           config = function(terminal) end,
         },
@@ -110,6 +105,12 @@ return {
           backend = "tmux",
           enabled = true,
           dump = 5000, -- Increase scrollback dump for better history
+        },
+        tools = {
+          antigravity = {
+            cmd = { "agy" },
+            is_proc = "\\<agy\\>",
+          },
         },
       },
     },

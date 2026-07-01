@@ -1,7 +1,7 @@
 # vim: set filetype=tmux:
 # Prefix
 set -g prefix C-Space
-set -g prefix2 C-b
+set -g prefix2 C-b -2
 bind C-Space send-prefix
 
 # Search ergonomics
@@ -99,10 +99,7 @@ set -g base-index 1
 setw -g pane-base-index 1
 set -g renumber-windows on
 set -g history-limit 50000
-set -g escape-time 0
-set -g focus-events on
 set -g set-clipboard on
-set -g allow-passthrough on
 # Ensure tmux forwards OSC 52 to its parent terminal (Ghostty / outer tmux),
 # so yanks chain all the way up even through a nested tmux.
 set -ag terminal-features ",tmux-256color:clipboard"
@@ -112,7 +109,6 @@ setw -g aggressive-resize on
 set -g detach-on-destroy off
 set -g extended-keys on
 set -g extended-keys-format csi-u
-set -sg escape-time 10
 setw -g automatic-rename off
 setw -g allow-rename off
 
@@ -162,10 +158,14 @@ set -g @plugin 'alexwforsythe/tmux-which-key'
 # under `set -e`, aborting the plugin so tpm reports "returned 1". Linux
 # ships GNU coreutils, so XDG works fine there.
 set -g @tmux-which-key-xdg-enable {{ if eq (.profile | lower) "mac" }}0{{ else }}1{{ end }}
-set -g @suspend_suspended_options "status::off,pane-border-status::off"
+set -g @suspend_suspended_options "status::off,pane-border-status::off,window-style::bg=brightblack,window-active-style::bg=brightblack"
 set -g @continuum-restore 'on'
+set -g @continuum-save-interval '5'
+set -g @continuum-boot 'on'
+set -g @continuum-boot-options 'ghostty'
 set -g @resurrect-capture-pane-contents 'on'
 set -g @resurrect-processes 'ssh'
+set -g @resurrect-strategy-nvim 'session'
 
 
 # Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
