@@ -18,26 +18,5 @@
   "terminalProgressBarEnabled": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "hooks": {
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "MSG=$(jq -r '.message // \"Claude needs your attention\"'); notify-send --urgency=critical --app-name='Claude Code' 'Claude Code' \"$MSG\""
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "notify-send --urgency=normal --app-name='Claude Code' 'Claude Code' 'Task complete'"
-          }
-        ]
-      }
-    ]
-  }
+  "preferredNotifChannel": "ghostty"
 }
