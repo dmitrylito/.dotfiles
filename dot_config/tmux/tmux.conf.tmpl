@@ -18,6 +18,7 @@ set -ag terminal-overrides ",xterm-256color:Tc"
 # Eliminate escape delay (critical for TUI apps)
 set -sg escape-time 0
 set -g focus-events on
+set -g allow-passthrough on
 
 # Optional later: synchronize panes
 # bind S setw synchronize-panes
