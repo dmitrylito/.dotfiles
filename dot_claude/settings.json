@@ -1,9 +1,9 @@
 {
-  "permissions": {
-    "defaultMode": "acceptEdits"
-  },
   "env": {
     "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1"
+  },
+  "permissions": {
+    "defaultMode": "auto"
   },
   "statusLine": {
     "type": "command",
@@ -14,9 +14,9 @@
   "awaySummaryEnabled": false,
   "theme": "auto",
   "editorMode": "vim",
+  "preferredNotifChannel": "ghostty",
   "autoCompactEnabled": true,
   "terminalProgressBarEnabled": true,
   "inputNeededNotifEnabled": true,
-  "agentPushNotifEnabled": true,
-  "preferredNotifChannel": "ghostty"
+  "agentPushNotifEnabled": true
 }
