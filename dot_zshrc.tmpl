@@ -128,6 +128,11 @@ openclaw() {
 
 if [[ -o interactive ]]; then
   eval "$(zoxide init --cmd cd zsh)"
+  # Try a real cd first (handles protected/first-visit paths and cd flags);
+  # fall back to zoxide's smart jump only when a normal cd fails.
+  cd() {
+    builtin cd "$@" 2>/dev/null || __zoxide_z "$@"
+  }
   eval "$(bob complete zsh)"
   eval "$(mise activate zsh)"
   eval "$(mise completion zsh)"

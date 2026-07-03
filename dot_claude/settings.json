@@ -17,12 +17,13 @@
     ]
   },
   "effortLevel": "high",
+  "promptSuggestionEnabled": false,
   "awaySummaryEnabled": false,
   "theme": "auto",
   "editorMode": "vim",
   "preferredNotifChannel": "ghostty",
   "autoCompactEnabled": true,
-  "terminalProgressBarEnabled": true,
+  "terminalProgressBarEnabled": false,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true
 }
