@@ -6,6 +6,7 @@ cmake
 cpio
 cuda
 cudnn
+direnv
 efibootmgr
 fwupd
 gamescope
@@ -14,13 +15,18 @@ ghostty
 gimp
 git-delta
 go
+i2c-tools
+migraphx
 neovim
+nvtop
 nwg-displays
 omarchy-keyring
 omazed
 openai-codex-bin
+openrgb
 pesign
 pre-commit
+rclone
 sbctl
 solaar
 steam

@@ -7,6 +7,7 @@ gogcli
 google-cloud-cli
 google-cloud-cli-gsutil
 hyprmon-bin
+llama.cpp-cuda
 sesh-bin
 zsa-keymapp-bin
 zsh-uv-env-git
