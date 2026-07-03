@@ -10,6 +10,12 @@
     "command": "bash ~/.claude/statusline-command.sh"
   },
   "spinnerTipsEnabled": false,
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "Working"
+    ]
+  },
   "effortLevel": "high",
   "awaySummaryEnabled": false,
   "theme": "auto",
