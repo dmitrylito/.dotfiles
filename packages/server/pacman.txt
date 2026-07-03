@@ -26,10 +26,14 @@ efibootmgr
 ethtool
 eza
 fd
+ffmpeg
 firewalld
 fzf
 gcc
+gdal
+geos
 ghostscript
+ghostty-terminfo
 git
 git-delta
 go
@@ -38,6 +42,7 @@ intel-ucode
 jq
 lazydocker
 lazygit
+libvips
 linux
 linux-firmware
 linux-headers
@@ -53,6 +58,9 @@ networkmanager
 nfs-utils
 nvidia-container-toolkit
 nvidia-open-lts
+nvtop
+ollama
+ollama-cuda
 openbsd-netcat
 openssh
 packagekit
