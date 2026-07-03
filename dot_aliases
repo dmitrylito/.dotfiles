@@ -20,6 +20,8 @@ alias cdz="cd ~/.local/share/chezmoi/"
 alias cdp="cd ~/Projects/"
 alias cdpc="cd ~/Projects/cer-backend/"
 alias cdpfb="cd ~/Projects/backend/"
+alias cs="claude --model sonnet"
+alias co="claude --model opus"
 
 # Homebrew update & upgrade (buu)
 if command -v brew >/dev/null; then

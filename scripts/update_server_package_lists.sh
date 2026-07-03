@@ -15,8 +15,12 @@ if ! command -v pacman >/dev/null 2>&1; then
 fi
 
 # Refuse to run on the wrong machine: running this on the Omarchy desktop
-# would overwrite the server lists with desktop packages.
+# would overwrite the server lists with desktop packages. Fall back to the
+# rendered chezmoi config when chezmoi/jq aren't on PATH (pacman hook context).
 profile="$(chezmoi data 2>/dev/null | jq -r '.profile // empty' | tr '[:upper:]' '[:lower:]')"
+if [ -z "$profile" ]; then
+    profile="$(grep -oP '^\s*profile\s*=\s*"\K[^"]+' "$HOME/.config/chezmoi/chezmoi.toml" 2>/dev/null | head -1)"
+fi
 if [ "$profile" != "server" ]; then
     echo "❌ Refusing to run: chezmoi profile is '${profile:-unset}', not 'server'." >&2
     exit 1

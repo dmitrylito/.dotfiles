@@ -5,3 +5,9 @@
 [git]
     autoCommit = true
     autoPush = true
+
+# chezmoi appends the destination/source/target files automatically when
+# args contains no template placeholders
+[merge]
+    command = "nvim"
+    args = ["-d"]

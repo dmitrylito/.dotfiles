@@ -215,8 +215,27 @@
           when: (pacman_packages + driver_packages) | length > 0
 
         # 3.2 Bootstrap yay & Install AUR Packages
-        - name: Handle AUR packages
+        #
+        # Missing packages are computed locally against `pacman -Qq` so a
+        # fully-synced machine skips this entire block (no yay invocations,
+        # no AUR network queries, no sudoers churn). Everything missing is
+        # then installed in ONE yay run with --batchinstall so ALPM hooks
+        # (MIME/desktop/icon-cache database updates) fire once per run
+        # instead of once per package — this was the big AUR slowdown.
+        - name: List installed packages
+          ansible.builtin.command: pacman -Qq
+          register: installed_packages
+          changed_when: false
           when: aur_packages | length > 0
+
+        # yay-bin bootstraps itself below; feeding it back into yay is a no-op
+        - name: Determine missing AUR packages
+          ansible.builtin.set_fact:
+            aur_missing_packages: "{{ aur_packages | reject('equalto', 'yay-bin') | list | difference(installed_packages.stdout_lines) }}"
+          when: aur_packages | length > 0
+
+        - name: Install missing AUR packages
+          when: aur_missing_packages | default([]) | length > 0
           block:
             - name: Ensure base-devel is installed (required for makepkg)
               community.general.pacman:
@@ -224,14 +243,14 @@
                 state: present
 
             - name: Allow non-root user to run sudo without password temporarily
-              ansible.builtin.lineinfile:
-                path: /etc/sudoers
-                state: present
-                line: "{{ non_root_user }} ALL=(ALL) NOPASSWD: ALL"
+              ansible.builtin.copy:
+                dest: /etc/sudoers.d/99-chezmoi-aur-temp
+                content: "{{ non_root_user }} ALL=(ALL) NOPASSWD: ALL\n"
+                mode: '0440'
                 validate: '/usr/sbin/visudo -cf %s'
 
             - name: Check if yay is installed
-              ansible.builtin.command: which yay
+              ansible.builtin.command: yay --version
               register: yay_check
               failed_when: false
               changed_when: false
@@ -260,11 +279,6 @@
                     path: "/tmp/yay-bin"
                     state: absent
 
-            # yay-bin is bootstrapped above; feeding it back into yay is a no-op
-            - name: Filter packages yay should not install onto itself
-              ansible.builtin.set_fact:
-                aur_install_packages: "{{ aur_packages | reject('equalto', 'yay-bin') | list }}"
-
             # Signed AUR sources (e.g. zfs-dkms) need their PGP keys fetched at
             # build time; the default keyserver can stall dirmngr indefinitely.
             - name: Ensure ~/.gnupg exists for the build user
@@ -284,26 +298,22 @@
               become: true
               become_user: "{{ non_root_user }}"
 
-            # One package per task so progress is visible, with a hard timeout
-            # so a stalled build/keyserver can never hang the playbook forever.
-            - name: Install AUR packages
+            # A hard async timeout so a stalled build/keyserver can never
+            # hang the playbook forever.
+            - name: Install AUR packages ({{ aur_missing_packages | join(', ') }})
               ansible.builtin.command:
-                cmd: "yay -S --needed --noconfirm --noprogressbar {{ item }}"
-              loop: "{{ aur_install_packages }}"
+                cmd: "yay -S --needed --noconfirm --noprogressbar --batchinstall {{ aur_missing_packages | join(' ') }}"
               become: true
               become_user: "{{ non_root_user }}"
-              async: 3600
+              async: 7200
               poll: 15
-              register: aur_result
-              changed_when: "'Installing' in aur_result.stdout or 'Upgrading' in aur_result.stdout"
+              changed_when: true
 
           always:
             - name: Revoke passwordless sudo
-              ansible.builtin.lineinfile:
-                path: /etc/sudoers
+              ansible.builtin.file:
+                path: /etc/sudoers.d/99-chezmoi-aur-temp
                 state: absent
-                line: "{{ non_root_user }} ALL=(ALL) NOPASSWD: ALL"
-                validate: '/usr/sbin/visudo -cf %s'
 
         # 3.3 Remove Unwanted Packages
         - name: Remove unwanted packages
@@ -315,40 +325,40 @@
     # =========================================================================
     # SECTION 4: OH MY ZSH AND CUSTOM PLUGINS (All Profiles)
     # =========================================================================
-    - name: Download Oh My Zsh install script
-      ansible.builtin.get_url:
-        url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-        dest: /tmp/install_omz.sh
-        mode: '0755'
-      become: "{{ true if (profile | lower) != 'mac' else false }}"
-      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+    - name: Check whether Oh My Zsh is already installed
+      ansible.builtin.stat:
+        path: "~{{ non_root_user | default(ansible_user_id) }}/.oh-my-zsh/oh-my-zsh.sh"
+      register: omz_check
 
-    - name: Run Oh My Zsh install script
-      ansible.builtin.shell: |
-        export HOME=$(getent passwd {{ non_root_user | default(ansible_user_id) }} | cut -d: -f6)
-        export ZSH="$HOME/.oh-my-zsh"
-        export KEEP_ZSHRC=yes
-        
-        if [ -f "$ZSH/oh-my-zsh.sh" ]; then
-          exit 0
-        fi
-        
-        if [ -d "$ZSH" ]; then
-          mv "$ZSH" "${ZSH}.chezmoi_bak"
-        fi
-        
-        /tmp/install_omz.sh --unattended
-        
-        if [ -d "${ZSH}.chezmoi_bak" ]; then
-          rsync -a "${ZSH}.chezmoi_bak/" "$ZSH/"
-          rm -rf "${ZSH}.chezmoi_bak"
-        fi
-        
-        echo "CHANGED"
-      register: omz_install
-      changed_when: "'CHANGED' in omz_install.stdout"
-      become: "{{ true if (profile | lower) != 'mac' else false }}"
-      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+    - name: Install Oh My Zsh
+      when: not omz_check.stat.exists
+      block:
+        - name: Download Oh My Zsh install script
+          ansible.builtin.get_url:
+            url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+            dest: /tmp/install_omz.sh
+            mode: '0755'
+          become: "{{ true if (profile | lower) != 'mac' else false }}"
+          become_user: "{{ non_root_user | default(ansible_user_id) }}"
+
+        - name: Run Oh My Zsh install script
+          ansible.builtin.shell: |
+            export HOME=$(getent passwd {{ non_root_user | default(ansible_user_id) }} | cut -d: -f6)
+            export ZSH="$HOME/.oh-my-zsh"
+            export KEEP_ZSHRC=yes
+
+            if [ -d "$ZSH" ]; then
+              mv "$ZSH" "${ZSH}.chezmoi_bak"
+            fi
+
+            /tmp/install_omz.sh --unattended
+
+            if [ -d "${ZSH}.chezmoi_bak" ]; then
+              rsync -a "${ZSH}.chezmoi_bak/" "$ZSH/"
+              rm -rf "${ZSH}.chezmoi_bak"
+            fi
+          become: "{{ true if (profile | lower) != 'mac' else false }}"
+          become_user: "{{ non_root_user | default(ansible_user_id) }}"
 
     - name: Ensure Oh My Zsh custom plugins are installed from source
       ansible.builtin.git:
@@ -414,3 +424,37 @@
         creates: "~{{ non_root_user | default(ansible_user_id) }}/.local/bin/codex"
       become: "{{ true if (profile | lower) != 'mac' else false }}"
       become_user: "{{ non_root_user | default(ansible_user_id) }}"
+
+    # =========================================================================
+    # SECTION 7: PACKAGE LIST AUTO-SYNC (Omarchy & server profiles)
+    # =========================================================================
+    # A pacman PostTransaction hook that regenerates this repo's package
+    # lists and commits them whenever packages are installed or removed
+    # manually — no more remembering to run scripts/update_*_package_lists.sh.
+    # The hook drops privileges back to the login user and delegates to
+    # scripts/sync-package-lists.sh in the chezmoi source dir.
+    - name: Install package-list auto-sync pacman hook
+      when: (profile | lower) in ['omarchy', 'server']
+      block:
+        - name: Ensure the pacman hook directory exists
+          ansible.builtin.file:
+            path: /etc/pacman.d/hooks
+            state: directory
+            mode: '0755'
+
+        # zz- prefix so it sorts (and therefore runs) after other hooks
+        - name: Install the package-list sync hook
+          ansible.builtin.copy:
+            dest: /etc/pacman.d/hooks/zz-chezmoi-package-sync.hook
+            mode: '0644'
+            content: |
+              [Trigger]
+              Operation = Install
+              Operation = Remove
+              Type = Package
+              Target = *
+
+              [Action]
+              Description = Syncing chezmoi package lists...
+              When = PostTransaction
+              Exec = /usr/bin/runuser -u {{ non_root_user }} -- {{ chezmoi_source_dir }}/scripts/sync-package-lists.sh
