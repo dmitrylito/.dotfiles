@@ -1,22 +1,18 @@
 # vim: set filetype=zsh:
-# Zsh interactive configuration
-# .zshrc is sourced for interactive shells.
 
 if command -v tmux >/dev/null 2>&1 && [ -z "$TMUX" ]; then
   tmux -u attach-session -d || tmux -u new-session
 fi
-# Oh My Zsh settings
+
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
 zstyle ':omz:update' mode auto
 
-# Completion cache (must be set before oh-my-zsh runs compinit)
 ZCOMPDUMP_DIR="$XDG_CACHE_HOME/zsh"
 mkdir -p "$ZCOMPDUMP_DIR"
 export ZSH_COMPDUMP="$ZCOMPDUMP_DIR/.zcompdump-${HOST:-local}-${ZSH_VERSION}"
 zstyle ':completion:*' menu select
 
-# Ensure local and site completion directories exist and are in fpath before compinit
 mkdir -p "$HOME/.zsh/completions" "$HOME/.local/share/zsh/site-functions"
 fpath=(
   $HOME/.zsh/completions
@@ -26,10 +22,8 @@ fpath=(
   $fpath
 )
 
-# Plugins array
 plugins=(
   git
-  dotenv
   github
   archlinux
   tailscale
@@ -48,41 +42,34 @@ plugins=(
   zsh-syntax-highlighting
 )
 
-# Load Oh My Zsh
 source "$ZSH/oh-my-zsh.sh"
 
-# Options
-setopt AUTO_CD              # Change to a directory by typing its name
-setopt SHARE_HISTORY        # Share command history across sessions
-setopt HIST_IGNORE_DUPS     # Ignore duplicate entries in history
-setopt HIST_IGNORE_ALL_DUPS # Remove older duplicates from history
-setopt HIST_FIND_NO_DUPS    # Do not display duplicates in history search
-setopt INC_APPEND_HISTORY   # Append to history file immediately
-setopt GLOB_DOTS            # Include dotfiles in filename generation
-setopt PROMPT_SUBST         # Enable prompt substitution
-setopt EXTENDED_GLOB        # Enable extended globbing
+setopt AUTO_CD
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_FIND_NO_DUPS
+setopt INC_APPEND_HISTORY
+setopt GLOB_DOTS
+setopt PROMPT_SUBST
+setopt EXTENDED_GLOB
 
-# --- Plugins ---
-
-# Helper to source plugins safely
 source_if_exists() {
   [[ -f "$1" ]] && source "$1"
 }
-# fc-cli autocompletion
+
 source_if_exists "$HOME/Projects/fc-cli/zsh_completion.sh"
 
-# fzf (zsh)
 source_if_exists "$HOME/.fzf.zsh" ||
   source_if_exists "/opt/homebrew/opt/fzf/shell/key-bindings.zsh" ||
   source_if_exists "/usr/share/fzf/key-bindings.zsh"
 source_if_exists "/opt/homebrew/opt/fzf/shell/completion.zsh" ||
   source_if_exists "/usr/share/fzf/completion.zsh"
 
-# Override zsh-autocomplete's Up Arrow with fzf history search
 bindkey '^[[A' fzf-history-widget
 bindkey '^[OA' fzf-history-widget
 
-function sesh-sessions() {
+sesh-sessions() {
   {
     exec </dev/tty
     exec <&1
@@ -93,28 +80,19 @@ function sesh-sessions() {
     sesh connect $session
   }
 }
-
 zle -N sesh-sessions
 bindkey -M vicmd '\es' sesh-sessions
 bindkey -M viins '\es' sesh-sessions
 
-# --- Aliases ---
 source_if_exists "$HOME/.aliases"
 
-# --- Final Initialization ---
-
-# Starship prompt
 if command -v starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
 fi
 
-# OpenClaw Completion
 source_if_exists "$HOME/.openclaw/completions/openclaw.zsh"
 
-# OpenClaw CLI auth: load the gateway's secret env (all SECRET_* SecretRef values)
-# only for openclaw invocations, in a subshell so nothing leaks into the shell.
-# This lets the CLI resolve every config SecretRef (gateway password, telegram,
-# ollama, etc.) the same way the gateway service does.
+# Subshell keeps gateway secrets scoped to the openclaw call; nothing leaks into the shell.
 openclaw() {
   (
     set -a
@@ -128,8 +106,6 @@ openclaw() {
 
 if [[ -o interactive ]]; then
   eval "$(zoxide init --cmd cd zsh)"
-  # Try a real cd first (handles protected/first-visit paths and cd flags);
-  # fall back to zoxide's smart jump only when a normal cd fails.
   cd() {
     builtin cd "$@" 2>/dev/null || __zoxide_z "$@"
   }
@@ -141,38 +117,37 @@ if [[ -o interactive ]]; then
   eval "$(direnv hook zsh)"
 fi
 
-# Omarchy environment, aliases, and functions
-{{ if eq .profile "omarchy" }}
-
-# Omarchy environment, aliases, and functions
+{{- if eq .profile "omarchy" }}
 export OMARCHY_PATH="${OMARCHY_PATH:-$HOME/.local/share/omarchy}"
 if [[ ":$PATH:" != *":$OMARCHY_PATH/bin:"* ]]; then
   export PATH="$OMARCHY_PATH/bin:$PATH"
 fi
+source_if_exists "$OMARCHY_PATH/default/bash/envs"
+source_if_exists "$HOME/google-cloud-sdk/completion.zsh.inc"
 
-# Source Omarchy's core environment and aliases (most are shell-agnostic)
-[[ -f "$OMARCHY_PATH/default/bash/envs" ]] && source "$OMARCHY_PATH/default/bash/envs"
-# [[ -f "$OMARCHY_PATH/default/bash/aliases" ]] && source "$OMARCHY_PATH/default/bash/aliases"
+_sync_hypr_signature() {
+  if command -v systemctl >/dev/null 2>&1; then
+    local _sys_sig
+    _sys_sig=$(systemctl --user show-environment 2>/dev/null | awk -F= '$1 == "HYPRLAND_INSTANCE_SIGNATURE" {print $2}')
+    if [[ -n "$_sys_sig" && "$HYPRLAND_INSTANCE_SIGNATURE" != "$_sys_sig" ]]; then
+      export HYPRLAND_INSTANCE_SIGNATURE="$_sys_sig"
+    fi
+  fi
+}
+_sync_hypr_signature
 
-# Source functions
-# if [[ -d "$OMARCHY_PATH/default/bash/fns" ]]; then
-#   for f in "$OMARCHY_PATH"/default/bash/fns/*(.N); do
-#     source "$f"
-#   done
-# fi
+hyprctl() {
+  _sync_hypr_signature
+  command hyprctl "$@"
+}
 {{- end }}
 
-# macOS-specific configuration
-{{if eq .profile "mac" }}
-
+{{- if eq .profile "mac" }}
 export PATH="$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
-
 source_if_exists "${HOME}/.iterm2_shell_integration.zsh"
-
 if [[ -d /opt/homebrew/share/zsh/site-functions ]]; then
   fpath=(/opt/homebrew/share/zsh/site-functions $fpath)
 fi
 source_if_exists "/opt/homebrew/share/google-cloud-sdk/path.zsh.inc"
 source_if_exists "/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc"
-
 {{- end }}

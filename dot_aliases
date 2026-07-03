@@ -1,8 +1,8 @@
 # vim: set filetype=zsh:
-# --- Aliases ---
 alias n="nvim"
 alias lg="lazygit"
 alias lzd="lazydocker"
+alias lzp='lazypodman'
 alias cz="chezmoi"
 alias czr="chezmoi re-add"
 alias czu="chezmoi update"
@@ -13,17 +13,15 @@ alias nz="ce ~/.zshrc"
 alias na="ce ~/.aliases"
 alias ne="ce ~/.zshenv"
 alias y="yazi"
-alias dvsc="docker-volume-snapshot create fleetchaser_db_volume /home/dmitrylito/Projects/tmp/docker/fleetchaser_db_volume"
-alias dvsr="docker-volume-snapshot restore /home/dmitrylito/Projects/tmp/docker/fleetchaser_db_volume fleetchaser_db_volume"
-alias lzp='lazypodman'
 alias cdz="cd ~/.local/share/chezmoi/"
 alias cdp="cd ~/Projects/"
 alias cdpc="cd ~/Projects/cer-backend/"
 alias cdpfb="cd ~/Projects/backend/"
 alias cs="claude --model sonnet"
 alias co="claude --model opus"
+alias dvsc="docker-volume-snapshot create fleetchaser_db_volume /home/dmitrylito/Projects/tmp/docker/fleetchaser_db_volume"
+alias dvsr="docker-volume-snapshot restore /home/dmitrylito/Projects/tmp/docker/fleetchaser_db_volume fleetchaser_db_volume"
 
-# Homebrew update & upgrade (buu)
 if command -v brew >/dev/null; then
   alias buu="brew update && brew upgrade"
 fi
@@ -32,7 +30,6 @@ ce() {
   chezmoi edit --apply "$@"
 }
 
-# ls aliases (use eza if available)
 if command -v eza >/dev/null; then
   alias ls="eza -T -L=1 --group-directories-first --color=always --icons=always"
   alias lsa="eza -a -T -L=1 --group-directories-first --color=always --icons=always"
@@ -40,23 +37,3 @@ else
   alias ls="ls --color=auto"
   alias lsa="ls -a --color=auto"
 fi
-
-# --- Hyprland Environment Sync ---
-_sync_hypr_signature() {
-  if command -v systemctl >/dev/null 2>&1; then
-    local _sys_sig
-    _sys_sig=$(systemctl --user show-environment 2>/dev/null | awk -F= '$1 == "HYPRLAND_INSTANCE_SIGNATURE" {print $2}')
-    if [[ -n "$_sys_sig" && "$HYPRLAND_INSTANCE_SIGNATURE" != "$_sys_sig" ]]; then
-      export HYPRLAND_INSTANCE_SIGNATURE="$_sys_sig"
-    fi
-  fi
-}
-
-# Run once at startup to fix any stale or missing signature
-_sync_hypr_signature
-
-# Wrap hyprctl to auto-sync before execution in case Hyprland restarted during the terminal session
-hyprctl() {
-  _sync_hypr_signature
-  command hyprctl "$@"
-}
