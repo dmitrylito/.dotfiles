@@ -14,7 +14,6 @@ alias na="ce ~/.aliases"
 alias ne="ce ~/.zshenv"
 alias y="yazi"
 alias cdz="cd ~/.local/share/chezmoi/"
-alias cdp="cd ~/Projects/"
 alias cdpc="cd ~/Projects/cer-backend/"
 alias cdpfb="cd ~/Projects/backend/"
 alias cs="claude --model sonnet"
@@ -29,6 +28,11 @@ fi
 ce() {
   chezmoi edit --apply "$@"
 }
+
+cdp() {
+  cd ~/Projects/"$1"
+}
+compdef '_path_files -/ -W ~/Projects' cdp
 
 if command -v eza >/dev/null; then
   alias ls="eza -T -L=1 --group-directories-first --color=always --icons=always"
