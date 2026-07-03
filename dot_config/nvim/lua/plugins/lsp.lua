@@ -26,7 +26,18 @@ return {
           settings = {
             python = {
               analysis = {
+                -- Analyze the whole project on open and build the symbol index
+                -- (auto-import + workspace-symbol search), not just open files.
                 diagnosticMode = "workspace",
+                indexing = true,
+                -- Django's dynamic ORM (reverse relations, pk, custom managers)
+                -- is unresolvable by pyright; mypy (nvim-lint -> fc-mypy) is the
+                -- accurate Django checker. Silence pyright's false positives so
+                -- they don't bury real diagnostics across the whole workspace.
+                diagnosticSeverityOverrides = {
+                  reportAttributeAccessIssue = "none",
+                  reportIncompatibleVariableOverride = "none",
+                },
               },
             },
           },
