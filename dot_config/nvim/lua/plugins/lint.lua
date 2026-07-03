@@ -5,11 +5,14 @@ return {
     config = function()
       local lint = require("lint")
 
-      -- Route mypy through the fleetchaser wrapper: it loads docker/envs/* and
-      -- sets BIGTABLE_EMULATOR_HOST to a dead local port so the django-stubs mypy
-      -- plugin can run django.setup() on the host. mypy resolves Django's dynamic
-      -- ORM (reverse relations, pk, custom managers) that pyright cannot.
-      lint.linters.mypy.cmd = vim.fn.expand("~/.local/bin/fc-mypy")
+      -- Route mypy through fc-dmypy: the mypy DAEMON (fast, ~sub-second warm)
+      -- with the django-stubs plugin, so Django's dynamic ORM (reverse relations,
+      -- pk, custom managers) resolves — which pyright cannot do. The wrapper loads
+      -- docker/envs so django.setup() works on the host and filters output to the
+      -- current file. Output format flags live in ~/.config/fleetchaser-mypy.ini,
+      -- so no CLI args are passed.
+      lint.linters.mypy.cmd = vim.fn.expand("~/.local/bin/fc-dmypy")
+      lint.linters.mypy.args = {}
 
       lint.linters_by_ft = { python = { "mypy" } }
 

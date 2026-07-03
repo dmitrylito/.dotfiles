@@ -1,0 +1,24 @@
+# Personal local dev environment (git-ignored via .gitignore). Requires direnv:
+# reproduces what Docker injects so host tools (mypy, dmypy, ./manage.py, shell)
+# work outside the container the moment you cd into the project.
+
+# Load docker/envs/* safely — values contain '&'/'?', which `source`/dotenv mangle.
+for f in docker/envs/*.env; do
+  [ -e "$f" ] || continue
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in ''|\#*) continue ;; esac
+    export "${line%%=*}=${line#*=}"
+  done < "$f"
+done
+
+# Point Bigtable at a dead local port so django.setup() fails fast instead of
+# hanging 60s on the Docker-only `bigtable` hostname.
+export BIGTABLE_EMULATOR_HOST="127.0.0.1:8721"
+export BIGTABLE_READ_ENABLED=False
+export BIGTABLE_WRITE_ENABLED=False
+export FAIL_ON_POSTGRES=False
+export DJANGO_SETTINGS_MODULE="fleetchaser.settings"
+
+# Project venv on PATH (mypy / dmypy / python / manage.py).
+export VIRTUAL_ENV="$PWD/.venv"
+export PATH="$PWD/.venv/bin:$PATH"
