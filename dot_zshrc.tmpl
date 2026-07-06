@@ -116,6 +116,13 @@ if [[ -o interactive ]]; then
   eval "$(tmuxifier init -)"
   eval "$(direnv hook zsh)"
 fi
+{{ if eq (.profile | lower) "omarchy" -}}
+# hyprmon writes monitor config to whatever $HYPRLAND_CONFIG points at (its #1
+# priority). Hyprland exports that as hyprland.conf, which is chezmoi-managed —
+# so redirect hyprmon to the unmanaged, sourced monitors.conf. Scoped to this
+# command only; setting HYPRLAND_CONFIG globally would confuse Hyprland itself.
+alias hyprmon='HYPRLAND_CONFIG="$HOME/.config/hypr/monitors.conf" command hyprmon'
+{{ end -}}
 
 {{- if eq .profile "omarchy" }}
 export OMARCHY_PATH="${OMARCHY_PATH:-$HOME/.local/share/omarchy}"
