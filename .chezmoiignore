@@ -25,6 +25,7 @@ scripts/
 .config/waybar/
 .config/swaync/
 .config/systemd/
+.local/bin/restore-hyprlock
 .local/share/applications/
 .XCompose
 {{ end }}

@@ -163,8 +163,12 @@ set -g @tmux-which-key-xdg-enable {{ if eq (.profile | lower) "mac" }}0{{ else }
 set -g @suspend_suspended_options "status::off,pane-border-status::off"
 set -g @continuum-restore 'on'
 set -g @continuum-save-interval '5'
-set -g @continuum-boot 'on'
-set -g @continuum-boot-options 'ghostty'
+# @continuum-boot disabled: its generated systemd unit ran `save.sh` as an
+# ExecStop hook, saving the dead/empty server on every stop (pkill, logout,
+# reboot) and clobbering `last` with an empty manifest — which broke restore
+# on next launch (and reliably on the headless server). Auto-restore above
+# and periodic in-session saves are unaffected.
+set -g @continuum-boot 'off'
 set -g @resurrect-capture-pane-contents 'on'
 set -g @resurrect-processes 'ssh'
 set -g @resurrect-strategy-nvim 'session'
