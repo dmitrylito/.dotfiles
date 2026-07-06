@@ -1,14 +1,17 @@
 antigravity
 antigravity-ide
+audacity4-alpha
 coolercontrol-bin
 discordupdater
 dotool
 gogcli
 google-cloud-cli
 google-cloud-cli-gsutil
+gputest
 hyprmon-bin
 llama.cpp-cuda
 sesh-bin
+slack-desktop
 zsa-keymapp-bin
 zsh-uv-env-git
 zsh-you-should-use
