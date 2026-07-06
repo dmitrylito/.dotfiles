@@ -18,6 +18,7 @@ cockpit-storaged
 cronie
 cups
 cups-filters
+direnv
 dmidecode
 docker
 docker-buildx
