@@ -98,6 +98,18 @@ set -g history-limit 50000
 set -g set-clipboard on
 set -ag terminal-features ",tmux-256color:clipboard"
 set -ag terminal-features ",xterm-ghostty:clipboard"
+# Advertise synchronized output (DECSET 2026) so tmux draws each frame
+# atomically instead of flushing partial frames. Ghostty supports it, but its
+# terminfo ships no Sync cap, so force it. Covers tmux-256color too because
+# nested-over-SSH attaches report client_termname=tmux-256color, not ghostty.
+set -ag terminal-features ",tmux-256color:sync"
+set -ag terminal-features ",xterm-ghostty:sync"
+# Cursor-style (DECSCUSR) and cursor-colour (OSC 12) handling. tmux only
+# grants cstyle/ccolour to xterm* built-in; the nested-over-SSH client attaches
+# as tmux-256color, which misses it, so tmux resets the cursor every redraw and
+# it flickers. Grant it explicitly for both names in the attach chain.
+set -ag terminal-features ",tmux-256color:cstyle:ccolour"
+set -ag terminal-features ",xterm-ghostty:cstyle:ccolour"
 set -ag update-environment " LANG LC_ALL LC_CTYPE"
 setw -g aggressive-resize on
 set -g detach-on-destroy off
