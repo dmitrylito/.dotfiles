@@ -1,9 +1,12 @@
 amd-ucode
 kernel-modules-hook
 lib32-nvidia-utils
+lib32-vulkan-radeon
 libva-nvidia-driver
 linux-firmware
 nvidia-open-dkms
 nvidia-settings
 nvidia-utils
+sof-firmware
+vulkan-radeon
 vulkan-tools
