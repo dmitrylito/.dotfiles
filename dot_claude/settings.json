@@ -5,9 +5,13 @@
   "permissions": {
     "defaultMode": "auto"
   },
+  "model": "opus[1m]",
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "pyright-lsp@claude-plugins-official": true
   },
   "spinnerTipsEnabled": false,
   "spinnerVerbs": {
@@ -19,6 +23,7 @@
   "effortLevel": "high",
   "promptSuggestionEnabled": false,
   "awaySummaryEnabled": false,
+  "tui": "fullscreen",
   "theme": "auto",
   "editorMode": "vim",
   "preferredNotifChannel": "ghostty",
