@@ -25,6 +25,10 @@ scripts/
 .config/waybar/
 .config/swaync/
 .config/systemd/
+.config/mimeapps.list
+.config/spotify-flags.conf
+.config/voxtype/
+.config/walker/
 .local/bin/restore-hyprlock
 .local/share/applications/
 .XCompose
