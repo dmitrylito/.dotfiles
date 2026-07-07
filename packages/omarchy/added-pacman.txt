@@ -4,7 +4,6 @@ audacity
 bob
 chezmoi
 cmake
-cpio
 cuda
 cudnn
 direnv
