@@ -39,6 +39,7 @@ telegram-desktop
 tesseract
 tesseract-data-eng
 tpm2-tools
+uv
 voxtype-bin
 wayvnc
 wev
