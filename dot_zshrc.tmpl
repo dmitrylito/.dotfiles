@@ -1,6 +1,8 @@
 # vim: set filetype=zsh:
 
-if command -v tmux >/dev/null 2>&1 && [ -z "$TMUX" ]; then
+# Only auto-attach in a real interactive terminal; agent harnesses (Claude
+# Code sets CLAUDECODE) source this file without a TTY and tmux breaks them.
+if command -v tmux >/dev/null 2>&1 && [ -z "$TMUX" ] && [ -t 0 ] && [ -z "$CLAUDECODE" ]; then
   tmux -u attach-session -d || tmux -u new-session
 fi
 
