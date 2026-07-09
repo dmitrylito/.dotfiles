@@ -66,7 +66,7 @@ format = '[@$hostname ]($style)'
 [directory]
 style = "bg:peach fg:crust"
 format = "[ $path ]($style)"
-truncation_length = 0
+truncation_length = 4
 truncation_symbol = "…/"
 
 [directory.substitutions]
@@ -142,7 +142,7 @@ format = '[$symbol$environment ]($style)'
 ignore_base = false
 
 [time]
-disabled = false
+disabled = true
 time_format = "%R"
 style = "bg:lavender"
 format = '[[  $time ](fg:crust bg:lavender)]($style)'
@@ -163,7 +163,7 @@ vimcmd_visual_symbol = '[❮](bold fg:yellow)'
 show_milliseconds = true
 format = " in $duration "
 style = "bg:lavender"
-disabled = false
+disabled = true
 show_notifications = true
 min_time_to_notify = 45000
 
