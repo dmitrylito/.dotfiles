@@ -50,11 +50,11 @@ disabled = true
 [hostname]
 ssh_only = false
 style = "fg:green"
-format = '[$hostname ]($style)'
+format = '[$hostname]($style)'
 
 [directory]
 style = "fg:peach"
-format = "[$path ]($style)"
+format = "[ $path]($style)"
 truncation_length = 4
 truncation_symbol = "…/"
 
@@ -68,11 +68,11 @@ truncation_symbol = "…/"
 [git_branch]
 symbol = ""
 style = "fg:yellow"
-format = '[$symbol $branch]($style)'
+format = '[ $symbol $branch]($style)'
 
 [git_status]
 style = "fg:yellow"
-format = '[ $all_status$ahead_behind]($style)'
+format = '[( $all_status$ahead_behind)]($style)'
 
 [nodejs]
 symbol = ""
