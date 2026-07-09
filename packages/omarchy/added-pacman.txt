@@ -4,7 +4,6 @@ audacity
 bob
 chezmoi
 cmake
-cpio
 cuda
 cudnn
 direnv
@@ -18,6 +17,7 @@ gimp
 git-delta
 go
 i2c-tools
+kdeconnect
 migraphx
 neovim
 nvtop

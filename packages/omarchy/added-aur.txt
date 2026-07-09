@@ -5,7 +5,6 @@ coolercontrol-bin
 discordupdater
 dotool
 gogcli
-google-cloud-cli
 google-cloud-cli-gsutil
 gputest
 hyprmon-bin
