@@ -66,7 +66,7 @@ format = '[@$hostname ]($style)'
 [directory]
 style = "bg:peach fg:crust"
 format = "[ $path ]($style)"
-truncation_length = 5
+truncation_length = 0
 truncation_symbol = "…/"
 
 [directory.substitutions]
