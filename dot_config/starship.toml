@@ -2,21 +2,13 @@
 
 add_newline = true
 format = """
-[ ](bg:green)\
-$os\
 $username\
 $hostname\
-[](bg:peach fg:green)\
 $directory\
-[](bg:yellow fg:peach)\
 $git_branch\
 $git_status\
-[](fg:yellow bg:red)\
 $golang\
 $python\
-[](fg:red bg:sapphire)\
-[](fg:sapphire bg:lavender)\
-[ ](fg:lavender)\
 $line_break\
 $status\
 $jobs\
@@ -53,19 +45,16 @@ Redhat = "󱄛"
 RedHatEnterprise = "󱄛"
 
 [username]
-show_always = true
-style_user = "bg:green fg:crust"
-style_root = "bg:green fg:crust"
-format = '[$user]($style)'
+disabled = true
 
 [hostname]
 ssh_only = false
-style = "bg:green fg:crust"
-format = '[@$hostname ]($style)'
+style = "fg:green"
+format = '[$hostname ]($style)'
 
 [directory]
-style = "bg:peach fg:crust"
-format = "[ $path ]($style)"
+style = "fg:peach"
+format = "[$path ]($style)"
 truncation_length = 4
 truncation_symbol = "…/"
 
@@ -78,12 +67,12 @@ truncation_symbol = "…/"
 
 [git_branch]
 symbol = ""
-style = "bg:yellow"
-format = '[[ $symbol $branch ](fg:crust bg:yellow)]($style)'
+style = "fg:yellow"
+format = '[$symbol $branch]($style)'
 
 [git_status]
-style = "bg:yellow"
-format = '[[($all_status$ahead_behind )](fg:crust bg:yellow)]($style)'
+style = "fg:yellow"
+format = '[ $all_status$ahead_behind]($style)'
 
 [nodejs]
 symbol = ""
@@ -102,8 +91,8 @@ format = '[[ $symbol ](fg:crust bg:green)]($style)'
 
 [golang]
 symbol = ""
-style = "bg:red"
-format = '[[ $symbol ](fg:crust bg:red)]($style)'
+style = "fg:red"
+format = '[ $symbol]($style)'
 
 [php]
 symbol = ""
@@ -127,8 +116,8 @@ format = '[[ $symbol ](fg:crust bg:green)]($style)'
 
 [python]
 symbol = ""
-style = "bg:red"
-format = '[[ $symbol ](fg:crust bg:red)]($style)'
+style = "fg:red"
+format = '[ $symbol]($style)'
 
 [docker_context]
 symbol = ""
