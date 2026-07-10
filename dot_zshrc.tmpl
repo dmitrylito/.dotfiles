@@ -87,6 +87,8 @@ bindkey -M vicmd '\es' sesh-sessions
 bindkey -M viins '\es' sesh-sessions
 
 source_if_exists "$HOME/.aliases"
+# Machine-local secrets/env (NOT managed by chezmoi — never add it).
+source_if_exists "$HOME/.zshrc.local"
 
 if command -v starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
