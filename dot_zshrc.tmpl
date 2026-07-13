@@ -120,7 +120,7 @@ if [[ -o interactive ]]; then
   eval "$(tmuxifier init -)"
   eval "$(direnv hook zsh)"
   eval "$(gog completion zsh)"
-  eval "$(opencode competion zsh)"
+  # eval "$(opencode competion zsh)"
 fi
 {{ if eq (.profile | lower) "omarchy" -}}
 # hyprmon writes monitor config to whatever $HYPRLAND_CONFIG points at (its #1
