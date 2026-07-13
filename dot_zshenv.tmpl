@@ -17,6 +17,10 @@ export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
 export HYPRLAND_CONFIG="$XDG_CONFIG_HOME/hypr/hyprland.conf"
 export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/gcloud/application_default_credentials.json"
 export GOOGLE_CLOUD_LOCATION="global"
+
+# Fullscreen (alt-screen) rendering so Claude Code stops full-viewport
+# redraws on every token, which flicker the cursor under tmux/Ghostty.
+export CLAUDE_CODE_NO_FLICKER=1
 {{- if eq .profile "omarchy" }}
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda/lib64"
 {{- end }}

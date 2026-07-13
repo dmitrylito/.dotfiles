@@ -5,7 +5,108 @@
   "permissions": {
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
+  "model": "opus",
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/home/dmitrylito/.local/bin/moshi-hook' claude-hook",
+            "async": false
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/home/dmitrylito/.local/bin/moshi-hook' claude-hook",
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/home/dmitrylito/.local/bin/moshi-hook' claude-hook",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/home/dmitrylito/.local/bin/moshi-hook' claude-hook",
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/home/dmitrylito/.local/bin/moshi-hook' claude-hook",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/home/dmitrylito/.local/bin/moshi-hook' claude-hook",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/home/dmitrylito/.local/bin/moshi-hook' claude-hook",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/home/dmitrylito/.local/bin/moshi-hook' claude-hook",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/home/dmitrylito/.local/bin/moshi-hook' claude-hook",
+            "async": true
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
