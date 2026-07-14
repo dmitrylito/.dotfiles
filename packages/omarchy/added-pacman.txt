@@ -5,6 +5,7 @@ bob
 chezmoi
 cmake
 cpio
+cronie
 cuda
 cudnn
 direnv
