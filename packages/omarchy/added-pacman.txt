@@ -1,5 +1,4 @@
 ansible
-appstream-glib
 ast-grep
 audacity
 bob
