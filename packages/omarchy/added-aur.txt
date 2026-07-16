@@ -1,5 +1,3 @@
-antigravity
-antigravity-ide
 audacity4-alpha
 claude
 coolercontrol-bin
