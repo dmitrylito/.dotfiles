@@ -48,7 +48,6 @@ wev
 wlr-randr
 wtype
 yazi
-zed
 zsh
 zsh-autocomplete
 zsh-autosuggestions
