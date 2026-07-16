@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Work Mode
+Comment=Open all work apps on their workspaces (ws 1/3/4/5 + Spotify scratchpad)
+Exec=/home/dmitrylito/.local/bin/work-mode
+Terminal=false
+Type=Application
+Icon=applications-office
+StartupNotify=false
+Categories=Utility;

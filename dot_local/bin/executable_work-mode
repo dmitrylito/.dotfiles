@@ -1,0 +1,117 @@
+#!/bin/bash
+#
+# work-mode — restore the "work" window layout on Hyprland.
+#
+# Opens the standard work apps onto their designated workspaces (which are
+# themselves pinned to specific monitors) and Spotify onto the scratchpad.
+# Idempotent: any app already open is left untouched, so it is safe to run
+# at any time to fill in whatever is missing.
+#
+# Layout reproduced:
+#   ws 1 (DP-1)      : work browser (chromium, Profile 1) + FC Gmail
+#   ws 3 (DP-2)      : Linear
+#   ws 4 (HDMI-A-1)  : FC Chat (left) + Dialpad (right)
+#   ws 5 (HDMI-A-1)  : FC Tasks
+#   scratchpad       : Spotify
+
+set -uo pipefail
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+WEBAPP="$HOME/.local/share/omarchy/bin/omarchy-launch-webapp"
+
+# When launched from a bare .desktop environment the Hyprland instance
+# signature may be missing; recover it from the runtime dir.
+if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+  sig_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr"
+  HYPRLAND_INSTANCE_SIGNATURE="$(ls -t "$sig_dir" 2>/dev/null | head -1)"
+  export HYPRLAND_INSTANCE_SIGNATURE
+fi
+
+log() { printf '[work-mode] %s\n' "$*" >&2; }
+
+# is_open <class-regex> — true if a window whose class matches is already mapped.
+is_open() {
+  hyprctl clients -j | jq -e --arg c "$1" '.[] | select(.class | test($c))' >/dev/null
+}
+
+# addr_of <class-regex> — print the address of the first matching window (if any).
+addr_of() {
+  hyprctl clients -j \
+    | jq -r --arg c "$1" 'first(.[] | select(.class | test($c)) | .address) // empty'
+}
+
+# launch_and_place <label> <class-regex> <workspace> <launch-cmd...>
+# Skips if already open. Otherwise launches, waits for the window to appear,
+# and moves it to <workspace> without stealing focus. Prints the new window's
+# address on stdout so callers can post-process geometry.
+launch_and_place() {
+  local label="$1" class_re="$2" ws="$3"; shift 3
+
+  if is_open "$class_re"; then
+    log "skip  $label (already open)"
+    return 0
+  fi
+
+  log "open  $label -> workspace $ws"
+  setsid -f "$@" >/dev/null 2>&1
+
+  local addr="" i
+  for ((i = 0; i < 60; i++)); do
+    addr="$(addr_of "$class_re")"
+    [[ -n "$addr" ]] && break
+    sleep 0.25
+  done
+
+  if [[ -z "$addr" ]]; then
+    log "WARN  $label window never appeared; skipping placement"
+    return 1
+  fi
+
+  hyprctl dispatch movetoworkspacesilent "$ws,address:$addr" >/dev/null
+  printf '%s\n' "$addr"
+}
+
+# Class strings as reported by `hyprctl clients` (Omarchy web-app convention:
+# chrome-<host>__<path>-Profile_N). Anchored so ^chromium$ never matches an app window.
+GMAIL_CLASS='^chrome-mail\.google\.com__mail_u_0_-Profile_1$'
+LINEAR_CLASS='^chrome-linear\.app__fleetchaser_agent-Profile_1$'
+CHAT_CLASS='^chrome-console\.fleetchaser\.com__chats-Profile_3$'
+DIALPAD_CLASS='^chrome-dialpad\.com__app_-Profile_1$'
+TASKS_CLASS='^chrome-console\.fleetchaser\.com__tasks_-Profile_2$'
+BROWSER_CLASS='^chromium$'
+SPOTIFY_CLASS='^spotify$'
+
+# --- Workspace 1 (DP-1): work browser + Gmail --------------------------------
+BROWSER_ADDR="$(launch_and_place 'Work browser' "$BROWSER_CLASS" 1 \
+  chromium --profile-directory='Profile 1')"
+launch_and_place 'FC Gmail' "$GMAIL_CLASS" 1 \
+  "$WEBAPP" 'https://mail.google.com/mail/u/0/#inbox' --profile-directory='Profile 1' >/dev/null
+
+# --- Workspace 3 (DP-2): Linear ----------------------------------------------
+launch_and_place 'Linear' "$LINEAR_CLASS" 3 \
+  "$WEBAPP" 'https://linear.app/fleetchaser/agent' --profile-directory='Profile 1' >/dev/null
+
+# --- Workspace 4 (HDMI-A-1): FC Chat (left) + Dialpad (right) -----------------
+# Open Chat first so it takes the left tile, then Dialpad splits off to the right.
+CHAT_ADDR="$(launch_and_place 'FC Chat' "$CHAT_CLASS" 4 \
+  "$WEBAPP" 'https://console.fleetchaser.com/chats' --profile-directory='Profile 3')"
+launch_and_place 'Dialpad' "$DIALPAD_CLASS" 4 \
+  "$WEBAPP" 'https://dialpad.com/app/' --profile-directory='Profile 1' >/dev/null
+
+# --- Workspace 5 (HDMI-A-1): FC Tasks ----------------------------------------
+launch_and_place 'FC Tasks' "$TASKS_CLASS" 5 \
+  "$WEBAPP" 'https://console.fleetchaser.com/tasks/' --profile-directory='Profile 2' >/dev/null
+
+# --- Scratchpad: Spotify -----------------------------------------------------
+launch_and_place 'Spotify' "$SPOTIFY_CLASS" 'special:scratchpad' \
+  spotify >/dev/null
+
+# --- Best-effort geometry for the two-window workspaces ----------------------
+# Single-window workspaces fill their monitor automatically; these two have an
+# uneven split we reproduce by pinning the narrower window's width.
+[[ -n "${GMAIL_ADDR:=$(addr_of "$GMAIL_CLASS")}" ]] && \
+  hyprctl dispatch resizewindowpixel "exact 1205 1542,address:$GMAIL_ADDR" >/dev/null 2>&1
+[[ -n "${CHAT_ADDR:-$(addr_of "$CHAT_CLASS")}" ]] && \
+  hyprctl dispatch resizewindowpixel "exact 945 1382,address:${CHAT_ADDR:-$(addr_of "$CHAT_CLASS")}" >/dev/null 2>&1
+
+log "done"
