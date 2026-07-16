@@ -9,8 +9,6 @@ cuda
 cudnn
 direnv
 dmidecode
-edk2-aarch64
-edk2-ovmf
 efibootmgr
 fwupd
 gamescope
@@ -31,8 +29,6 @@ openai-codex-bin
 openrgb
 pesign
 pre-commit
-qemu-system-aarch64
-qemu-system-x86
 rclone
 sbctl
 solaar
