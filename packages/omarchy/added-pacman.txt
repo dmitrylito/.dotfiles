@@ -1,6 +1,5 @@
 ansible
 ast-grep
-audacity
 bob
 chezmoi
 cmake
