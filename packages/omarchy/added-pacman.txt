@@ -1,8 +1,10 @@
 ansible
 ast-grep
+audacity
 bob
 chezmoi
 cmake
+cpio
 cronie
 cuda
 cudnn
@@ -47,6 +49,7 @@ wev
 wlr-randr
 wtype
 yazi
+zed
 zsh
 zsh-autocomplete
 zsh-autosuggestions
