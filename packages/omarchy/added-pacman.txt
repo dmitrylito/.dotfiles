@@ -21,6 +21,7 @@ i2c-tools
 kdeconnect
 migraphx
 neovim
+npm
 nvtop
 nwg-displays
 omarchy-keyring
