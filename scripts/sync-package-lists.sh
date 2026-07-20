@@ -7,14 +7,28 @@
 # chezmoi's autoPush on the next chezmoi operation.
 set -uo pipefail
 
+# pacman runs PostTransaction hooks SYNCHRONOUSLY and waits for this script
+# before handing control back. An AUR install with yay fires several
+# transactions back-to-back (build-dep install/remove, then the package), and
+# the git push below can stall on the network — doing all that inline made
+# pacman/yay hang for seconds after every AUR build. So on first entry we
+# re-exec ourselves detached into a new session and return immediately, moving
+# the regen/commit/push off pacman's critical path.
+if [ -z "${CHEZMOI_SYNC_DETACHED:-}" ]; then
+    CHEZMOI_SYNC_DETACHED=1 setsid -f "$0" "$@" </dev/null >/dev/null 2>&1
+    exit 0
+fi
+
 HOME="$(getent passwd "$(id -un)" | cut -d: -f6)"
 export HOME
 CHEZMOI_DIR="$HOME/.local/share/chezmoi"
 
-# Serialize concurrent transactions; if another sync is running, skip —
-# the running one will capture the final state anyway.
+# Serialize concurrent syncs. Wait (rather than skip) so the worker spawned by
+# the LAST transaction of a multi-transaction AUR build still runs and captures
+# the final package state; a run that finds nothing changed just commits nothing.
+# Backgrounded, so this wait never blocks pacman.
 exec 9>"/tmp/chezmoi-package-sync-$(id -u).lock"
-flock -n 9 || exit 0
+flock -w 60 9 || exit 0
 
 # The rendered chezmoi config records the machine profile chosen at init.
 profile="$(grep -oP '^\s*profile\s*=\s*"\K[^"]+' "$HOME/.config/chezmoi/chezmoi.toml" 2>/dev/null | head -1)"
