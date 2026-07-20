@@ -12,6 +12,7 @@ lazycron-bin
 llama.cpp-cuda
 sesh-bin
 slack-desktop
+ventoy-bin
 zsa-keymapp-bin
 zsh-uv-env-git
 zsh-you-should-use
