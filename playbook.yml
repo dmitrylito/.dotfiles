@@ -26,7 +26,8 @@
     # Paths to Omarchy-specific auto-generated lists (Option A)
     pacman_file: "{{ chezmoi_source_dir }}/packages/omarchy/added-pacman.txt"
     aur_file: "{{ chezmoi_source_dir }}/packages/omarchy/added-aur.txt"
-    drivers_file: "{{ chezmoi_source_dir }}/packages/omarchy/drivers.txt"
+    # drivers.txt is auto-tracked for reference only — drivers are hardware-
+    # specific and must be installed MANUALLY, so the playbook never reads it.
     removed_file: "{{ chezmoi_source_dir }}/packages/omarchy/removed.txt"
 
     # Paths to server-specific auto-generated lists
@@ -193,10 +194,6 @@
           ansible.builtin.set_fact:
             pacman_packages: "{{ lookup('file', profile_pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
 
-        - name: Read drivers list (Omarchy only)
-          ansible.builtin.set_fact:
-            driver_packages: "{{ (lookup('file', drivers_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if (profile | lower) == 'omarchy' else [] }}"
-
         - name: Read AUR packages list
           ansible.builtin.set_fact:
             aur_packages: "{{ lookup('file', profile_aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
@@ -205,14 +202,17 @@
           ansible.builtin.set_fact:
             removed_packages: "{{ (lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if (profile | lower) == 'omarchy' else [] }}"
 
-        # 3.1 Install Native Packages (Added, Drivers)
+        # 3.1 Install Native Packages (Added only)
         # Note: We do NOT install the base/other packages because those are
-        # pre-installed in the OS and contain hardware-specific drivers.
-        - name: Install native packages (Added, Drivers)
+        # pre-installed in the OS. Drivers (drivers.txt) are also NOT installed
+        # here — they are hardware-specific and must be installed manually. The
+        # list is still auto-tracked by scripts/sync-package-lists.sh for
+        # reference, but chezmoi/ansible never touches driver packages.
+        - name: Install native packages (Added)
           community.general.pacman:
-            name: "{{ pacman_packages + driver_packages }}"
+            name: "{{ pacman_packages }}"
             state: present
-          when: (pacman_packages + driver_packages) | length > 0
+          when: pacman_packages | length > 0
 
         # 3.2 Bootstrap yay & Install AUR Packages
         #
