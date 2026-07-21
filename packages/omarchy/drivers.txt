@@ -2,13 +2,6 @@ amd-ucode
 kernel-modules-hook
 lib32-vulkan-radeon
 linux-firmware
-<<<<<<< HEAD
-nvidia-container-toolkit
-nvidia-open-dkms
-nvidia-settings
-nvidia-utils
-=======
->>>>>>> f9483a3 (Auto-sync package lists (pacman hook))
 sof-firmware
 vulkan-radeon
 vulkan-tools

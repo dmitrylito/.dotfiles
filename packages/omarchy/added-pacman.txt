@@ -1,9 +1,9 @@
 ansible
+appstream-glib
 ast-grep
 bob
 chezmoi
 cmake
-cpio
 cronie
 direnv
 dmidecode
@@ -27,6 +27,7 @@ openai-codex-bin
 openrgb
 pesign
 pre-commit
+qt6-webengine
 rclone
 sbctl
 solaar
