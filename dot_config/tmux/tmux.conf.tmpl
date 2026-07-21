@@ -169,7 +169,9 @@ set -g @continuum-save-interval '5'
 # on next launch (and reliably on the headless server). Auto-restore above
 # and periodic in-session saves are unaffected.
 set -g @continuum-boot 'off'
-set -g @resurrect-capture-pane-contents 'on'
+# Don't restore pane scrollback/terminal history — only reopen processes
+# (see @resurrect-processes below, which relaunches ssh). Restored panes start clean.
+set -g @resurrect-capture-pane-contents 'off'
 set -g @resurrect-processes 'ssh'
 set -g @resurrect-strategy-nvim 'session'
 
