@@ -1,7 +1,8 @@
 claude
-coolercontrold-bin
+coolercontrol-bin
 discordupdater
 dotool
+etcher-bin
 gogcli
 google-cloud-cli
 google-cloud-cli-gsutil
@@ -10,6 +11,7 @@ hyprmon-bin
 lazycron-bin
 sesh-bin
 slack-desktop
+ventoy-bin
 zsa-keymapp-bin
 zsh-uv-env-git
 zsh-you-should-use
