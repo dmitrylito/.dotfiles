@@ -5,8 +5,6 @@ chezmoi
 cmake
 cpio
 cronie
-cuda
-cudnn
 direnv
 dmidecode
 efibootmgr
