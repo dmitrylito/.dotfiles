@@ -1,4 +1,3 @@
-android-studio
 claude
 coolercontrol-bin
 discordupdater
@@ -10,6 +9,7 @@ google-cloud-cli-gsutil
 gputest
 hyprmon-bin
 lazycron-bin
+llama.cpp-cuda
 sesh-bin
 slack-desktop
 ventoy-bin

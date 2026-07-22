@@ -3,7 +3,10 @@ ast-grep
 bob
 chezmoi
 cmake
+cpio
 cronie
+cuda
+cudnn
 direnv
 dmidecode
 efibootmgr
@@ -15,7 +18,6 @@ gimp
 git-delta
 go
 i2c-tools
-jdk17-openjdk
 kdeconnect
 migraphx
 neovim
