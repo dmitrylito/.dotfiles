@@ -2,35 +2,26 @@
 #
 # work-mode — restore the "work" window layout on Hyprland.
 #
-# Opens the standard work apps onto their designated workspaces (which are
-# themselves pinned to specific monitors) and Spotify onto the scratchpad.
-# Idempotent: any app already open is left untouched, so it is safe to run
-# at any time to fill in whatever is missing.
-#
-# Layout reproduced:
 #   ws 1 (DP-1)      : work browser (chromium, Profile 1) + FC Gmail
 #   ws 3 (DP-2)      : Linear
 #   ws 4 (HDMI-A-1)  : FC Chat (left) + Dialpad (right)
 #   ws 5 (HDMI-A-1)  : FC Tasks
 #   scratchpad       : Spotify
 #
-# Placement strategy: register a transient, CLASS-matched `windowrule` per app
-# before launching it, so Hyprland drops each window onto its workspace the
-# instant it maps. We match by class rather than using an `exec [workspace N
-# silent]` rule because those match by the *spawned PID*: our webapps launch via
-# `omarchy-launch-webapp` (setsid + uwsm systemd scope) AND share one chromium
-# profile, so their windows are actually spawned by the already-running chromium
-# master — a PID Hyprland never sees. Class matching is PID-agnostic, so it works
-# regardless. The rules are cleaned up with `hyprctl reload` once everything has
-# mapped (see the geometry section for the ordering constraint that creates).
+# Idempotent: apps already open are left untouched.
+#
+# Placement uses transient class-matched `windowrule`s rather than
+# `exec [workspace N silent]`, because exec rules match by spawned PID: the
+# webapps launch through omarchy-launch-webapp and share a chromium profile,
+# so their windows belong to the already-running chromium master — a PID
+# Hyprland never sees. The rules are discarded with `hyprctl reload` at the end.
 
 set -uo pipefail
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
 WEBAPP="$HOME/.local/share/omarchy/bin/omarchy-launch-webapp"
 
-# When launched from a bare .desktop environment the Hyprland instance
-# signature may be missing; recover it from the runtime dir.
+# Recover the Hyprland instance signature when launched from a bare .desktop env.
 if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
   sig_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr"
   HYPRLAND_INSTANCE_SIGNATURE="$(ls -t "$sig_dir" 2>/dev/null | head -1)"
@@ -39,19 +30,16 @@ fi
 
 log() { printf '[work-mode] %s\n' "$*" >&2; }
 
-# is_open <class-regex> — true if a window whose class matches is already mapped.
 is_open() {
   hyprctl clients -j | jq -e --arg c "$1" '.[] | select(.class | test($c))' >/dev/null
 }
 
-# addr_of <class-regex> — print the address of the first matching window (if any).
 addr_of() {
   hyprctl clients -j \
     | jq -r --arg c "$1" 'first(.[] | select(.class | test($c)) | .address) // empty'
 }
 
-# wait_for <class-regex> — poll up to 15s for a matching window to map; print its
-# address on success, return 1 on timeout.
+# Poll up to 15s for a window matching the class regex to map.
 wait_for() {
   local addr="" i
   for ((i = 0; i < 60; i++)); do
@@ -63,10 +51,8 @@ wait_for() {
 }
 
 # launch <label> <class-regex> <workspace> <launch-cmd...>
-# Skips if already open. Otherwise registers a class-matched placement rule for
-# <workspace>, launches the app, and blocks until its window maps — so callers
-# can rely on it being placed and tiled before the next launch (this is what
-# makes the left/right split order on two-window workspaces deterministic).
+# Blocks until the window maps, so launch order determines the left/right
+# split on two-window workspaces.
 launch() {
   local label="$1" class_re="$2" ws="$3"; shift 3
 
@@ -82,9 +68,8 @@ launch() {
   wait_for "$class_re" >/dev/null || log "WARN  $label window never appeared"
 }
 
-# Class strings as reported by `hyprctl clients` (Omarchy web-app convention:
-# chrome-<host>__<path>-Profile_N). Anchored so ^chromium$ never matches an app
-# window. The same anchored regexes double as `match:class` values in the rules.
+# Classes as reported by `hyprctl clients` (Omarchy web-app convention:
+# chrome-<host>__<path>-Profile_N), anchored so ^chromium$ never matches an app window.
 GMAIL_CLASS='^chrome-mail\.google\.com__mail_u_0_-Profile_1$'
 LINEAR_CLASS='^chrome-linear\.app__fleetchaser_agent-Profile_1$'
 CHAT_CLASS='^chrome-console\.fleetchaser\.com__chats-Profile_3$'
@@ -93,53 +78,34 @@ TASKS_CLASS='^chrome-console\.fleetchaser\.com__tasks_-Profile_2$'
 BROWSER_CLASS='^chromium$'
 SPOTIFY_CLASS='^spotify$'
 
-# --- Workspace 1 (DP-1): work browser (left) + Gmail (right) -----------------
-# Launch the browser first and wait for it so it takes the left tile; Gmail then
-# splits off to the right.
 launch 'Work browser' "$BROWSER_CLASS" 1 \
   chromium --profile-directory='Profile 1'
 launch 'FC Gmail' "$GMAIL_CLASS" 1 \
   "$WEBAPP" 'https://mail.google.com/mail/u/0/#inbox' --profile-directory='Profile 1'
 
-# --- Workspace 3 (DP-2): Linear ----------------------------------------------
 launch 'Linear' "$LINEAR_CLASS" 3 \
   "$WEBAPP" 'https://linear.app/fleetchaser/agent' --profile-directory='Profile 1'
 
-# --- Workspace 4 (HDMI-A-1): FC Chat (left) + Dialpad (right) -----------------
-# Chat first so it takes the left tile, then Dialpad splits off to the right.
 launch 'FC Chat' "$CHAT_CLASS" 4 \
   "$WEBAPP" 'https://console.fleetchaser.com/chats' --profile-directory='Profile 3'
 launch 'Dialpad' "$DIALPAD_CLASS" 4 \
   "$WEBAPP" 'https://dialpad.com/app/' --profile-directory='Profile 1'
 
-# --- Workspace 5 (HDMI-A-1): FC Tasks ----------------------------------------
 launch 'FC Tasks' "$TASKS_CLASS" 5 \
   "$WEBAPP" 'https://console.fleetchaser.com/tasks/' --profile-directory='Profile 2'
 
-# --- Scratchpad: Spotify -----------------------------------------------------
 launch 'Spotify' "$SPOTIFY_CLASS" 'special:scratchpad' \
   spotify
 
-# --- Drop the transient placement rules --------------------------------------
-# Everything above blocks until its window has mapped, so by here all windows
-# are placed and the rules have done their job. Reload re-reads the on-disk
-# config, discarding the runtime `keyword` rules so they never leak into normal
-# window behaviour or accumulate across runs.
+# Drop the transient placement rules by re-reading the on-disk config.
 hyprctl reload >/dev/null 2>&1
 
-# --- Geometry for the two-window workspaces ----------------------------------
-# Single-window workspaces fill their monitor automatically; these two have an
-# uneven split. Pin the LEFT window's width: it is anchored at the workspace
-# origin, so an exact-pixel resize is deterministic (resizing the RIGHT window
-# mirrors the delta in dwindle, so a "shrink" on a 50/50 split grows it — which
-# is how Gmail used to end up as the wide window). The browser at 2600 leaves
-# Gmail ~1190px on the right; Chat at 945 leaves Dialpad the wider pane.
-#
-# This MUST run after `hyprctl reload`: reload resets tiled splits back to 50/50,
-# so resizing earlier would just be undone.
+# Uneven splits on the two-window workspaces. Pin the LEFT window (anchored at
+# the workspace origin, so an exact-pixel resize is deterministic). Must run
+# after `hyprctl reload`, which resets splits back to 50/50.
 [[ -n "${BROWSER_ADDR:=$(addr_of "$BROWSER_CLASS")}" ]] && \
-  hyprctl dispatch resizewindowpixel "exact 2600 1542,address:$BROWSER_ADDR" >/dev/null 2>&1
+  hyprctl dispatch resizewindowpixel "exact 2749 1542,address:$BROWSER_ADDR" >/dev/null 2>&1
 [[ -n "${CHAT_ADDR:=$(addr_of "$CHAT_CLASS")}" ]] && \
-  hyprctl dispatch resizewindowpixel "exact 945 1382,address:$CHAT_ADDR" >/dev/null 2>&1
+  hyprctl dispatch resizewindowpixel "exact 1153 1382,address:$CHAT_ADDR" >/dev/null 2>&1
 
 log "done"
