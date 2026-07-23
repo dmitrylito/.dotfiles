@@ -28,6 +28,7 @@ omazed
 openai-codex-bin
 openrgb
 pesign
+pigz
 pre-commit
 rclone
 sbctl
