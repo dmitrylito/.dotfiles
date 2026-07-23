@@ -3,9 +3,12 @@
     "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1"
   },
   "permissions": {
-    "defaultMode": "auto"
+    "defaultMode": "auto",
+    "allow": [
+      "Bash(git add:*\\), Bash\\(git commit:*\\), Bash\\(git push:*)"
+    ]
   },
-  "model": "opus",
+  "model": "fable",
   "hooks": {
     "PermissionRequest": [
       {
@@ -123,7 +126,16 @@
     "linear@claude-plugins-official": true,
     "remember@claude-plugins-official": true,
     "sentry@claude-plugins-official": true,
-    "huggingface-skills@claude-plugins-official": true
+    "huggingface-skills@claude-plugins-official": true,
+    "typescript-plugin@lsp-marketplace": true
+  },
+  "extraKnownMarketplaces": {
+    "lsp-marketplace": {
+      "source": {
+        "source": "directory",
+        "path": "/home/dmitrylito/lsp-marketplace"
+      }
+    }
   },
   "spinnerTipsEnabled": false,
   "spinnerVerbs": {
@@ -136,11 +148,13 @@
   "promptSuggestionEnabled": false,
   "awaySummaryEnabled": false,
   "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
   "theme": "auto",
   "editorMode": "vim",
   "preferredNotifChannel": "ghostty",
-  "autoCompactEnabled": true,
-  "terminalProgressBarEnabled": false,
+  "autoCompactEnabled": false,
+  "showTurnDuration": false,
+  "terminalProgressBarEnabled": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true
 }
