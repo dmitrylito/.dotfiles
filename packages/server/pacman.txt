@@ -54,6 +54,7 @@ lua
 luarocks
 man-db
 mise
+mosh
 ncdu
 networkmanager
 nfs-utils
