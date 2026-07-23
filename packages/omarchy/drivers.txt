@@ -2,6 +2,7 @@ amd-ucode
 kernel-modules-hook
 lib32-vulkan-radeon
 linux-firmware
+nvidia-utils
 sof-firmware
 vulkan-radeon
 vulkan-tools
