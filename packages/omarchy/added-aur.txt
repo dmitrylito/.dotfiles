@@ -1,4 +1,3 @@
-android-studio
 claude
 coolercontrol-bin
 discordupdater
