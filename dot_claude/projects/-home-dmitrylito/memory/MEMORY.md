@@ -10,3 +10,4 @@
 - [Python tools](python-tools.md) — billingapp/owlcam(⚠️live prod key)/spotify-cli/chat-export/openclaw
 - [Claude Code setup](claude-code-setup.md) — native install, auto mode, moshi-hook, plugins, lsp-marketplace
 - [Guidance architecture](guidance-architecture.md) — rules/, CLAUDE.md, auto-memory, remember plugin
+- [Subagent spawn policy](subagent-spawn-policy.md) — self-judge spawn worth; no blanket model pin; `lookup` agent
