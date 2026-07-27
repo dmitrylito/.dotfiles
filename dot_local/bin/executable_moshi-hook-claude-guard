@@ -33,27 +33,48 @@ tty_nr=$(sed 's/.*) //' /proc/self/stat 2>/dev/null | cut -d' ' -f5)
 
 payload=$(mktemp) || exec "$MOSHI_HOOK" "$@"
 cat >"$payload"
-"$MOSHI_HOOK" "$@" <"$payload"
-rc=$?
-
 sid=$(sed -n 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$payload" | head -1)
-rm -f "$payload"
 record="${MOSHI_STATE_DIR:-$HOME/.local/state/moshi}/claude-sessions/$sid.json"
 
-# Only pay for the interpreter when there is actually a guessed pane to strip.
-if [ -n "$sid" ] && grep -q '"tmux' "$record" 2>/dev/null; then
-    python3 - "$record" <<'PY'
+# A binding carrying tmuxSocket came from a real $TMUX_PANE rather than the cwd guess —
+# e.g. this session is a background job the user is viewing through a terminal attach.
+# Remember it, because moshi-hook drops the pane on non-SessionStart events.
+keep=""
+if [ -n "$sid" ] && grep -q '"tmuxSocket"' "$record" 2>/dev/null; then
+    keep=$(mktemp) && cp "$record" "$keep"
+fi
+
+"$MOSHI_HOOK" "$@" <"$payload"
+rc=$?
+rm -f "$payload"
+
+if [ -n "$sid" ] && { [ -n "$keep" ] || grep -q '"tmux' "$record" 2>/dev/null; }; then
+    python3 - "$record" "$keep" <<'PY'
 import json, os, sys
 path = sys.argv[1]
+prior = sys.argv[2] if len(sys.argv) > 2 else ''
 try:
     with open(path) as fh:
         record = json.load(fh)
 except Exception:
     sys.exit(0)
-if not any(k.startswith('tmux') or k == 'terminalKind' for k in record):
-    sys.exit(0)
-for key in ('tmuxSession', 'tmuxWindow', 'tmuxPane', 'tmuxSocket', 'terminalKind'):
+binding = {}
+if prior:
+    try:
+        with open(prior) as fh:
+            old = json.load(fh)
+        binding = {k: old[k] for k in
+                   ('tmuxSession', 'tmuxWindow', 'tmuxPane', 'tmuxSocket', 'terminalKind')
+                   if k in old}
+    except Exception:
+        binding = {}
+before = {k: record.get(k) for k in
+          ('tmuxSession', 'tmuxWindow', 'tmuxPane', 'tmuxSocket', 'terminalKind')}
+for key in before:
     record.pop(key, None)
+record.update(binding)          # empty for a cwd guess, so the guess is simply dropped
+if {k: record.get(k) for k in before} == before:
+    sys.exit(0)
 tmp = path + '.guard.tmp'
 try:
     with open(tmp, 'w') as fh:
@@ -66,5 +87,6 @@ except Exception:
         pass
 PY
 fi
+[ -n "$keep" ] && rm -f "$keep"
 
 exit $rc
