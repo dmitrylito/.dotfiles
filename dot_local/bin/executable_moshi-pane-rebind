@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+# moshi-pane-rebind — keep Moshi's pane->conversation bindings pointing at the job each
+# tmux pane is actually displaying.
+#
+# Usage: moshi-pane-rebind [--dry-run] [--verbose]
+#        Run periodically (moshi-pane-rebind.timer). Safe to run any time; it only edits
+#        the tmux* fields of records under ~/.local/state/moshi/claude-sessions/ and
+#        never deletes a record.
+#
+# Why: Moshi assumes one tmux pane == one agent session. Viewing a background job in a
+# pane breaks that — the job owns the conversation but is tty-less, while the terminal
+# that displays it registers its own Claude session that is never prompted and so never
+# gets a transcript. Moshi binds the pane to that empty session, the gateway answers 404,
+# and the app spins on "connecting" with a blank chat.
+#
+# Claude Code renders the job's name in the pane, and ~/.claude/jobs/*/state.json holds
+# that same name plus the authoritative sessionId and current transcript path
+# (linkScanPath, which follows the transcript when a cwd change relocates it). Matching
+# the two gives an exact pane -> conversation mapping.
+#
+# Panes whose bound session has no transcript, and which match no job, have the stale
+# claim removed so they stop hijacking the pane.
+
+import argparse
+import glob
+import json
+import os
+import re
+import subprocess
+import sys
+
+STATE = os.path.expanduser(os.environ.get("MOSHI_STATE_DIR", "~/.local/state/moshi"))
+RECORDS = os.path.join(STATE, "claude-sessions")
+JOBS = os.path.expanduser("~/.claude/jobs")
+TMUX = next((p for p in ("/usr/bin/tmux", "/usr/sbin/tmux", "/opt/homebrew/bin/tmux")
+             if os.path.exists(p)), "tmux")
+TMUX_FIELDS = ("tmuxSession", "tmuxWindow", "tmuxPane", "tmuxSocket", "terminalKind")
+# Claude Code draws the job name in a horizontal rule: ─── name ──
+DIVIDER = re.compile(r"─+\s(.+?)\s─+\s*$")
+
+args = argparse.ArgumentParser()
+args.add_argument("--dry-run", action="store_true")
+args.add_argument("--verbose", action="store_true")
+opts = args.parse_args()
+changes = []
+
+
+def log(msg):
+    if opts.verbose:
+        print(msg)
+
+
+def tmux_sockets():
+    return sorted(glob.glob("/tmp/tmux-%d/*" % os.getuid()))
+
+
+def panes():
+    """[(socket, pane_id, session, window, rendered_title)]"""
+    out = []
+    for sock in tmux_sockets():
+        try:
+            listed = subprocess.run(
+                [TMUX, "-S", sock, "list-panes", "-a", "-F",
+                 "#{pane_id}\t#{session_name}\t#{window_index}"],
+                capture_output=True, text=True, timeout=10)
+        except Exception:
+            continue
+        for line in listed.stdout.splitlines():
+            parts = line.split("\t")
+            if len(parts) != 3:
+                continue
+            pane, session, window = parts
+            try:
+                cap = subprocess.run([TMUX, "-S", sock, "capture-pane", "-p", "-t", pane],
+                                     capture_output=True, text=True, timeout=10).stdout
+            except Exception:
+                cap = ""
+            title = ""
+            for row in reversed(cap.splitlines()):
+                hit = DIVIDER.search(row.rstrip())
+                if hit:
+                    title = hit.group(1).strip()
+                    break
+            out.append((sock, pane, session, window, title))
+    return out
+
+
+def jobs_by_name():
+    by_name = {}
+    for path in glob.glob(os.path.join(JOBS, "*", "state.json")):
+        try:
+            with open(path) as fh:
+                job = json.load(fh)
+        except Exception:
+            continue
+        name, sid = job.get("name"), job.get("sessionId")
+        if not name or not sid:
+            continue
+        # Most recently updated wins when two jobs share a name.
+        if name not in by_name or job.get("updatedAt", "") > by_name[name].get("updatedAt", ""):
+            by_name[name] = job
+    return by_name
+
+
+def load(sid):
+    path = os.path.join(RECORDS, sid + ".json")
+    try:
+        with open(path) as fh:
+            return path, json.load(fh)
+    except Exception:
+        return path, None
+
+
+def save(path, record):
+    if opts.dry_run:
+        return
+    tmp = path + ".rebind.tmp"
+    with open(tmp, "w") as fh:
+        json.dump(record, fh, indent=2)
+    os.replace(tmp, path)
+
+
+def has_transcript(record):
+    p = record.get("transcriptPath") or ""
+    return bool(p) and os.path.exists(p)
+
+
+if not os.path.isdir(RECORDS):
+    sys.exit(0)
+
+by_name = jobs_by_name()
+bound = {}
+
+for sock, pane, session, window, title in panes():
+    job = by_name.get(title) if title else None
+    if not job:
+        continue
+    sid = job["sessionId"]
+    path, record = load(sid)
+    if record is None:
+        continue
+    transcript = job.get("linkScanPath") or record.get("transcriptPath")
+    desired = dict(terminalKind="tmux", tmuxSession=session, tmuxWindow=window,
+                   tmuxPane=pane, tmuxSocket=sock)
+    current = {k: record.get(k) for k in TMUX_FIELDS}
+    if current != desired or (transcript and record.get("transcriptPath") != transcript
+                              and os.path.exists(transcript)):
+        record.update(desired)
+        if transcript and os.path.exists(transcript):
+            record["transcriptPath"] = transcript
+        save(path, record)
+        changes.append(f"bound {pane} -> {sid[:8]} ({title})")
+    bound[pane] = sid
+
+# Resolve panes with more than one claimant: whichever the gateway picks, the losers make
+# it answer 404. A pane matched to a job has an exact answer; otherwise prefer a claimant
+# that can actually serve a transcript, falling back to the newest.
+#
+# Never strip the sole claimant of an unmatched pane just because it has no transcript —
+# that is what a foreground Claude looks like before its first prompt, and moshi-hook only
+# sets the pane at SessionStart, so clearing it would never be undone.
+claimants = {}
+for path in glob.glob(os.path.join(RECORDS, "*.json")):
+    try:
+        with open(path) as fh:
+            record = json.load(fh)
+    except Exception:
+        continue
+    pane = record.get("tmuxPane")
+    if pane:
+        claimants.setdefault(pane, []).append((path, record))
+
+for pane, holders in claimants.items():
+    if pane in bound:
+        keeper = bound[pane]
+    elif len(holders) == 1:
+        continue
+    else:
+        ranked = sorted(holders,
+                        key=lambda h: (has_transcript(h[1]), os.path.getmtime(h[0])),
+                        reverse=True)
+        keeper = os.path.basename(ranked[0][0])[:-5]
+    for path, record in holders:
+        sid = os.path.basename(path)[:-5]
+        if sid == keeper:
+            continue
+        for key in TMUX_FIELDS:
+            record.pop(key, None)
+        save(path, record)
+        changes.append(f"cleared competing claim on {pane} by {sid[:8]}")
+
+for line in changes:
+    log(line)
+if opts.dry_run and changes:
+    print("\n".join(changes))

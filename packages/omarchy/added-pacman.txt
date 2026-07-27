@@ -3,7 +3,6 @@ ast-grep
 bob
 chezmoi
 cmake
-cpio
 cronie
 cuda
 cudnn
@@ -21,6 +20,7 @@ i2c-tools
 jdk17-openjdk
 kdeconnect
 migraphx
+mosh
 neovim
 nvtop
 nwg-displays

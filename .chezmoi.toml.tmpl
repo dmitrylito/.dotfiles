@@ -1,6 +1,15 @@
 {{- $profile := promptStringOnce . "profile" "Machine profile (Omarchy, server, mac)" -}}
+# This repo is public, so anything secret must be committed encrypted.
+# The identity lives outside the source tree and is never committed; copy it to a new
+# machine out of band before the first `chezmoi apply`, or encrypted files stay unreadable.
+encryption = "age"
+
 [data]
     profile = {{ $profile | lower | quote }}
+
+[age]
+    identity = {{ (joinPath .chezmoi.homeDir ".config" "chezmoi" "key.txt") | quote }}
+    recipient = "age1dwdeg394lmtkmp5wn682kqpx7jjrtkl6mcgfn6pzggklj6xm3d2sqv3chk"
 
 [git]
     autoCommit = true
