@@ -11,9 +11,11 @@
 # RULE FOR FUTURE EDITS: add exact argument lines, never a bare binary and never
 # a trailing wildcard. sudoers matches args as one string, so `cmd *` also
 # matches `cmd --config /tmp/evil` — that is a root shell, not a diagnostic.
+# A bare `/usr/bin/foo` is the same trap: it permits ANY arguments and silently
+# overrides every pinned variant beside it. Write `/usr/bin/foo ""` for no-args.
 
 Cmnd_Alias CLAUDE_KERNEL_LOG = \
-	/usr/bin/dmesg, \
+	/usr/bin/dmesg "", \
 	/usr/bin/dmesg -T, \
 	/usr/bin/dmesg -TH, \
 	/usr/bin/dmesg -H, \
