@@ -1,0 +1,158 @@
+{
+  "agentPushNotifEnabled": true,
+  "autoCompactEnabled": false,
+  "awaySummaryEnabled": false,
+  "editorMode": "vim",
+  "effortLevel": "high",
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "djlsp-plugin@lsp-marketplace": true,
+    "github@claude-plugins-official": true,
+    "huggingface-skills@claude-plugins-official": true,
+    "linear@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "remember@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "sentry@claude-plugins-official": true,
+    "typescript-plugin@lsp-marketplace": true
+  },
+  "env": {
+    "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1"
+  },
+  "extraKnownMarketplaces": {
+    "lsp-marketplace": {
+      "source": {
+        "path": "{{ .chezmoi.homeDir }}/lsp-marketplace",
+        "source": "directory"
+      }
+    }
+  },
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "async": false,
+            "command": "'{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard' claude-hook",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "'{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard' claude-hook",
+            "type": "command"
+          }
+        ],
+        "matcher": "AskUserQuestion"
+      },
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "'{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard' claude-hook",
+            "type": "command"
+          }
+        ],
+        "matcher": "ExitPlanMode"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "'{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard' claude-hook",
+            "type": "command"
+          }
+        ],
+        "matcher": "AskUserQuestion"
+      },
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "'{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard' claude-hook",
+            "type": "command"
+          }
+        ],
+        "matcher": "ExitPlanMode"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "'{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard' claude-hook",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "'{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard' claude-hook",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "'{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard' claude-hook",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "'{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard' claude-hook",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  },
+  "inputNeededNotifEnabled": true,
+  "model": "opus",
+  "permissions": {
+    "allow": [],
+    "defaultMode": "auto"
+  },
+  "preferredNotifChannel": "ghostty",
+  "promptSuggestionEnabled": false,
+  "showTurnDuration": false,
+  "skipDangerousModePermissionPrompt": true,
+  "spinnerTipsEnabled": false,
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "Working"
+    ]
+  },
+  "statusLine": {
+    "command": "bash ~/.claude/statusline-command.sh",
+    "type": "command"
+  },
+  "terminalProgressBarEnabled": true,
+  "theme": "auto",
+  "tui": "fullscreen"
+}

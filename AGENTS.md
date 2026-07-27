@@ -23,7 +23,7 @@ This home directory uses **[chezmoi](https://www.chezmoi.io/)** to manage dotfil
 
 This system runs **[Omarchy](https://omarchy.org/)**—an opinionated, beautiful Arch Linux distribution using Hyprland.
 
-* **Never Modify the Core:** Do **not** edit files inside `/home/dmitrylito/.local/share/omarchy/`. These are read-only source files managed by git. Any changes will break system updates.
+* **Never Modify the Core:** Do **not** edit files inside `~/.local/share/omarchy/`. These are read-only source files managed by git. Any changes will break system updates.
 * **User Customizations:** Make all user-level customizations in `~/.config/` (such as `~/.config/hypr/` for Hyprland rules/keybindings, or `~/.config/omarchy/`).
 * **Sourcing Rules & Reloads:**
   * **Hyprland:** Config files auto-reload on save. Always validate changes by running `hyprctl reload` followed by `hyprctl configerrors`.

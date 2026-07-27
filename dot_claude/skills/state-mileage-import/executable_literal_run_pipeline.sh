@@ -14,14 +14,14 @@ VEHICLES="$1"
 START="$2"
 END="$3"
 SRC_INSTANCE="${4:-fleetchaser-default-production}"
-CHECKOUT="${5:-/home/dmitrylito/Projects/backend}"
+CHECKOUT="${5:-$HOME/Projects/backend}"
 LOG_DIR="${LOG_DIR:-/tmp/state-mileage-import}"
 mkdir -p "$LOG_DIR"
 
 export COMPOSE_FILE="$CHECKOUT/docker/docker-compose.yml"
 # Worktrees miss gitignored files the containers need.
-[ -f "$CHECKOUT/docker/.env" ] || cp /home/dmitrylito/Projects/backend/docker/.env "$CHECKOUT/docker/.env"
-[ -f "$CHECKOUT/fc-staging-media.json" ] || cp /home/dmitrylito/Projects/backend/fc-staging-media.json "$CHECKOUT/"
+[ -f "$CHECKOUT/docker/.env" ] || cp $HOME/Projects/backend/docker/.env "$CHECKOUT/docker/.env"
+[ -f "$CHECKOUT/fc-staging-media.json" ] || cp $HOME/Projects/backend/fc-staging-media.json "$CHECKOUT/"
 cp "$SKILL_DIR/reprocess_state_mileage.py" "$CHECKOUT/reprocess_state_mileage.py"
 
 IFS=',' read -ra IDS <<< "$VEHICLES"
