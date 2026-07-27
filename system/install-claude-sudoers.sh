@@ -33,6 +33,24 @@ fi
 
 visudo -cf "$src" >/dev/null || { echo "refusing to install: $src does not parse" >&2; exit 1; }
 
+# Faults anywhere in /etc/sudoers.d fail a whole-tree `visudo -c`, so compare
+# against a baseline — otherwise an unrelated broken file rolls this one back.
+tree_faults() { visudo -c 2>&1 | grep -v 'parsed OK$' | sort || true; }
+
+# 0440 is the only mode sudo accepts; anything else means the file is being
+# ignored at runtime, so tightening it is a repair, not a policy change.
+while read -r bad; do
+	[[ -n $bad ]] || continue
+	echo "repairing pre-existing $bad (was $(stat -c %a "$bad"), sudo requires 0440)"
+	chmod 0440 "$bad"
+done < <(tree_faults | sed -n 's|^\(/etc/sudoers\.d/[^:]*\): bad permissions.*|\1|p')
+
+baseline=$(tree_faults)
+if [[ -n $baseline ]]; then
+	echo "warning: /etc/sudoers.d already has faults this script will not touch:" >&2
+	echo "$baseline" | sed 's/^/  /' >&2
+fi
+
 backup=""
 if [[ -f $dest ]]; then
 	backup=$(mktemp)
@@ -41,13 +59,15 @@ fi
 
 install -o root -g root -m 0440 "$src" "$dest"
 
-if ! visudo -c >/dev/null; then
+introduced=$(comm -13 <(printf '%s\n' "$baseline") <(tree_faults))
+if [[ -n $introduced ]]; then
 	if [[ -n $backup ]]; then
 		cp -a "$backup" "$dest"
 	else
 		rm -f "$dest"
 	fi
-	echo "rolled back: /etc/sudoers.d tree failed to parse with the new file" >&2
+	echo "rolled back — this file introduced:" >&2
+	echo "$introduced" | sed 's/^/  /' >&2
 	exit 1
 fi
 
