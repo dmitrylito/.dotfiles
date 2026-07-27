@@ -5,6 +5,7 @@ package-lock.json
 playbook.yml
 packages/
 scripts/
+system/
 
 # WM / editor state that is machine-specific or generated
 .config/hypr/shaders/
