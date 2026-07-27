@@ -1,0 +1,92 @@
+#!/bin/sh
+# moshi-hook-claude-guard — guard wrapper for the Moshi Claude Code hooks.
+#
+# Usage: called from ~/.claude/settings.json in place of `moshi-hook claude-hook`;
+#        every argument and the stdin payload are forwarded verbatim, and moshi-hook's
+#        stdout/stderr and exit code are preserved.
+#
+# Why this exists: moshi-hook takes a session's tmux pane from $TMUX_PANE, and when that
+# is unset it GUESSES one by matching the session's cwd against each pane's working
+# directory, taking the first match with no check that the pane runs Claude at all.
+# Tty-less sessions (background jobs, scheduled agents) therefore claim panes they do
+# not occupy — on dlco six panes sit in $HOME, so they all land on the same wrong one —
+# and Moshi's agent mode binds to a phantom conversation.
+#
+# Such sessions must still REGISTER: the Moshi app needs the record to show the chat and
+# its history, and moshi-hook refreshes transcriptPath on every event, which is what
+# repairs history after Claude Code relocates a transcript on a cwd change (entering a
+# worktree). So this forwards the event as normal and then removes only the guessed tmux
+# fields, leaving the record shaped like a genuine tty-less one.
+#
+# Verified 2026-07-27 against moshi-hook 0.2.61.
+
+MOSHI_HOOK="${MOSHI_HOOK_BIN:-$HOME/.local/bin/moshi-hook}"
+[ -x "$MOSHI_HOOK" ] || exit 0
+
+# Inside tmux the pane is known exactly, so no guess can happen.
+[ -n "$TMUX_PANE" ] && exec "$MOSHI_HOOK" "$@"
+
+# /proc/self/stat field 7 is tty_nr, and 0 means no controlling terminal. Fields are
+# counted after the last ')' because comm can itself contain spaces and parentheses.
+tty_nr=$(sed 's/.*) //' /proc/self/stat 2>/dev/null | cut -d' ' -f5)
+[ -n "$tty_nr" ] && [ "$tty_nr" -ne 0 ] 2>/dev/null && exec "$MOSHI_HOOK" "$@"
+
+payload=$(mktemp) || exec "$MOSHI_HOOK" "$@"
+cat >"$payload"
+sid=$(sed -n 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$payload" | head -1)
+record="${MOSHI_STATE_DIR:-$HOME/.local/state/moshi}/claude-sessions/$sid.json"
+
+# A binding carrying tmuxSocket came from a real $TMUX_PANE rather than the cwd guess —
+# e.g. this session is a background job the user is viewing through a terminal attach.
+# Remember it, because moshi-hook drops the pane on non-SessionStart events.
+keep=""
+if [ -n "$sid" ] && grep -q '"tmuxSocket"' "$record" 2>/dev/null; then
+    keep=$(mktemp) && cp "$record" "$keep"
+fi
+
+"$MOSHI_HOOK" "$@" <"$payload"
+rc=$?
+rm -f "$payload"
+
+if [ -n "$sid" ] && { [ -n "$keep" ] || grep -q '"tmux' "$record" 2>/dev/null; }; then
+    python3 - "$record" "$keep" <<'PY'
+import json, os, sys
+path = sys.argv[1]
+prior = sys.argv[2] if len(sys.argv) > 2 else ''
+try:
+    with open(path) as fh:
+        record = json.load(fh)
+except Exception:
+    sys.exit(0)
+binding = {}
+if prior:
+    try:
+        with open(prior) as fh:
+            old = json.load(fh)
+        binding = {k: old[k] for k in
+                   ('tmuxSession', 'tmuxWindow', 'tmuxPane', 'tmuxSocket', 'terminalKind')
+                   if k in old}
+    except Exception:
+        binding = {}
+before = {k: record.get(k) for k in
+          ('tmuxSession', 'tmuxWindow', 'tmuxPane', 'tmuxSocket', 'terminalKind')}
+for key in before:
+    record.pop(key, None)
+record.update(binding)          # empty for a cwd guess, so the guess is simply dropped
+if {k: record.get(k) for k in before} == before:
+    sys.exit(0)
+tmp = path + '.guard.tmp'
+try:
+    with open(tmp, 'w') as fh:
+        json.dump(record, fh, indent=2)
+    os.replace(tmp, path)
+except Exception:
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
+PY
+fi
+[ -n "$keep" ] && rm -f "$keep"
+
+exit $rc
