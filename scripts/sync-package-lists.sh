@@ -23,11 +23,11 @@ HOME="$(getent passwd "$(id -un)" | cut -d: -f6)"
 export HOME
 CHEZMOI_DIR="$HOME/.local/share/chezmoi"
 
-# Serialize concurrent syncs. Wait (rather than skip) so the worker spawned by
-# the LAST transaction of a multi-transaction AUR build still runs and captures
-# the final package state; a run that finds nothing changed just commits nothing.
-# Backgrounded, so this wait never blocks pacman.
-exec 9>"/tmp/chezmoi-package-sync-$(id -u).lock"
+# Serialize git access to the chezmoi repo. The Claude Code auto-commit hook
+# (.claude/settings.json) writes to the same repo, so both take this shared lock
+# to avoid racing on .git/index.lock. Wait rather than skip — bailing here would
+# silently drop this transaction's package-list changes until the next install.
+exec 9>"/tmp/chezmoi-git-$(id -u).lock"
 flock -w 60 9 || exit 0
 
 # The rendered chezmoi config records the machine profile chosen at init.
