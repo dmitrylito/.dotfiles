@@ -40,6 +40,12 @@ path=(
   $path
 )
 
+# Auth for the github MCP plugin, which expands ${GITHUB_PERSONAL_ACCESS_TOKEN} in its
+# .mcp.json. Read from the gh keyring at startup so no token lands in this pushed file.
+if command -v gh >/dev/null 2>&1; then
+  export GITHUB_PERSONAL_ACCESS_TOKEN="${GITHUB_PERSONAL_ACCESS_TOKEN:-$(gh auth token 2>/dev/null)}"
+fi
+
 if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 elif [[ -f /opt/homebrew/bin/brew ]]; then
