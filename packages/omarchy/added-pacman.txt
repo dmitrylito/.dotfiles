@@ -32,7 +32,6 @@ openrgb
 pesign
 pigz
 pre-commit
-qt6-tools
 rclone
 sbctl
 solaar

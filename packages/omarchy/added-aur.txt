@@ -8,6 +8,8 @@ google-cloud-cli-gsutil
 gputest
 hyprmon-bin
 lazycron-bin
+libuvc
+llama.cpp-cuda
 sesh-bin
 slack-desktop
 ventoy-bin
