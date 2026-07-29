@@ -6,6 +6,7 @@ alias lzp='lazypodman'
 alias cz="chezmoi"
 alias czr="chezmoi re-add"
 alias czu="chezmoi update"
+alias cza="chezmoi apply"
 alias py="python3"
 alias c="clear"
 alias sz="exec zsh"
