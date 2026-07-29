@@ -25,7 +25,13 @@ set -g allow-passthrough on
 
 bind q source-file ~/.config/tmux/tmux.conf \; display "Reloaded!"
 
-bind M send-keys C-c "printf '\\033[?1000l\\033[?1002l\\033[?1003l\\033[?1006l\\033[?1015l'; clear" Enter \; display "mouse reset"
+# Aliased so the which-key menu can invoke it by name — the escape soup does not
+# survive being nested through which-key's YAML -> generated-config quoting.
+# The inner shell string MUST stay single-quoted for tmux and double-quoted for
+# the shell: an alias is parsed twice, and double-quoting it here would let the
+# second parse turn \033 into a real ESC before the shell's printf ever sees it.
+set -s command-alias[100] "mouse-reset=send-keys C-c 'printf \"\\033[?1000l\\033[?1002l\\033[?1003l\\033[?1006l\\033[?1015l\"; clear' Enter"
+bind M mouse-reset \; display "mouse reset"
 
 # With mouse off, clicks stop being reported to tmux and Ghostty handles them
 # again — that's what makes ctrl+click on a URL work. Overrides default mark-pane.
