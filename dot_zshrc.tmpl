@@ -21,6 +21,7 @@ fpath=(
   $HOME/.local/share/zsh/site-functions
   /usr/local/share/zsh/site-functions
   /usr/share/zsh/site-functions
+  /opt/homebrew/share/zsh/site-functions
   $fpath
 )
 
@@ -86,6 +87,8 @@ bindkey -M vicmd '\es' sesh-sessions
 bindkey -M viins '\es' sesh-sessions
 
 source_if_exists "$HOME/.aliases"
+# iTerm2 only ships this on macOS; the guard makes it a no-op everywhere else.
+source_if_exists "$HOME/.iterm2_shell_integration.zsh"
 # Machine-local secrets/env (NOT managed by chezmoi — never add it).
 source_if_exists "$HOME/.zshrc.local"
 
@@ -121,7 +124,6 @@ if [[ ":$PATH:" != *":$OMARCHY_PATH/bin:"* ]]; then
   export PATH="$OMARCHY_PATH/bin:$PATH"
 fi
 source_if_exists "$OMARCHY_PATH/default/bash/envs"
-source_if_exists "$HOME/google-cloud-sdk/completion.zsh.inc"
 
 _sync_hypr_signature() {
   if command -v systemctl >/dev/null 2>&1; then
@@ -140,15 +142,6 @@ hyprctl() {
 }
 {{- end }}
 
-{{- if eq .profile "mac" }}
-export PATH="$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
-source_if_exists "${HOME}/.iterm2_shell_integration.zsh"
-if [[ -d /opt/homebrew/share/zsh/site-functions ]]; then
-  fpath=(/opt/homebrew/share/zsh/site-functions $fpath)
-fi
-source_if_exists "/opt/homebrew/share/google-cloud-sdk/path.zsh.inc"
-source_if_exists "/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc"
-{{- end }}
 
 # Pull + apply dotfiles in the background so no machine drifts behind master.
 # Throttled and script-excluded; see ~/.local/bin/chezmoi-autoupdate for why.

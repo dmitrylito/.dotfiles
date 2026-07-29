@@ -1,13 +1,10 @@
 # Ghostty Configuration Template managed by Chezmoi
 # Profiles: omarchy (Linux), mac (macOS)
-background = 000000
 {{ if eq .profile "omarchy" -}}
 # --- Omarchy Profile Configuration ---
 
 # Dynamic theme colors from Omarchy
 config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"
-
-background = 000000
 
 # Font size
 font-size = 11
