@@ -12,7 +12,6 @@ hyprmon-bin
 lazycron-bin
 noisetorch-bin
 sesh-bin
-slack-desktop
 ventoy-bin
 webcamoid
 zsa-keymapp-bin
