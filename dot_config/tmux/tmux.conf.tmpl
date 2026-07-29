@@ -27,6 +27,14 @@ bind q source-file ~/.config/tmux/tmux.conf \; display "Reloaded!"
 
 bind M send-keys C-c "printf '\\033[?1000l\\033[?1002l\\033[?1003l\\033[?1006l\\033[?1015l'; clear" Enter \; display "mouse reset"
 
+# With mouse off, clicks stop being reported to tmux and Ghostty handles them
+# again — that's what makes ctrl+click on a URL work. Overrides default mark-pane.
+bind m set -g mouse \; display "mouse #{?mouse,on,off}"
+
+# Keyboard equivalent of ctrl+click, and unlike ctrl+click it also catches URLs
+# that tmux wrapped across rows.
+bind u display-popup -E -w 80% -h 60% "~/.config/tmux/url_picker.sh '#{pane_id}'"
+
 bind g display-popup -d "#{pane_current_path}" -E -w 90% -h 90% "lazygit"
 
 # Vi mode for copy
@@ -99,8 +107,8 @@ set -g set-clipboard on
 set -ag terminal-features ",tmux-256color:clipboard"
 set -ag terminal-features ",xterm-ghostty:clipboard"
 # Advertise synchronized output (DECSET 2026) so tmux draws each frame
-# atomically instead of flushing partial frames. Ghostty supports it, but its
-# terminfo ships no Sync cap, so force it. Covers tmux-256color too because
+# atomically instead of flushing partial frames. xterm-ghostty's terminfo does
+# carry a Sync cap now (tmux detects it), but tmux-256color doesn't, and
 # nested-over-SSH attaches report client_termname=tmux-256color, not ghostty.
 set -ag terminal-features ",tmux-256color:sync"
 set -ag terminal-features ",xterm-ghostty:sync"
@@ -110,6 +118,22 @@ set -ag terminal-features ",xterm-ghostty:sync"
 # it flickers. Grant it explicitly for both names in the attach chain.
 set -ag terminal-features ",tmux-256color:cstyle:ccolour"
 set -ag terminal-features ",xterm-ghostty:cstyle:ccolour"
+# OSC 8 hyperlinks. Ghostty renders them, but neither terminfo carries the Hls
+# cap, so tmux drops hyperlinks from pane output entirely (eza --hyperlink, gh).
+set -ag terminal-features ",tmux-256color:hyperlinks"
+set -ag terminal-features ",xterm-ghostty:hyperlinks"
+# modifyOtherKeys. `extended-keys on` below is a no-op unless tmux believes the
+# client supports it, and no terminfo in the chain advertises Eneks/Dseks.
+# Revert these two lines first if any key or the C-Space prefix misbehaves.
+set -ag terminal-features ",tmux-256color:extkeys"
+set -ag terminal-features ",xterm-ghostty:extkeys"
+# xterm-ghostty advertises Tc so tmux detects RGB itself; tmux-256color doesn't,
+# which loses truecolor on the nested-over-SSH attach.
+set -ag terminal-features ",tmux-256color:RGB"
+# usstyle (curly/coloured underlines, e.g. nvim LSP diagnostics) is left off:
+# tmux's usstyle emits the 4::3 sub-parameter form, Ghostty's terminfo uses 4:3.
+# Test in bare Ghostty first — printf '\e[4::3mtest\e[0m\n' curly means safe.
+# set -ag terminal-features ",xterm-ghostty:usstyle"
 set -ag update-environment " LANG LC_ALL LC_CTYPE"
 setw -g aggressive-resize on
 set -g detach-on-destroy off

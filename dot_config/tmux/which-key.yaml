@@ -42,6 +42,12 @@ items:
       - name: List buffers
         key: "#"
         command: list-buffers
+  - name: Open URL
+    key: u
+    command: "display-popup -E -w 80% -h 60% ~/.config/tmux/url_picker.sh"
+  - name: Toggle mouse
+    key: m
+    command: "set -g mouse"
   - separator: true
   - name: +Windows
     key: w
