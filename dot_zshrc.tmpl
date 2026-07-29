@@ -44,7 +44,19 @@ plugins=(
   zsh-syntax-highlighting
 )
 
+# --- zsh-autocomplete: debounce so it doesn't complete+redraw on every keystroke
+# (must be set BEFORE oh-my-zsh sources the plugin). Fixes lag/flood-crash under
+# tmux+Ghostty without disabling the plugin's history-search / tab behavior.
+zstyle ':autocomplete:*' delay 0.15      # wait for a typing pause before listing
+zstyle ':autocomplete:*' min-input 2     # don't start listing until 2 chars typed
+zstyle ':autocomplete:*' list-lines 8    # smaller live list = far less redraw
+
 source "$ZSH/oh-my-zsh.sh"
+
+# Cap syntax-highlighting work: without this, zsh-syntax-highlighting re-parses
+# the whole buffer on every keystroke, so long lines / big pastes flood the
+# terminal with redraws and crash the window under tmux (zsh-syntax-highlighting #295).
+ZSH_HIGHLIGHT_MAXLENGTH=512
 
 setopt AUTO_CD
 setopt SHARE_HISTORY
