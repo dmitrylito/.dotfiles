@@ -14,8 +14,29 @@
     # non_root_user on Linux and stays as the invoking user on macOS.
     as_user: "{{ (profile | lower) != 'mac' }}"
 
-    # 1. Base terminal essentials defined in YAML (Option B)
-    # These are installed on ANY Linux system (Omarchy or server)
+    # Decoded output of the SECTION 0 probe. Lazily evaluated, so it resolves on
+    # first reference (after the probe has run), not at parse time.
+    st: "{{ state_probe.stdout | from_json }}"
+
+    # Upstream checkouts, all synced by the single task in SECTION 6.
+    # `dest` is relative to the user's home.
+    tmuxifier_rel: ".cache/tmuxifier-src"
+    git_repos:
+      - { repo: 'https://github.com/marlonrichert/zsh-autocomplete.git', dest: '.oh-my-zsh/custom/plugins/zsh-autocomplete' }
+      - { repo: 'https://github.com/zsh-users/zsh-autosuggestions.git', dest: '.oh-my-zsh/custom/plugins/zsh-autosuggestions' }
+      - { repo: 'https://github.com/MichaelAquilina/zsh-you-should-use.git', dest: '.oh-my-zsh/custom/plugins/you-should-use' }
+      - { repo: 'https://github.com/zsh-users/zsh-syntax-highlighting.git', dest: '.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' }
+      # NOT under /tmp: /tmp is tmpfs, so a /tmp clone forced a full re-clone of
+      # tmuxifier after every reboot.
+      - { repo: 'https://github.com/jimeh/tmuxifier.git', dest: "{{ tmuxifier_rel }}" }
+
+    ai_clis:
+      - { name: claude, url: 'https://claude.ai/install.sh', runner: bash }
+      - { name: codex, url: 'https://chatgpt.com/codex/install.sh', runner: sh }
+
+    # Base terminal essentials. Installed on ANY Linux system (Omarchy or
+    # server); most already ship in Omarchy's base, so on omarchy this is a
+    # safety net rather than real work.
     common_linux_packages:
       - git
       - zsh
@@ -32,7 +53,7 @@
     mac_cask_file: "{{ chezmoi_source_dir }}/packages/mac/casks.txt"
     mac_taps_file: "{{ chezmoi_source_dir }}/packages/mac/taps.txt"
 
-    # Paths to Omarchy-specific auto-generated lists (Option A)
+    # Paths to Omarchy-specific auto-generated lists
     pacman_file: "{{ chezmoi_source_dir }}/packages/omarchy/added-pacman.txt"
     aur_file: "{{ chezmoi_source_dir }}/packages/omarchy/added-aur.txt"
     # drivers.txt is auto-tracked for reference only — drivers are hardware-
@@ -44,58 +65,124 @@
     server_pacman_file: "{{ chezmoi_source_dir }}/packages/server/pacman.txt"
     server_aur_file: "{{ chezmoi_source_dir }}/packages/server/aur.txt"
 
-    # archzfs unofficial binary repo (server ZFS — see SECTION 2.5).
+    # archzfs unofficial binary repo (server ZFS — see SECTION 3).
     # Current signing key after the 2024 maintainer change; the old
     # ...F75D9D76 key is deprecated.
     archzfs_key: "3A9917BF0DED5C13F69AC68FABEC0A1208037BE9"
     archzfs_server: "https://github.com/archzfs/archzfs/releases/download/experimental"
 
+    makeflags_line: 'MAKEFLAGS="-j$(nproc)"'
+    pacman_hook_path: /etc/pacman.d/hooks/zz-chezmoi-package-sync.hook
+    pacman_hook_exec: "/usr/bin/runuser -u {{ non_root_user }} -- {{ chezmoi_source_dir }}/scripts/sync-package-lists.sh"
+
   tasks:
     # =========================================================================
-    # SECTION 1: COMMON LINUX PACKAGES (Applied to Omarchy & server profiles)
+    # SECTION 0: ONE-PASS STATE PROBE
     # =========================================================================
-    - name: Install common Linux terminal packages
-      community.general.pacman:
-        name: "{{ common_linux_packages }}"
-        state: present
-        update_cache: true
-      when: is_linux
+    # Every "has X already been done?" question this playbook asks is answered
+    # here, in one task. On localhost a task that executes a module costs ~150ms
+    # while all of these checks together cost ~5ms, so asking them as separate
+    # stat/command tasks costs an order of magnitude more than the answers are
+    # worth. Everything below is gated on this output, which is why a
+    # fully-synced machine executes almost nothing.
+    #
+    # Emits one line of JSON, consumed as `st.<key>`. To add a gate, extend this
+    # probe — do not add another check task.
+    - name: Probe system state in one pass
+      ansible.builtin.shell:
+        cmd: |
+          set -u
+          # `eval echo ~user` resolves another user's home portably; macOS has
+          # no getent.
+          home=$(eval echo "~{{ non_root_user }}")
+          yn() { if "$@" >/dev/null 2>&1; then printf true; else printf false; fi; }
 
+          installed=
+          command -v pacman >/dev/null 2>&1 && installed=$(pacman -Qq | tr '\n' ' ')
+
+          clis=
+          for c in claude codex; do
+            [ -x "$home/.local/bin/$c" ] && clis="$clis $c"
+          done
+
+          {% if p == 'server' %}
+          key_trusted=$(yn pacman-key --list-keys {{ archzfs_key }})
+          {% else %}
+          key_trusted=true
+          {% endif %}
+
+          printf '{'
+          printf '"home":"%s",' "$home"
+          printf '"installed":"%s",' "$installed"
+          printf '"clis":"%s",' "$clis"
+          printf '"omz":%s,' "$(yn test -f "$home/.oh-my-zsh/oh-my-zsh.sh")"
+          printf '"makeflags":%s,' "$(yn grep -qxF '{{ makeflags_line }}' /etc/makepkg.conf)"
+          printf '"pacman_hooks_dir":%s,' "$(yn test -d /etc/pacman.d/hooks)"
+          printf '"pacman_hook":%s,' "$(yn grep -qF '{{ pacman_hook_exec }}' {{ pacman_hook_path }})"
+          printf '"archzfs_key":%s' "$key_trusted"
+          printf '}\n'
+      register: state_probe
+      changed_when: false
+      # Read-only, and every gate below depends on it, so it must run even under
+      # --check; otherwise `st` is undefined and a dry run cannot work at all.
+      check_mode: false
+
+    # Resolve the package lists and diff them against the probe's installed set
+    # ONCE. Every package action below is gated on these, so a synced machine
+    # never invokes the pacman module at all — each invocation otherwise spends
+    # ~350ms building a full package inventory (and ~570ms plus a mirror round
+    # trip when it also refreshes the cache) only to conclude there is nothing
+    # to do.
+    - name: Compute package deltas
+      when: is_linux
+      vars:
+        have: "{{ st.installed.split() }}"
+        want_native: "{{ (common_linux_packages + (lookup('file', server_pacman_file if p == 'server' else pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list)) | unique }}"
+        want_aur: "{{ lookup('file', server_aur_file if p == 'server' else aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
+        unwanted: "{{ (lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if p == 'omarchy' else [] }}"
+      ansible.builtin.set_fact:
+        installed_packages: "{{ have }}"
+        pacman_missing: "{{ want_native | difference(have) }}"
+        # yay-bin bootstraps itself below; feeding it back into yay is a no-op
+        aur_missing: "{{ want_aur | reject('equalto', 'yay-bin') | list | difference(have) }}"
+        removed_present: "{{ unwanted | intersect(have) }}"
+        yay_installed: "{{ 'yay' in have or 'yay-bin' in have }}"
+
+    # =========================================================================
+    # SECTION 1: BUILD CONFIGURATION (Omarchy & server profiles)
+    # =========================================================================
     # Arch ships MAKEFLAGS commented out, so makepkg compiles on a single core
     # no matter how many the machine has. Everything AUR that actually builds
     # from source pays for it — llama.cpp-cuda (cmake+cudnn) worst of all.
     # Package compression is already threaded (COMPRESSZST uses -T0).
+    # Must stay ahead of the AUR build in SECTION 4.
     - name: Build AUR packages with all available cores
       ansible.builtin.lineinfile:
         path: /etc/makepkg.conf
         regexp: '^#?\s*MAKEFLAGS='
-        line: 'MAKEFLAGS="-j$(nproc)"'
+        line: "{{ makeflags_line }}"
         validate: 'bash -n %s'
-      when: is_linux
+      when:
+        - is_linux
+        - not st.makeflags
 
     # =========================================================================
     # SECTION 2: MACOS HOMEBREW PACKAGES (Applied only to mac profile)
     # =========================================================================
-    - name: Load Mac package lists
+    - name: Install Homebrew packages
       when: is_mac
       block:
-        - name: Read mac brew taps list
+        - name: Read mac brew taps, formulae and cask lists
           ansible.builtin.set_fact:
             mac_brew_taps: "{{ lookup('file', mac_taps_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
-
-        - name: Read mac brew packages list
-          ansible.builtin.set_fact:
             mac_brew_packages: "{{ lookup('file', mac_brew_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
-
-        - name: Read mac brew casks list
-          ansible.builtin.set_fact:
             mac_brew_casks: "{{ lookup('file', mac_cask_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
 
+        # homebrew_tap takes a list; looping it ran a separate brew process per tap
         - name: Add macOS Homebrew taps
           community.general.homebrew_tap:
-            name: "{{ item }}"
+            name: "{{ mac_brew_taps }}"
             state: present
-          loop: "{{ mac_brew_taps }}"
           when: mac_brew_taps | length > 0
 
         - name: Install macOS Homebrew packages
@@ -111,7 +198,7 @@
           when: mac_brew_casks | length > 0
 
     # =========================================================================
-    # SECTION 2.5: ZFS VIA ARCHZFS BINARY REPO (server profile only)
+    # SECTION 3: ZFS VIA ARCHZFS BINARY REPO (server profile only)
     # =========================================================================
     # zfs-dkms/zfs-utils used to be AUR source builds, which failed reliably
     # only on the headless server (PGP key import under makepkg --noconfirm,
@@ -126,18 +213,12 @@
     - name: Set up archzfs binary repo and install ZFS (server)
       when: p == 'server'
       block:
-        - name: Check whether the archzfs signing key is already trusted
-          ansible.builtin.command: "pacman-key --list-keys {{ archzfs_key }}"
-          register: archzfs_key_check
-          failed_when: false
-          changed_when: false
-
         - name: Receive and locally sign the archzfs signing key
           ansible.builtin.command: "{{ item }}"
           loop:
             - "pacman-key --recv-keys {{ archzfs_key }} --keyserver hkps://keyserver.ubuntu.com"
             - "pacman-key --lsign-key {{ archzfs_key }}"
-          when: archzfs_key_check.rc != 0
+          when: not st.archzfs_key
 
         - name: Add the archzfs repository to pacman.conf
           ansible.builtin.blockinfile:
@@ -146,29 +227,28 @@
             block: |
               [archzfs]
               Server = {{ archzfs_server }}
+          register: archzfs_repo
 
+        # Only when the repo stanza or the key actually changed. Unconditional,
+        # this cost a mirror round trip plus ~570ms of local database parsing on
+        # every single server run.
         - name: Refresh package databases now that archzfs is configured
           community.general.pacman:
             update_cache: true
+          when: archzfs_repo is changed or not st.archzfs_key
 
         # One-time migration off the old AUR build. The AUR zfs-dkms pins an
         # exact zfs-utils version; if archzfs ships an older zfs-utils, pacman
-        # refuses to install the archzfs stack until zfs-dkms is gone. We only
-        # remove the pair when zfs-dkms is still present, so this is a no-op on
-        # every subsequent run (and never touches the archzfs zfs-utils).
-        - name: Detect leftover AUR-built zfs-dkms (server)
-          ansible.builtin.command: pacman -Qq zfs-dkms
-          register: zfs_dkms_present
-          failed_when: false
-          changed_when: false
-
+        # refuses to install the archzfs stack until zfs-dkms is gone. Gated on
+        # the probe's installed set, so this is a no-op on every subsequent run
+        # (and never touches the archzfs zfs-utils).
         - name: Remove the old AUR ZFS stack so archzfs can take over (server)
           community.general.pacman:
             name:
               - zfs-dkms
               - zfs-utils
             state: absent
-          when: zfs_dkms_present.rc == 0
+          when: "'zfs-dkms' in installed_packages"
 
         - name: Install ZFS from archzfs (prebuilt, matched to linux-lts)
           community.general.pacman:
@@ -176,183 +256,131 @@
               - zfs-linux-lts
               - zfs-utils
             state: present
+          when: "'zfs-linux-lts' not in installed_packages or 'zfs-utils' not in installed_packages"
 
-    # =========================================================================
-    # SECTION 2.6: DRIVER MIGRATIONS (server profile only)
-    # =========================================================================
     # nvidia-open-lts (prebuilt for the LTS kernel) provides NVIDIA-MODULE and
     # conflicts with the DKMS package it replaces. pacman --noconfirm can't
     # answer the "Remove nvidia-open-dkms?" prompt, so remove it ourselves
-    # first. Guarded on the DKMS package being present, so it's a one-time
-    # migration and a no-op afterwards.
-    - name: Detect leftover nvidia-open-dkms (server)
-      ansible.builtin.command: pacman -Qq nvidia-open-dkms
-      register: nvidia_dkms_present
-      failed_when: false
-      changed_when: false
-      when: p == 'server'
-
+    # first. Gated on the probe's installed set: a one-time migration.
     - name: Remove nvidia-open-dkms so nvidia-open-lts can take over (server)
       community.general.pacman:
         name: nvidia-open-dkms
         state: absent
       when:
         - p == 'server'
-        - nvidia_dkms_present.rc | default(1) == 0
+        - "'nvidia-open-dkms' in installed_packages"
 
     # =========================================================================
-    # SECTION 3: DYNAMIC PACKAGES (Applied to Omarchy & server profiles)
+    # SECTION 4: DYNAMIC PACKAGES (Omarchy & server profiles)
     # =========================================================================
-    - name: Load dynamic package lists
-      when: is_linux
+    # Note: base/other packages are NOT installed because those ship with the
+    # OS. Drivers (drivers.txt) are also NOT installed here — they are
+    # hardware-specific and must be installed manually. The list is still
+    # auto-tracked by scripts/sync-package-lists.sh for reference.
+    #
+    # update_cache lives on this task rather than one of its own, so mirrors are
+    # contacted only when there is genuinely something to install.
+    - name: Install missing native packages ({{ pacman_missing | default([]) | join(', ') }})
+      community.general.pacman:
+        name: "{{ pacman_missing }}"
+        state: present
+        update_cache: true
+      when: pacman_missing | default([]) | length > 0
+
+    # Everything missing is installed in ONE yay run with --batchinstall so ALPM
+    # hooks (MIME/desktop/icon-cache database updates) fire once per run instead
+    # of once per package — this was the big AUR slowdown.
+    - name: Install missing AUR packages
+      when: aur_missing | default([]) | length > 0
       block:
-        - name: Select package lists for this profile
-          ansible.builtin.set_fact:
-            profile_pacman_file: "{{ server_pacman_file if p == 'server' else pacman_file }}"
-            profile_aur_file: "{{ server_aur_file if p == 'server' else aur_file }}"
-
-        - name: Read added pacman packages list
-          ansible.builtin.set_fact:
-            pacman_packages: "{{ lookup('file', profile_pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
-
-        - name: Read AUR packages list
-          ansible.builtin.set_fact:
-            aur_packages: "{{ lookup('file', profile_aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
-
-        - name: Read removed packages list (Omarchy only)
-          ansible.builtin.set_fact:
-            removed_packages: "{{ (lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if (profile | lower) == 'omarchy' else [] }}"
-
-        # 3.1 Install Native Packages (Added only)
-        # Note: We do NOT install the base/other packages because those are
-        # pre-installed in the OS. Drivers (drivers.txt) are also NOT installed
-        # here — they are hardware-specific and must be installed manually. The
-        # list is still auto-tracked by scripts/sync-package-lists.sh for
-        # reference, but chezmoi/ansible never touches driver packages.
-        - name: Install native packages (Added)
+        - name: Ensure base-devel is installed (required for makepkg)
           community.general.pacman:
-            name: "{{ pacman_packages }}"
+            name: base-devel
             state: present
-          when: pacman_packages | length > 0
 
-        # 3.2 Bootstrap yay & Install AUR Packages
-        #
-        # Missing packages are computed locally against `pacman -Qq` so a
-        # fully-synced machine skips this entire block (no yay invocations,
-        # no AUR network queries, no sudoers churn). Everything missing is
-        # then installed in ONE yay run with --batchinstall so ALPM hooks
-        # (MIME/desktop/icon-cache database updates) fire once per run
-        # instead of once per package — this was the big AUR slowdown.
-        - name: List installed packages
-          ansible.builtin.command: pacman -Qq
-          register: installed_packages
-          changed_when: false
-          when: aur_packages | length > 0
+        - name: Allow non-root user to run sudo without password temporarily
+          ansible.builtin.copy:
+            dest: /etc/sudoers.d/99-chezmoi-aur-temp
+            content: "{{ non_root_user }} ALL=(ALL) NOPASSWD: ALL\n"
+            mode: '0440'
+            validate: '/usr/sbin/visudo -cf %s'
 
-        # yay-bin bootstraps itself below; feeding it back into yay is a no-op
-        - name: Determine missing AUR packages
-          ansible.builtin.set_fact:
-            aur_missing_packages: "{{ aur_packages | reject('equalto', 'yay-bin') | list | difference(installed_packages.stdout_lines) }}"
-          when: aur_packages | length > 0
-
-        - name: Install missing AUR packages
-          when: aur_missing_packages | default([]) | length > 0
+        - name: Bootstrap yay if missing
+          become: true
+          become_user: "{{ non_root_user }}"
+          when: not yay_installed
           block:
-            - name: Ensure base-devel is installed (required for makepkg)
-              community.general.pacman:
-                name: base-devel
-                state: present
+            - name: Clone yay-bin
+              ansible.builtin.git:
+                repo: https://aur.archlinux.org/yay-bin.git
+                dest: "/tmp/yay-bin"
+                version: master
+                depth: 1
 
-            - name: Allow non-root user to run sudo without password temporarily
-              ansible.builtin.copy:
-                dest: /etc/sudoers.d/99-chezmoi-aur-temp
-                content: "{{ non_root_user }} ALL=(ALL) NOPASSWD: ALL\n"
-                mode: '0440'
-                validate: '/usr/sbin/visudo -cf %s'
-
-            - name: Check if yay is installed
-              ansible.builtin.command: yay --version
-              register: yay_check
-              failed_when: false
-              changed_when: false
-              become: true
-              become_user: "{{ non_root_user }}"
-
-            - name: Bootstrap yay if missing
-              become: true
-              become_user: "{{ non_root_user }}"
-              when: yay_check.rc | default(1) != 0
-              block:
-                - name: Clone yay-bin
-                  ansible.builtin.git:
-                    repo: https://aur.archlinux.org/yay-bin.git
-                    dest: "/tmp/yay-bin"
-                    version: master
-                    depth: 1
-
-                - name: Build and install yay
-                  ansible.builtin.command:
-                    cmd: makepkg -si --noconfirm
-                    chdir: "/tmp/yay-bin"
-
-                - name: Remove temporary clone directory
-                  ansible.builtin.file:
-                    path: "/tmp/yay-bin"
-                    state: absent
-
-            # Signed AUR sources (e.g. zfs-dkms) need their PGP keys fetched at
-            # build time; the default keyserver can stall dirmngr indefinitely.
-            - name: Ensure ~/.gnupg exists for the build user
-              ansible.builtin.file:
-                path: "~{{ non_root_user }}/.gnupg"
-                state: directory
-                mode: '0700'
-              become: true
-              become_user: "{{ non_root_user }}"
-
-            - name: Point GPG at a reliable keyserver for AUR key imports
-              ansible.builtin.lineinfile:
-                path: "~{{ non_root_user }}/.gnupg/gpg.conf"
-                line: "keyserver hkps://keyserver.ubuntu.com"
-                create: true
-                mode: '0600'
-              become: true
-              become_user: "{{ non_root_user }}"
-
-            # A hard async timeout so a stalled build/keyserver can never
-            # hang the playbook forever.
-            - name: Install AUR packages ({{ aur_missing_packages | default([]) | join(', ') }})
+            - name: Build and install yay
               ansible.builtin.command:
-                cmd: "yay -S --needed --noconfirm --noprogressbar --batchinstall {{ aur_missing_packages | join(' ') }}"
-              become: true
-              become_user: "{{ non_root_user }}"
-              async: 7200
-              poll: 15
-              changed_when: true
+                cmd: makepkg -si --noconfirm
+                chdir: "/tmp/yay-bin"
 
-          always:
-            - name: Revoke passwordless sudo
+            - name: Remove temporary clone directory
               ansible.builtin.file:
-                path: /etc/sudoers.d/99-chezmoi-aur-temp
+                path: "/tmp/yay-bin"
                 state: absent
 
-        # 3.3 Remove Unwanted Packages
-        - name: Remove unwanted packages
-          community.general.pacman:
-            name: "{{ removed_packages }}"
+        # Signed AUR sources (e.g. zfs-dkms) need their PGP keys fetched at
+        # build time; the default keyserver can stall dirmngr indefinitely.
+        # gpg refuses to use a ~/.gnupg that is not 0700, and lineinfile's
+        # create:true does not make missing parent directories.
+        - name: Ensure ~/.gnupg exists for the build user
+          ansible.builtin.file:
+            path: "{{ st.home }}/.gnupg"
+            state: directory
+            mode: '0700'
+          become: true
+          become_user: "{{ non_root_user }}"
+
+        - name: Point GPG at a reliable keyserver for AUR key imports
+          ansible.builtin.lineinfile:
+            path: "{{ st.home }}/.gnupg/gpg.conf"
+            line: "keyserver hkps://keyserver.ubuntu.com"
+            create: true
+            mode: '0600'
+          become: true
+          become_user: "{{ non_root_user }}"
+
+        # A hard async timeout so a stalled build/keyserver can never
+        # hang the playbook forever.
+        - name: Install AUR packages ({{ aur_missing | default([]) | join(', ') }})
+          ansible.builtin.command:
+            cmd: "yay -S --needed --noconfirm --noprogressbar --batchinstall {{ aur_missing | join(' ') }}"
+          become: true
+          become_user: "{{ non_root_user }}"
+          async: 7200
+          poll: 15
+          changed_when: true
+
+      always:
+        - name: Revoke passwordless sudo
+          ansible.builtin.file:
+            path: /etc/sudoers.d/99-chezmoi-aur-temp
             state: absent
-          when: removed_packages | length > 0
+
+    # Intersected with the installed set first: `state: absent` against an
+    # already-clean list still pays the module's full ~350ms inventory build to
+    # discover there is nothing to remove.
+    - name: Remove unwanted packages ({{ removed_present | default([]) | join(', ') }})
+      community.general.pacman:
+        name: "{{ removed_present }}"
+        state: absent
+      when: removed_present | default([]) | length > 0
 
     # =========================================================================
-    # SECTION 4: OH MY ZSH AND CUSTOM PLUGINS (All Profiles)
+    # SECTION 5: OH MY ZSH (All Profiles)
     # =========================================================================
-    - name: Check whether Oh My Zsh is already installed
-      ansible.builtin.stat:
-        path: "~{{ non_root_user }}/.oh-my-zsh/oh-my-zsh.sh"
-      register: omz_check
-
+    # Custom plugins are cloned by SECTION 6, which must therefore run after
+    # this.
     - name: Install Oh My Zsh
-      when: not omz_check.stat.exists
+      when: not st.omz
       block:
         - name: Download Oh My Zsh install script
           ansible.builtin.get_url:
@@ -364,7 +392,7 @@
 
         - name: Run Oh My Zsh install script
           ansible.builtin.shell: |
-            export HOME=$(getent passwd {{ non_root_user }} | cut -d: -f6)
+            export HOME="{{ st.home }}"
             export ZSH="$HOME/.oh-my-zsh"
             export KEEP_ZSHRC=yes
 
@@ -381,72 +409,80 @@
           become: "{{ as_user }}"
           become_user: "{{ non_root_user }}"
 
-    - name: Ensure Oh My Zsh custom plugins are installed from source
-      ansible.builtin.git:
-        repo: "{{ item.repo }}"
-        dest: "~{{ non_root_user }}/{{ item.dest }}"
-        depth: 1
-        update: true
-      become: "{{ as_user }}"
-      become_user: "{{ non_root_user }}"
-      loop:
-        - { repo: 'https://github.com/marlonrichert/zsh-autocomplete.git', dest: '.oh-my-zsh/custom/plugins/zsh-autocomplete' }
-        - { repo: 'https://github.com/zsh-users/zsh-autosuggestions.git', dest: '.oh-my-zsh/custom/plugins/zsh-autosuggestions' }
-        - { repo: 'https://github.com/MichaelAquilina/zsh-you-should-use.git', dest: '.oh-my-zsh/custom/plugins/you-should-use' }
-        - { repo: 'https://github.com/zsh-users/zsh-syntax-highlighting.git', dest: '.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' }
-
     # =========================================================================
-    # SECTION 5: TMUX AND TOOLS
+    # SECTION 6: UPSTREAM CHECKOUTS (zsh plugins + tmuxifier)
     # =========================================================================
-    - name: Clone Tmuxifier repository
-      ansible.builtin.git:
-        repo: https://github.com/jimeh/tmuxifier.git
-        dest: /tmp/tmuxifier-repo
-        depth: 1
-        update: true
-      become: "{{ as_user }}"
-      become_user: "{{ non_root_user }}"
+    # One task, all five repos, fetched CONCURRENTLY. These were five separate
+    # `ansible.builtin.git` tasks with update:true, which cost ~1.2s of serial
+    # network latency plus ~600ms of task overhead on every run. `forks` cannot
+    # parallelise a loop against a single host, so the concurrency lives here:
+    # ~350ms wall clock, and upstream is still checked every single run.
+    #
+    # `git ls-remote` was measured at 1021ms vs 1340ms for the fetches it would
+    # guard, so there is no cheap "did upstream move?" pre-check worth adding —
+    # the TLS handshake is the cost, not the data.
+    #
+    # Prints one line per repo that actually moved, and refuses to discard local
+    # modifications (matching ansible.builtin.git's force=false default).
+    - name: Sync upstream checkouts and Tmuxifier
+      ansible.builtin.shell:
+        cmd: |
+          set -u
+          home={{ st.home | quote }}
+          rc=0
+          pids=
 
-    - name: Ensure .tmuxifier directory exists
-      ansible.builtin.file:
-        path: "~{{ non_root_user }}/.tmuxifier"
-        state: directory
-        mode: '0755'
-      become: "{{ as_user }}"
-      become_user: "{{ non_root_user }}"
+          sync_repo() {
+            url=$1
+            dest=$2
+            if [ ! -d "$dest/.git" ]; then
+              git clone -q --depth 1 "$url" "$dest" || return 1
+              echo "cloned $dest"
+              return 0
+            fi
+            git -C "$dest" fetch -q --depth 1 origin || return 1
+            [ "$(git -C "$dest" rev-parse HEAD)" = "$(git -C "$dest" rev-parse FETCH_HEAD)" ] && return 0
+            if [ -n "$(git -C "$dest" status --porcelain)" ]; then
+              echo "skipped $dest: local modifications" >&2
+              return 0
+            fi
+            git -C "$dest" reset -q --hard FETCH_HEAD || return 1
+            echo "updated $dest"
+          }
 
-    # --itemize-changes prints one line per file it actually touches, so an
-    # already-synced run produces no output and reports ok instead of changed.
-    # Without this the task reports changed every single run.
-    # shell, not command: the destination uses ~user tilde expansion.
-    - name: Sync Tmuxifier binaries and libraries to user home
-      ansible.builtin.shell: |
-        rsync -a --checksum --itemize-changes --exclude=.git --exclude=layouts \
-          /tmp/tmuxifier-repo/ ~{{ non_root_user }}/.tmuxifier/
-      register: tmuxifier_sync
-      changed_when: tmuxifier_sync.stdout | trim | length > 0
-      become: "{{ as_user }}"
-      become_user: "{{ non_root_user }}"
+          {% for r in git_repos %}
+          sync_repo {{ r.repo | quote }} "$home/{{ r.dest }}" & pids="$pids $!"
+          {% endfor %}
+          for pid in $pids; do wait "$pid" || rc=1; done
 
-    # =========================================================================
-    # SECTION 6: AI CLI TOOLS
-    # =========================================================================
-    - name: Install Claude CLI
-      ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | bash
-      args:
-        creates: "~{{ non_root_user }}/.local/bin/claude"
-      become: "{{ as_user }}"
-      become_user: "{{ non_root_user }}"
+          # tmuxifier ships as a checkout, so mirror it into place minus
+          # layouts/, which chezmoi owns. --itemize-changes prints one line per
+          # file actually touched, so an already-synced run stays silent and the
+          # task reports ok instead of changed.
+          rsync -a --checksum --itemize-changes --exclude=.git --exclude=layouts \
+            "$home/{{ tmuxifier_rel }}/" "$home/.tmuxifier/" || rc=1
 
-    - name: Install ChatGPT Codex CLI
-      ansible.builtin.shell: curl -fsSL https://chatgpt.com/codex/install.sh | sh
-      args:
-        creates: "~{{ non_root_user }}/.local/bin/codex"
+          exit $rc
+      register: upstream_sync
+      changed_when: upstream_sync.stdout | trim | length > 0
       become: "{{ as_user }}"
       become_user: "{{ non_root_user }}"
 
     # =========================================================================
-    # SECTION 7: PACKAGE LIST AUTO-SYNC (Omarchy & server profiles)
+    # SECTION 7: AI CLI TOOLS
+    # =========================================================================
+    # One task for both CLIs: the per-tool `creates:` guard cost a full module
+    # invocation each just to stat a path the probe already checked.
+    - name: Bootstrap AI CLIs
+      ansible.builtin.shell:
+        cmd: "curl -fsSL {{ item.url }} | {{ item.runner }}"
+      loop: "{{ ai_clis }}"
+      become: "{{ as_user }}"
+      become_user: "{{ non_root_user }}"
+      when: item.name not in st.clis.split()
+
+    # =========================================================================
+    # SECTION 8: PACKAGE LIST AUTO-SYNC (Omarchy & server profiles)
     # =========================================================================
     # A pacman PostTransaction hook that regenerates this repo's package
     # lists and commits them whenever packages are installed or removed
@@ -461,11 +497,14 @@
             path: /etc/pacman.d/hooks
             state: directory
             mode: '0755'
+          when: not st.pacman_hooks_dir
 
-        # zz- prefix so it sorts (and therefore runs) after other hooks
+        # zz- prefix so it sorts (and therefore runs) after other hooks.
+        # The probe greps for the Exec line, so a change to non_root_user or
+        # chezmoi_source_dir still rewrites the hook.
         - name: Install the package-list sync hook
           ansible.builtin.copy:
-            dest: /etc/pacman.d/hooks/zz-chezmoi-package-sync.hook
+            dest: "{{ pacman_hook_path }}"
             mode: '0644'
             content: |
               [Trigger]
@@ -477,4 +516,5 @@
               [Action]
               Description = Syncing chezmoi package lists...
               When = PostTransaction
-              Exec = /usr/bin/runuser -u {{ non_root_user }} -- {{ chezmoi_source_dir }}/scripts/sync-package-lists.sh
+              Exec = {{ pacman_hook_exec }}
+          when: not st.pacman_hook
