@@ -190,6 +190,11 @@ set -g @plugin 'alexwforsythe/tmux-which-key'
 
 # Plugin settings
 set -g @tmux-which-key-xdg-enable {{ if eq (.profile | lower) "mac" }}0{{ else }}1{{ end }}
+# Without this the plugin reads $XDG_CONFIG_HOME/tmux/plugins/tmux-which-key/config.yaml
+# — inside the tpm-owned plugins dir that .chezmoiignore excludes, so the menu
+# never syncs between machines. Point it at a directory chezmoi owns instead;
+# the plugin always appends /config.yaml to this path.
+set -g @tmux-which-key-xdg-plugin-path 'tmux/which-key'
 set -g @suspend_suspended_options "status::off,pane-border-status::off"
 set -g @continuum-restore 'on'
 set -g @continuum-save-interval '5'
