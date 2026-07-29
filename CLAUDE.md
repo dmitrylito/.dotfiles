@@ -33,7 +33,7 @@ After moving/renaming source files, verify with `chezmoi execute-template` (temp
 
 `.chezmoiignore` is itself a template and uses **target ($HOME) paths**, not source paths. It does two jobs:
 1. **Per-profile config gating** — e.g. `.config/hypr/`, `.config/waybar/` only deploy on omarchy; `.config/aerospace/`, `.config/sketchybar/` only on mac. If you add a profile-specific config, gate it here or it deploys everywhere.
-2. **Keeping repo tooling out of `$HOME`** — `packages/`, `scripts/`, `playbook.yml`, `package-lock.json`, `README.md`, and `.config/tmux/plugins/` live in the repo but must never be deployed. tmux plugins are owned by **tpm**, not chezmoi. `AGENTS.md`/`GEMINI.md` are intentionally *not* ignored (they deploy as global agent guides).
+2. **Keeping repo tooling out of `$HOME`** — `packages/`, `scripts/`, `playbook.yml`, `package-lock.json`, `README.md`, and `.config/tmux/plugins/` live in the repo but must never be deployed. tmux plugins are owned by **tpm**, not chezmoi. `AGENTS.md` is intentionally *not* ignored (it deploys as the global agent guide).
 
 When adding a new top-level tooling file or directory, add it to `.chezmoiignore` or it will land in `$HOME`.
 
