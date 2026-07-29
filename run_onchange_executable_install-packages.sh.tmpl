@@ -33,9 +33,7 @@ if [ -z "${profile}" ]; then
     fi
 fi
 
-echo "=================================================="
-echo "🚀 Bootstrapping packages with Ansible + Chezmoi..."
-echo "=================================================="
+echo "📦 Syncing packages ({{ .profile | lower }} profile)…"
 
 # 1. Ensure Ansible is installed
 if ! command -v ansible-playbook >/dev/null 2>&1; then
@@ -55,21 +53,20 @@ fi
 # 2. Run the Ansible playbook
 # We only use sudo (privilege escalation) for Linux profiles (Omarchy/server)
 # because Homebrew on macOS cannot and should not be run as root.
-echo "📦 Running Ansible playbook..."
+#
+# ANSIBLE_CONFIG is passed as a sudo command-line assignment, not exported: sudo
+# resets the environment, so an exported value would be dropped and the run would
+# silently fall back to Ansible's noisy defaults.
+ansible_cfg="{{ joinPath .chezmoi.sourceDir "ansible.cfg" }}"
+playbook="{{ joinPath .chezmoi.sourceDir "playbook.yml" }}"
+extra_vars="chezmoi_source_dir={{ .chezmoi.sourceDir }} non_root_user={{ .chezmoi.username }} profile=${profile}"
+
 if [ "${profile}" = "mac" ]; then
-    ansible-playbook \
-        -i "localhost," \
-        -c local \
-        --extra-vars "chezmoi_source_dir={{ .chezmoi.sourceDir }} non_root_user={{ .chezmoi.username }} profile=${profile}" \
-        "{{ joinPath .chezmoi.sourceDir "playbook.yml" }}"
+    ANSIBLE_CONFIG="${ansible_cfg}" ansible-playbook \
+        -i "localhost," -c local --extra-vars "${extra_vars}" "${playbook}"
 else
-    sudo ansible-playbook \
-        -i "localhost," \
-        -c local \
-        --extra-vars "chezmoi_source_dir={{ .chezmoi.sourceDir }} non_root_user={{ .chezmoi.username }} profile=${profile}" \
-        "{{ joinPath .chezmoi.sourceDir "playbook.yml" }}"
+    sudo ANSIBLE_CONFIG="${ansible_cfg}" ansible-playbook \
+        -i "localhost," -c local --extra-vars "${extra_vars}" "${playbook}"
 fi
 
-echo "=================================================="
-echo "✅ Package synchronization complete!"
-echo "=================================================="
+echo "✅ Packages synced."

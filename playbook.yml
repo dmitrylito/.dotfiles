@@ -5,6 +5,15 @@
   gather_facts: false
 
   vars:
+    # `profile` arrives via --extra-vars from the run_onchange wrapper. Normalise
+    # once here rather than writing `profile | lower` at every use site.
+    p: "{{ profile | lower }}"
+    is_mac: "{{ (profile | lower) == 'mac' }}"
+    is_linux: "{{ (profile | lower) in ['omarchy', 'server'] }}"
+    # Homebrew must not run as root, so every user-scoped task escalates to
+    # non_root_user on Linux and stays as the invoking user on macOS.
+    as_user: "{{ (profile | lower) != 'mac' }}"
+
     # 1. Base terminal essentials defined in YAML (Option B)
     # These are installed on ANY Linux system (Omarchy or server)
     common_linux_packages:
@@ -50,13 +59,13 @@
         name: "{{ common_linux_packages }}"
         state: present
         update_cache: true
-      when: (profile | lower) in ['omarchy', 'server']
+      when: is_linux
 
     # =========================================================================
     # SECTION 2: MACOS HOMEBREW PACKAGES (Applied only to mac profile)
     # =========================================================================
     - name: Load Mac package lists
-      when: (profile | lower) == 'mac'
+      when: is_mac
       block:
         - name: Read mac brew taps list
           ansible.builtin.set_fact:
@@ -103,7 +112,7 @@
     # tagged "experimental" upstream and is version-locked to a specific
     # linux-lts release, so a kernel bump may have to wait for an archzfs build.
     - name: Set up archzfs binary repo and install ZFS (server)
-      when: (profile | lower) == 'server'
+      when: p == 'server'
       block:
         - name: Check whether the archzfs signing key is already trusted
           ansible.builtin.command: "pacman-key --list-keys {{ archzfs_key }}"
@@ -169,26 +178,26 @@
       register: nvidia_dkms_present
       failed_when: false
       changed_when: false
-      when: (profile | lower) == 'server'
+      when: p == 'server'
 
     - name: Remove nvidia-open-dkms so nvidia-open-lts can take over (server)
       community.general.pacman:
         name: nvidia-open-dkms
         state: absent
       when:
-        - (profile | lower) == 'server'
+        - p == 'server'
         - nvidia_dkms_present.rc | default(1) == 0
 
     # =========================================================================
     # SECTION 3: DYNAMIC PACKAGES (Applied to Omarchy & server profiles)
     # =========================================================================
     - name: Load dynamic package lists
-      when: (profile | lower) in ['omarchy', 'server']
+      when: is_linux
       block:
         - name: Select package lists for this profile
           ansible.builtin.set_fact:
-            profile_pacman_file: "{{ server_pacman_file if (profile | lower) == 'server' else pacman_file }}"
-            profile_aur_file: "{{ server_aur_file if (profile | lower) == 'server' else aur_file }}"
+            profile_pacman_file: "{{ server_pacman_file if p == 'server' else pacman_file }}"
+            profile_aur_file: "{{ server_aur_file if p == 'server' else aur_file }}"
 
         - name: Read added pacman packages list
           ansible.builtin.set_fact:
@@ -327,7 +336,7 @@
     # =========================================================================
     - name: Check whether Oh My Zsh is already installed
       ansible.builtin.stat:
-        path: "~{{ non_root_user | default(ansible_user_id) }}/.oh-my-zsh/oh-my-zsh.sh"
+        path: "~{{ non_root_user }}/.oh-my-zsh/oh-my-zsh.sh"
       register: omz_check
 
     - name: Install Oh My Zsh
@@ -338,12 +347,12 @@
             url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
             dest: /tmp/install_omz.sh
             mode: '0755'
-          become: "{{ true if (profile | lower) != 'mac' else false }}"
-          become_user: "{{ non_root_user | default(ansible_user_id) }}"
+          become: "{{ as_user }}"
+          become_user: "{{ non_root_user }}"
 
         - name: Run Oh My Zsh install script
           ansible.builtin.shell: |
-            export HOME=$(getent passwd {{ non_root_user | default(ansible_user_id) }} | cut -d: -f6)
+            export HOME=$(getent passwd {{ non_root_user }} | cut -d: -f6)
             export ZSH="$HOME/.oh-my-zsh"
             export KEEP_ZSHRC=yes
 
@@ -357,17 +366,17 @@
               rsync -a "${ZSH}.chezmoi_bak/" "$ZSH/"
               rm -rf "${ZSH}.chezmoi_bak"
             fi
-          become: "{{ true if (profile | lower) != 'mac' else false }}"
-          become_user: "{{ non_root_user | default(ansible_user_id) }}"
+          become: "{{ as_user }}"
+          become_user: "{{ non_root_user }}"
 
     - name: Ensure Oh My Zsh custom plugins are installed from source
       ansible.builtin.git:
         repo: "{{ item.repo }}"
-        dest: "~{{ non_root_user | default(ansible_user_id) }}/{{ item.dest }}"
+        dest: "~{{ non_root_user }}/{{ item.dest }}"
         depth: 1
         update: true
-      become: "{{ true if (profile | lower) != 'mac' else false }}"
-      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+      become: "{{ as_user }}"
+      become_user: "{{ non_root_user }}"
       loop:
         - { repo: 'https://github.com/marlonrichert/zsh-autocomplete.git', dest: '.oh-my-zsh/custom/plugins/zsh-autocomplete' }
         - { repo: 'https://github.com/zsh-users/zsh-autosuggestions.git', dest: '.oh-my-zsh/custom/plugins/zsh-autosuggestions' }
@@ -383,22 +392,29 @@
         dest: /tmp/tmuxifier-repo
         depth: 1
         update: true
-      become: "{{ true if (profile | lower) != 'mac' else false }}"
-      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+      become: "{{ as_user }}"
+      become_user: "{{ non_root_user }}"
 
     - name: Ensure .tmuxifier directory exists
       ansible.builtin.file:
-        path: "~{{ non_root_user | default(ansible_user_id) }}/.tmuxifier"
+        path: "~{{ non_root_user }}/.tmuxifier"
         state: directory
         mode: '0755'
-      become: "{{ true if (profile | lower) != 'mac' else false }}"
-      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+      become: "{{ as_user }}"
+      become_user: "{{ non_root_user }}"
 
+    # --itemize-changes prints one line per file it actually touches, so an
+    # already-synced run produces no output and reports ok instead of changed.
+    # Without this the task reports changed every single run.
+    # shell, not command: the destination uses ~user tilde expansion.
     - name: Sync Tmuxifier binaries and libraries to user home
       ansible.builtin.shell: |
-        rsync -a --checksum --exclude=.git --exclude=layouts /tmp/tmuxifier-repo/ ~{{ non_root_user | default(ansible_user_id) }}/.tmuxifier/
-      become: "{{ true if (profile | lower) != 'mac' else false }}"
-      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+        rsync -a --checksum --itemize-changes --exclude=.git --exclude=layouts \
+          /tmp/tmuxifier-repo/ ~{{ non_root_user }}/.tmuxifier/
+      register: tmuxifier_sync
+      changed_when: tmuxifier_sync.stdout | trim | length > 0
+      become: "{{ as_user }}"
+      become_user: "{{ non_root_user }}"
 
     # =========================================================================
     # SECTION 6: AI CLI TOOLS
@@ -406,16 +422,16 @@
     - name: Install Claude CLI
       ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | bash
       args:
-        creates: "~{{ non_root_user | default(ansible_user_id) }}/.local/bin/claude"
-      become: "{{ true if (profile | lower) != 'mac' else false }}"
-      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+        creates: "~{{ non_root_user }}/.local/bin/claude"
+      become: "{{ as_user }}"
+      become_user: "{{ non_root_user }}"
 
     - name: Install ChatGPT Codex CLI
       ansible.builtin.shell: curl -fsSL https://chatgpt.com/codex/install.sh | sh
       args:
-        creates: "~{{ non_root_user | default(ansible_user_id) }}/.local/bin/codex"
-      become: "{{ true if (profile | lower) != 'mac' else false }}"
-      become_user: "{{ non_root_user | default(ansible_user_id) }}"
+        creates: "~{{ non_root_user }}/.local/bin/codex"
+      become: "{{ as_user }}"
+      become_user: "{{ non_root_user }}"
 
     # =========================================================================
     # SECTION 7: PACKAGE LIST AUTO-SYNC (Omarchy & server profiles)
@@ -426,7 +442,7 @@
     # The hook drops privileges back to the login user and delegates to
     # scripts/sync-package-lists.sh in the chezmoi source dir.
     - name: Install package-list auto-sync pacman hook
-      when: (profile | lower) in ['omarchy', 'server']
+      when: is_linux
       block:
         - name: Ensure the pacman hook directory exists
           ansible.builtin.file:
