@@ -1,7 +1,6 @@
 # Explicitly installed AUR/foreign packages (auto-generated, do not edit by hand)
 # Regenerate with: scripts/update_server_package_lists.sh
 cockpit-sensors
-gogcli-bin
 llama.cpp-cuda
 sesh-bin
 yay-bin
