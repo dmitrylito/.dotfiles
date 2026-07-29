@@ -371,7 +371,6 @@
       loop:
         - { repo: 'https://github.com/marlonrichert/zsh-autocomplete.git', dest: '.oh-my-zsh/custom/plugins/zsh-autocomplete' }
         - { repo: 'https://github.com/zsh-users/zsh-autosuggestions.git', dest: '.oh-my-zsh/custom/plugins/zsh-autosuggestions' }
-        - { repo: 'https://github.com/ocodo/ollama_zsh_completion.git', dest: '.oh-my-zsh/custom/plugins/ollama' }
         - { repo: 'https://github.com/MichaelAquilina/zsh-you-should-use.git', dest: '.oh-my-zsh/custom/plugins/you-should-use' }
         - { repo: 'https://github.com/zsh-users/zsh-syntax-highlighting.git', dest: '.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' }
 
