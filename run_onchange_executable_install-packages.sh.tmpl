@@ -8,17 +8,24 @@ set -euo pipefail
 # It will run automatically when you run 'chezmoi apply' or 'chezmoi init'
 # but ONLY if any of the tracked package list files or the playbook itself changes.
 #
+# Only THIS profile's lists are hashed — hashing every profile's lists would make a
+# package change on one machine re-trigger a sudo playbook run on all the others.
+#
 # Tracked package files and playbook:
 # playbook.yml hash: {{ include "playbook.yml" | sha256sum }}
+{{- if eq (.profile | lower) "omarchy" }}
 # packages/omarchy/added-pacman.txt hash: {{ include "packages/omarchy/added-pacman.txt" | sha256sum }}
 # packages/omarchy/added-aur.txt hash: {{ include "packages/omarchy/added-aur.txt" | sha256sum }}
 # packages/omarchy/drivers.txt hash: {{ include "packages/omarchy/drivers.txt" | sha256sum }}
 # packages/omarchy/removed.txt hash: {{ include "packages/omarchy/removed.txt" | sha256sum }}
+{{- else if eq (.profile | lower) "server" }}
 # packages/server/pacman.txt hash: {{ include "packages/server/pacman.txt" | sha256sum }}
 # packages/server/aur.txt hash: {{ include "packages/server/aur.txt" | sha256sum }}
+{{- else if eq (.profile | lower) "mac" }}
 # packages/mac/brew.txt hash: {{ include "packages/mac/brew.txt" | sha256sum }}
 # packages/mac/casks.txt hash: {{ include "packages/mac/casks.txt" | sha256sum }}
 # packages/mac/taps.txt hash: {{ include "packages/mac/taps.txt" | sha256sum }}
+{{- end }}
 
 profile="{{ .profile | lower }}"
 
