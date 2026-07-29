@@ -97,7 +97,7 @@ type_delay_ms = 0
 # Safe at 0 because the persistent dotoold daemon keeps one uinput device alive,
 # so there's no per-output device-settle race to guard against. Bump to ~5 only
 # if you ever see the first character dropped.
-pre_type_delay_ms = 0
+pre_type_delay_ms = 25
 auto_submit = false
 shift_enter_newlines = false
 
@@ -178,7 +178,7 @@ enabled = false
 source = "default"
 
 [status]
-icon_theme = "emoji"
+icon_theme = "omarchy"
 
 [vad]
 # Enable Voice Activity Detection to filter out empty recordings
@@ -187,10 +187,10 @@ backend = "auto"
 threshold = 0.5
 
 [whisper]
-gpu_isolation = true
+gpu_isolation = false
 on_demand_loading = false
 flash_attention = true
-eager_processing = false
+eager_processing = true
 model = ""
 mode = "local"
 language = "auto"
