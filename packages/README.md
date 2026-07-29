@@ -55,9 +55,9 @@ Server adds `ncdu`, `pv`, `lsof`, `rsync`. Yazi previewer deps on mac/server: `g
 
 | tool | O | S | M | note |
 |---|---|---|---|---|
-| claude (`~/.local/bin`) | playbook | playbook | playbook | installed by SECTION 6 curl script |
+| claude (`~/.local/bin`) | playbook | playbook | playbook | installed by SECTION 7 curl script |
 | `claude` (AUR) | ✓ | · | · | **duplicate** of the above, 478 MB |
-| codex (`~/.local/bin`) | playbook | playbook | playbook | SECTION 6 |
+| codex (`~/.local/bin`) | playbook | playbook | playbook | SECTION 7 |
 | `openai-codex-bin` | ✓ | · | · | **duplicate**, 341 MB, `/usr/bin/codex` shadowed |
 | `gemini-cli` | ✓ | · | · | **duplicate** — `gemini` resolves to the mise/npm copy |
 | ollama / ollama-cuda | · | ✓ | · | |
