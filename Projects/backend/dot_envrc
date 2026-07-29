@@ -34,3 +34,7 @@ export PATH="$PWD/.venv/bin:$PATH"
 # Absolute path so it resolves regardless of CWD; project dir defaults to
 # docker/, so docker/.env (COMPOSE_PROJECT_NAME, PROJECT_PATH) still loads.
 export COMPOSE_FILE="$PWD/docker/docker-compose.yml"
+
+# Chezmoi-managed Claude Code skill helpers, callable directly in this project
+# (e.g. `restack_migrations.py plan`). Skill source: ~/.claude/skills/.
+PATH_add "$HOME/.claude/skills/restack-migrations"
