@@ -149,3 +149,9 @@ fi
 source_if_exists "/opt/homebrew/share/google-cloud-sdk/path.zsh.inc"
 source_if_exists "/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc"
 {{- end }}
+
+# Pull + apply dotfiles in the background so no machine drifts behind master.
+# Throttled and script-excluded; see ~/.local/bin/chezmoi-autoupdate for why.
+if [[ -o interactive ]] && [[ -x "$HOME/.local/bin/chezmoi-autoupdate" ]]; then
+  "$HOME/.local/bin/chezmoi-autoupdate"
+fi
