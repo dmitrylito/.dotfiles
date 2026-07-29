@@ -83,6 +83,7 @@ sudo
 tailscale
 tectonic
 tmux
+tpm2-tools
 tree-sitter
 udisks2
 udisks2-lvm2
