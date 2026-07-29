@@ -13,8 +13,6 @@ export EDITOR="$HOME/.local/share/bob/nvim-bin/nvim"
 export VISUAL="$EDITOR"
 export PAGER="less"
 export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship.toml"
-export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
-export HYPRLAND_CONFIG="$XDG_CONFIG_HOME/hypr/hyprland.conf"
 export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/gcloud/application_default_credentials.json"
 export GOOGLE_CLOUD_LOCATION="global"
 
@@ -25,6 +23,9 @@ export CLAUDE_CODE_NO_FLICKER=1
 export REMEMBER_BRANCH={{ .profile }}
 {{- if eq .profile "omarchy" }}
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda/lib64"
+# Hyprland/Wayland only — nothing else on any profile reads these.
+export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
+export HYPRLAND_CONFIG="$XDG_CONFIG_HOME/hypr/hyprland.conf"
 {{- end }}
 
 typeset -U path
@@ -52,10 +53,16 @@ elif [[ -f /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-{{- if eq .profile "mac" }}
-path=($HOME/.antigravity/antigravity/bin $path)
-{{- end }}
-
-{{- if eq .profile "omarchy" }}
-[[ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]] && . "$HOME/google-cloud-sdk/path.zsh.inc"
-{{- end }}
+# gcloud installs to a different prefix on every machine (pacman /opt, macOS
+# homebrew, upstream tarball in $HOME) — probe instead of branching per profile.
+# Setting CLOUDSDK_HOME is what makes it work everywhere: the omz `gcloud` plugin
+# sources path.zsh.inc and completion.zsh.inc from it, but only otherwise probes
+# /usr/share, so homebrew prefixes used to need their own branch.
+for _gcloud_root in /opt/google-cloud-cli /opt/homebrew/share/google-cloud-sdk \
+                    /usr/share/google-cloud-sdk "$HOME/google-cloud-sdk"; do
+  if [[ -f "$_gcloud_root/path.zsh.inc" ]]; then
+    export CLOUDSDK_HOME="${CLOUDSDK_HOME:-$_gcloud_root}"
+    break
+  fi
+done
+unset _gcloud_root
