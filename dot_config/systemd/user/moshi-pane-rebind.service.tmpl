@@ -1,0 +1,7 @@
+[Unit]
+Description=Repair Moshi tmux pane -> Claude conversation bindings
+Documentation=https://github.com/dmitrylito/dotfiles/pull/4
+
+[Service]
+Type=oneshot
+ExecStart={{ .chezmoi.homeDir }}/.local/bin/moshi-pane-rebind
