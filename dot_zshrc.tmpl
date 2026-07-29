@@ -94,20 +94,6 @@ if command -v starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
 fi
 
-source_if_exists "$HOME/.openclaw/completions/openclaw.zsh"
-
-# Subshell keeps gateway secrets scoped to the openclaw call; nothing leaks into the shell.
-openclaw() {
-  (
-    set -a
-    [ -r "$HOME/.openclaw/gateway.systemd.env" ] && . "$HOME/.openclaw/gateway.systemd.env"
-    set +a
-    : "${OPENCLAW_GATEWAY_PASSWORD:=${SECRET_GW_PASSWORD:-}}"
-    export OPENCLAW_GATEWAY_PASSWORD
-    command openclaw "$@"
-  )
-}
-
 if [[ -o interactive ]]; then
   eval "$(zoxide init --cmd cd zsh)"
   cd() {
