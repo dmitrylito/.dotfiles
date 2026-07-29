@@ -1,4 +1,3 @@
-android-studio
 claude
 discordupdater
 dotool
