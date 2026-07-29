@@ -1,4 +1,6 @@
+android-studio
 claude
+coolercontrol-bin
 discordupdater
 dotool
 etcher-bin
@@ -8,9 +10,11 @@ google-cloud-cli-gsutil
 gputest
 hyprmon-bin
 lazycron-bin
+noisetorch-bin
 sesh-bin
 slack-desktop
 ventoy-bin
+webcamoid
 zsa-keymapp-bin
 zsh-uv-env-git
 zsh-you-should-use
