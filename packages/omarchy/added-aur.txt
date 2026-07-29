@@ -10,6 +10,7 @@ google-cloud-cli-gsutil
 gputest
 hyprmon-bin
 lazycron-bin
+noisetorch-bin
 sesh-bin
 slack-desktop
 ventoy-bin
