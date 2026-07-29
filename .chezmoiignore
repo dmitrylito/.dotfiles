@@ -3,6 +3,7 @@ README.md
 CLAUDE.md
 package-lock.json
 playbook.yml
+ansible.cfg
 packages/
 scripts/
 
