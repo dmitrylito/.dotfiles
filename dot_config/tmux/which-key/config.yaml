@@ -130,7 +130,9 @@ items:
         command: "splitw -h -c #{pane_current_path}"
       - name: Dev layout (tmuxifier)
         key: D
-        command: "run-shell '~/.tmuxifier/bin/tmuxifier load-window Dev'"
+        # No single quotes in any command: build.py wraps each menu in '...', so a
+        # literal ' ends the wrapper early and the whole set-option fails to parse.
+        command: 'run-shell "~/.tmuxifier/bin/tmuxifier load-window Dev"'
       - name: +Go to
         key: g
         menu:
@@ -194,7 +196,9 @@ items:
       - separator: true
       - name: Rename
         key: R
-        command: command-prompt -I "#W" "renamew -- \"%%\""
+        # Brace form, not "renamew -- \"%%\"": build.py escapes double quotes but
+        # not an existing backslash, so \" becomes \\" and tmux ends the string early.
+        command: command-prompt -I "#W" { renamew -- "%%" }
       - name: Kill
         key: X
         command: 'confirm -p "Kill window #W? (y/n)" killw'
