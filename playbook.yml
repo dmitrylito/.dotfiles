@@ -321,7 +321,7 @@
 
             # A hard async timeout so a stalled build/keyserver can never
             # hang the playbook forever.
-            - name: Install AUR packages ({{ aur_missing_packages | join(', ') }})
+            - name: Install AUR packages ({{ aur_missing_packages | default([]) | join(', ') }})
               ansible.builtin.command:
                 cmd: "yay -S --needed --noconfirm --noprogressbar --batchinstall {{ aur_missing_packages | join(' ') }}"
               become: true
