@@ -20,7 +20,6 @@ go
 i2c-tools
 jdk17-openjdk
 kdeconnect
-libjcat
 migraphx
 mosh
 neovim
