@@ -4,19 +4,6 @@ git:
   merging:
     args: "--no-ff"
 
-customCommands:
-  - key: "<c-a>" # You can change this keybinding (Ctrl+a in this example)
-    context: "files"
-    description: "pick AI commit"
-    command: 'git commit -m "{{.Form.Msg}}"'
-    prompts:
-      - type: "menuFromCommand"
-        title: "ai Commits"
-        key: "Msg"
-        command: "lazycommit commit"
-        filter: "^(?P<raw>.+)$"
-        valueFormat: "{{ .raw }}"
-        labelFormat: "{{ .raw | green }}"
 gui:
   theme:
     activeBorderColor:
