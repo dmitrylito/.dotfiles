@@ -1,6 +1,6 @@
 # Dotfiles are chezmoi-managed — never edit targets in place
 
-Host `dlco` (server profile). Source of truth: `~/.local/share/chezmoi/`. Editing a managed
+Host `{{ .chezmoi.hostname }}` ({{ .profile | lower }} profile). Source of truth: `~/.local/share/chezmoi/`. Editing a managed
 target (`~/.zshrc`, `~/.config/**`, `~/.claude/**`, …) is silently wiped on the next
 `chezmoi apply`.
 
@@ -19,4 +19,4 @@ target (`~/.zshrc`, `~/.config/**`, `~/.claude/**`, …) is silently wiped on th
 - Stage only the paths you changed (`git commit -- <path>`), never `git add -A`, so unrelated
   dirty source files stay out of your commit.
 - The source is multi-profile: when editing `.tmpl` source, preserve the
-  `{{ if eq .profile … }}` branches — this box is the `server` profile.
+  `{{ "{{ if eq .profile … }}" }}` branches — this box is the `{{ .profile | lower }}` profile.
