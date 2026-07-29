@@ -5,8 +5,12 @@ CHEZMOI_DIR="$HOME/.local/share/chezmoi"
 OMARCHY_BASE="$CHEZMOI_DIR/packages/omarchy/base.packages"
 OMARCHY_OTHER="$CHEZMOI_DIR/packages/omarchy/other.packages"
 
-# The regex used to identify hardware-specific packages that shouldn't sync across machines
-DRIVER_REGEX='nvidia|amd|intel|vulkan|apple|macbook|t2|tuxedo|firmware|dkms|kernel|modules|asus|broadcom|thermald|ptl|dfr|vpl|debug'
+# The regex used to identify hardware-specific packages that shouldn't sync across machines.
+# GPU compute stacks (CUDA, ROCm/HIP) count as drivers: they're multi-GB and only valid on
+# the vendor whose card the machine actually has, so they belong in drivers.txt (reference
+# only, never installed by the playbook) rather than in the shared added-* lists.
+# The ROCm/HIP tokens are anchored — an unanchored `hip` also matches `starship`.
+DRIVER_REGEX='nvidia|amd|intel|vulkan|apple|macbook|t2|tuxedo|firmware|dkms|kernel|modules|asus|broadcom|thermald|ptl|dfr|vpl|debug|cuda|cudnn|migraphx|miopen|comgr|nccl|rccl|^roc|^hip|^hsa'
 # Repo-/machine-specific packages that only exist in special repos not configured
 # on every machine (e.g. the CachyOS kernel + its keyring/mirrorlists). Syncing
 # these into the shared lists breaks `chezmoi apply` on machines without those
