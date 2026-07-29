@@ -3,7 +3,6 @@ ast-grep
 bob
 chezmoi
 cmake
-cpio
 cronie
 cuda
 cudnn
