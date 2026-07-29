@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pacman PostTransaction hook target (installed by playbook.yml SECTION 7).
+# Pacman PostTransaction hook target (installed by playbook.yml SECTION 8).
 # Regenerates the package lists for this machine's profile and commits the
 # result, so manual installs/removals flow back into the repo automatically.
 # The push is best-effort with a short timeout so the hook never blocks a

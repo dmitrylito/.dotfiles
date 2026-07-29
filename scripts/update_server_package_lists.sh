@@ -29,7 +29,7 @@ fi
 echo "Gathering current system state..."
 
 # ZFS is provisioned separately from the archzfs binary repo in playbook.yml
-# (SECTION 2.5), so keep these packages out of the generated lists to avoid
+# (SECTION 3), so keep these packages out of the generated lists to avoid
 # double-management. Once installed from archzfs they are repo (not foreign)
 # packages, so they'd otherwise leak into the native list on regeneration.
 ZFS_EXCLUDE='^(zfs-linux(-lts)?|zfs-utils|zfs-dkms)$'
