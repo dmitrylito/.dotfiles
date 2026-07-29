@@ -61,6 +61,18 @@
         update_cache: true
       when: is_linux
 
+    # Arch ships MAKEFLAGS commented out, so makepkg compiles on a single core
+    # no matter how many the machine has. Everything AUR that actually builds
+    # from source pays for it — llama.cpp-cuda (cmake+cudnn) worst of all.
+    # Package compression is already threaded (COMPRESSZST uses -T0).
+    - name: Build AUR packages with all available cores
+      ansible.builtin.lineinfile:
+        path: /etc/makepkg.conf
+        regexp: '^#?\s*MAKEFLAGS='
+        line: 'MAKEFLAGS="-j$(nproc)"'
+        validate: 'bash -n %s'
+      when: is_linux
+
     # =========================================================================
     # SECTION 2: MACOS HOMEBREW PACKAGES (Applied only to mac profile)
     # =========================================================================
