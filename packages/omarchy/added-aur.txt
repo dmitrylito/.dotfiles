@@ -2,7 +2,6 @@ claude
 discordupdater
 dotool
 etcher-bin
-gogcli
 google-cloud-cli
 google-cloud-cli-gsutil
 gputest
