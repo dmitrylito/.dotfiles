@@ -8,6 +8,7 @@ cuda
 cudnn
 direnv
 dmidecode
+easyeffects
 efibootmgr
 fwupd
 gamescope
