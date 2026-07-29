@@ -23,6 +23,14 @@ macros:
     commands:
       - display "#{log_info} Restarting pane"
       - "respawnp -k -c #{pane_current_path}"
+  - name: toggle-mouse
+    commands:
+      - set -g mouse
+      - display "#{log_info} mouse #{?mouse,on,off} — off hands clicks back to Ghostty"
+  - name: reset-mouse
+    commands:
+      - mouse-reset
+      - display "#{log_info} mouse reset"
 items:
   - name: Run
     key: space
@@ -45,9 +53,18 @@ items:
   - name: Open URL
     key: u
     command: "display-popup -E -w 80% -h 60% ~/.config/tmux/url_picker.sh"
+  - name: Lazygit
+    key: g
+    command: 'display-popup -d "#{pane_current_path}" -E -w 90% -h 90% lazygit'
+  - name: Session launcher
+    key: a
+    command: "display-popup -E -w 80% -h 70% ~/.config/tmux/sesh_launcher.sh"
   - name: Toggle mouse
     key: m
-    command: "set -g mouse"
+    macro: toggle-mouse
+  - name: Reset mouse
+    key: M
+    macro: reset-mouse
   - separator: true
   - name: +Windows
     key: w
@@ -105,12 +122,85 @@ items:
         command: rotatew -D
         transient: true
       - separator: true
+      - name: Split below (h)
+        key: h
+        command: "splitw -v -c #{pane_current_path}"
+      - name: Split right (v)
+        key: v
+        command: "splitw -h -c #{pane_current_path}"
+      - name: Dev layout (tmuxifier)
+        key: D
+        command: "run-shell '~/.tmuxifier/bin/tmuxifier load-window Dev'"
+      - name: +Go to
+        key: g
+        menu:
+          - name: Window 1
+            key: "1"
+            command: "selectw -t :1"
+          - name: Window 2
+            key: "2"
+            command: "selectw -t :2"
+          - name: Window 3
+            key: "3"
+            command: "selectw -t :3"
+          - name: Window 4
+            key: "4"
+            command: "selectw -t :4"
+          - name: Window 5
+            key: "5"
+            command: "selectw -t :5"
+          - name: Window 6
+            key: "6"
+            command: "selectw -t :6"
+          - name: Window 7
+            key: "7"
+            command: "selectw -t :7"
+          - name: Window 8
+            key: "8"
+            command: "selectw -t :8"
+          - name: Window 9
+            key: "9"
+            command: "selectw -t :9"
+      - name: +Move to
+        key: M
+        menu:
+          - name: Position 1
+            key: "1"
+            command: "swapw -d -t :1"
+          - name: Position 2
+            key: "2"
+            command: "swapw -d -t :2"
+          - name: Position 3
+            key: "3"
+            command: "swapw -d -t :3"
+          - name: Position 4
+            key: "4"
+            command: "swapw -d -t :4"
+          - name: Position 5
+            key: "5"
+            command: "swapw -d -t :5"
+          - name: Position 6
+            key: "6"
+            command: "swapw -d -t :6"
+          - name: Position 7
+            key: "7"
+            command: "swapw -d -t :7"
+          - name: Position 8
+            key: "8"
+            command: "swapw -d -t :8"
+          - name: Position 9
+            key: "9"
+            command: "swapw -d -t :9"
+      - separator: true
       - name: Rename
         key: R
         command: command-prompt -I "#W" "renamew -- \"%%\""
       - name: Kill
         key: X
         command: 'confirm -p "Kill window #W? (y/n)" killw'
+      - name: Kill (no confirm, my k)
+        key: k
+        command: killw
   - name: +Panes
     key: p
     menu:
@@ -203,6 +293,9 @@ items:
       - name: Kill
         key: X
         command: 'confirm -p "Kill pane #P? (y/n)" killp'
+      - name: Kill (no confirm, my x)
+        key: x
+        command: killp
   - name: +Buffers
     key: b
     menu:
@@ -221,12 +314,35 @@ items:
       - name: Choose
         key: s
         command: choose-tree -Zs
+      - name: Launcher (sesh)
+        key: a
+        command: "display-popup -E -w 80% -h 70% ~/.config/tmux/sesh_launcher.sh"
       - name: New
         key: N
         command: new
       - name: Rename
         key: r
         command: rename
+      - separator: true
+      - name: Previous
+        key: p
+        command: switchc -p
+      - name: Next
+        key: n
+        command: switchc -n
+      - separator: true
+      - name: +State (resurrect)
+        key: S
+        menu:
+          - name: Save
+            key: s
+            command: "run-shell ~/.config/tmux/plugins/tmux-resurrect/scripts/save.sh"
+          - name: Restore
+            key: r
+            command: "run-shell ~/.config/tmux/plugins/tmux-resurrect/scripts/restore.sh"
+      - name: Kill
+        key: X
+        command: 'confirm -p "Kill session #S? (y/n)" kill-session'
   - name: +Client
     key: C
     menu:
