@@ -29,7 +29,8 @@ scripts/
 .config/hypr/
 .config/waybar/
 .config/swaync/
-.config/systemd/
+.config/systemd/user/dotoold.service
+.config/systemd/user/graphical-session.target.wants/
 .config/mimeapps.list
 .config/spotify-flags.conf
 .config/voxtype/
@@ -42,4 +43,9 @@ scripts/
 {{ if ne (.profile | lower) "mac"}}
 .config/aerospace/
 .config/sketchybar/
+{{ end }}
+
+{{ if eq (.profile | lower) "mac" }}
+# macOS has launchd, not systemd — the whole user-units tree is Linux-only.
+.config/systemd/
 {{ end }}
