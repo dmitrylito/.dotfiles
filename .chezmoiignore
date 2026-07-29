@@ -20,10 +20,6 @@ scripts/
 # managing it guarantees permanent drift and would sync one box's memories onto another.
 .claude/projects/*/memory/
 
-# Gemini/Antigravity config is maintained per machine, not synced. GEMINI.md is separate:
-# it is a deployed agent guide, like AGENTS.md, and is intentionally still managed.
-.gemini/
-
 {{ if and (ne (.profile | lower) "omarchy") (ne (.profile | lower) "mac") }}
 .config/ghostty/
 {{ end }}
