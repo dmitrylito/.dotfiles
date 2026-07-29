@@ -22,7 +22,6 @@ export CLAUDE_CODE_NO_FLICKER=1
 # Labels this machine in the `remember` plugin's memory headers (server/omarchy/mac).
 export REMEMBER_BRANCH={{ .profile }}
 {{- if eq .profile "omarchy" }}
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda/lib64"
 # Hyprland/Wayland only — nothing else on any profile reads these.
 export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
 export HYPRLAND_CONFIG="$XDG_CONFIG_HOME/hypr/hyprland.conf"
