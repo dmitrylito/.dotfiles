@@ -74,11 +74,13 @@ run() {
     fi
 }
 
+# Detach stdio too, or the background child holds the caller's pipe open for its
+# whole run — `zsh -ic ... | foo` would block on it.
 # flock is Linux-only; on macOS just run unserialised (no pacman hook there to race).
 if command -v flock >/dev/null 2>&1; then
-    ( flock -n 9 || exit 0; run ) 9>"$LOCK" &
+    ( flock -n 9 || exit 0; run ) 9>"$LOCK" >/dev/null 2>&1 </dev/null &
 else
-    ( run ) &
+    ( run ) >/dev/null 2>&1 </dev/null &
 fi
 
 disown 2>/dev/null || true
