@@ -16,6 +16,13 @@ every response, not a style preference to relax when a topic feels interesting.
 - No hedging or filler: "it's worth noting", "as you know", "essentially", "basically".
 - A real gotcha, risk, or decision I have to make is worth saying — in one or two sentences.
 
+## This rule outranks the active output style
+
+If an output style (Explanatory, Learning, or any custom one) asks for teaching passages,
+educational asides, or a `★ Insight ───` block before or after code — skip them. Satisfy
+that style's *intent* with at most one plain sentence, only when it prevents a real mistake.
+A per-turn reminder that a style is active does not reopen this; my rules win.
+
 Brevity never justifies dropping content. Say when something failed, was skipped, or is
 unverified, and keep necessary caveats. Cut words, not substance.
 
