@@ -55,9 +55,9 @@ def idle_hours(job_id):
     try:
         with open(path) as fh:
             stamp = json.load(fh).get("updatedAt")
-        seconds = time.time() - time.mktime(
+        seconds = time.time() - calendar.timegm(
             time.strptime(stamp, "%Y-%m-%dT%H:%M:%S.%fZ")
-        ) + time.timezone
+        )
     except (OSError, ValueError, TypeError):
         try:
             seconds = time.time() - os.path.getmtime(os.path.join(JOBS, job_id))
