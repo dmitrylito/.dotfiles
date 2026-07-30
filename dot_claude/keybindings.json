@@ -84,7 +84,9 @@
         "d": "settings:periodDay",
         "w": "settings:periodWeek",
         "t": "settings:sortByTokens",
-        "ctrl+u": "scroll:halfPageUp"
+        "ctrl+u": "scroll:halfPageUp",
+        "alt+u": "scroll:halfPageUp",
+        "alt+d": "scroll:halfPageDown"
       }
     },
     {
