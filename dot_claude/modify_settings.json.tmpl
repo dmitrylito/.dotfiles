@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+# modify_settings.json — computes ~/.claude/settings.json from whatever is already there.
+#
+# Usage: not run by hand. chezmoi executes this on every `apply`, passing the CURRENT
+#        target file on stdin; stdout becomes the new file. Empty stdin on a fresh
+#        machine, which yields BASELINE verbatim.
+#
+# Why a modify_ script instead of a plain tracked file: Claude Code owns this file at
+# runtime. /model, /config, /plugin and /permissions all rewrite it, and moshi-hook's
+# installer rewrites the whole hooks block. A tracked file therefore drifted constantly,
+# so every `chezmoi apply` stopped to ask whether to overwrite it, and answering yes threw
+# away real settings changes. Here the live file is the INPUT, so there is nothing to
+# overwrite and no prompt.
+#
+# The merge policy:
+#   - BASELINE keys are DEFAULTS: filled in only where the live file lacks them, so a
+#     setting changed inside Claude Code sticks, and a new BASELINE key still propagates.
+#   - hooks are ENFORCED: every moshi hook command is forced back to the guard wrapper and
+#     any missing event/matcher is re-added. Without this, `moshi-hook service install`
+#     silently repoints the hooks at raw moshi-hook, which makes tty-less sessions bind to
+#     phantom tmux panes and the Moshi app show a blank chat. Hooks the user added
+#     themselves are left alone.
+#
+# A live file that will not parse is replaced by BASELINE — it was already broken.
+
+import json
+import sys
+
+HOME = "{{ .chezmoi.homeDir }}"
+MOSHI_COMMAND = "'" + HOME + "/.local/bin/moshi-hook-claude-guard' claude-hook"
+MOSHI_BINARIES = ("moshi-hook", "moshi-hook-claude-guard", "moshi")
+
+BASELINE = {
+    "agentPushNotifEnabled": True,
+    "autoCompactEnabled": False,
+    "awaySummaryEnabled": False,
+    "editorMode": "vim",
+    "effortLevel": "high",
+    "enabledPlugins": {
+        "claude-code-setup@claude-plugins-official": True,
+        "claude-md-management@claude-plugins-official": True,
+        "code-simplifier@claude-plugins-official": True,
+        "commit-commands@claude-plugins-official": True,
+        "djlsp-plugin@lsp-marketplace": True,
+        "frontend-design@claude-plugins-official": True,
+        "github@claude-plugins-official": True,
+        "huggingface-skills@claude-plugins-official": True,
+        "linear@claude-plugins-official": True,
+        "pyright-lsp@claude-plugins-official": True,
+        "remember@claude-plugins-official": True,
+        "security-guidance@claude-plugins-official": True,
+        "sentry@claude-plugins-official": True,
+        "typescript-plugin@lsp-marketplace": True,
+    },
+    "env": {"CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1"},
+    "extraKnownMarketplaces": {
+        "lsp-marketplace": {
+            "source": {"path": HOME + "/lsp-marketplace", "source": "directory"}
+        }
+    },
+    "hooks": {
+        "PermissionRequest": [
+            {"hooks": [{"async": False, "command": MOSHI_COMMAND, "type": "command"}]}
+        ],
+        "PostToolUse": [
+            {
+                "hooks": [{"async": True, "command": MOSHI_COMMAND, "type": "command"}],
+                "matcher": "AskUserQuestion",
+            },
+            {
+                "hooks": [{"async": True, "command": MOSHI_COMMAND, "type": "command"}],
+                "matcher": "ExitPlanMode",
+            },
+        ],
+        "PreToolUse": [
+            {
+                "hooks": [{"async": True, "command": MOSHI_COMMAND, "type": "command"}],
+                "matcher": "AskUserQuestion",
+            },
+            {
+                "hooks": [{"async": True, "command": MOSHI_COMMAND, "type": "command"}],
+                "matcher": "ExitPlanMode",
+            },
+        ],
+        "SessionEnd": [
+            {"hooks": [{"async": True, "command": MOSHI_COMMAND, "type": "command"}]}
+        ],
+        "SessionStart": [
+            {"hooks": [{"async": True, "command": MOSHI_COMMAND, "type": "command"}]}
+        ],
+        "Stop": [
+            {"hooks": [{"async": True, "command": MOSHI_COMMAND, "type": "command"}]}
+        ],
+        "UserPromptSubmit": [
+            {"hooks": [{"async": True, "command": MOSHI_COMMAND, "type": "command"}]}
+        ],
+    },
+    "inputNeededNotifEnabled": True,
+    "model": "opus[1m]",
+    "permissions": {
+        "allow": [
+            "Bash(git add:*)",
+            "Bash(git commit:*)",
+            "Bash(git push:*)",
+            "Bash(gog drive *)",
+            "Bash(gog drv *)",
+            "Bash(gog docs *)",
+            "Bash(gog doc *)",
+            "Bash(gog sheets *)",
+            "Bash(gog sheet *)",
+            "Bash(gog slides *)",
+            "Bash(gog slide *)",
+            "Bash(gog forms *)",
+            "Bash(gog form *)",
+            "Bash(gog upload *)",
+            "Bash(gog download *)",
+            "Bash(gog ls *)",
+            "Bash(gog search *)",
+        ],
+        "defaultMode": "auto",
+    },
+    "preferredNotifChannel": "ghostty",
+    "promptSuggestionEnabled": False,
+    "showTurnDuration": False,
+    "skipDangerousModePermissionPrompt": True,
+    "spinnerTipsEnabled": False,
+    "spinnerVerbs": {"mode": "replace", "verbs": ["Working"]},
+    "statusLine": {"command": "bash ~/.claude/statusline-command.sh", "type": "command"},
+    "terminalProgressBarEnabled": True,
+    "theme": "auto",
+    "tui": "fullscreen",
+}
+
+
+def clone(value):
+    return json.loads(json.dumps(value))
+
+
+def fill_defaults(live, defaults):
+    for key, value in defaults.items():
+        if isinstance(value, dict) and isinstance(live.get(key), dict):
+            fill_defaults(live[key], value)
+        elif key not in live:
+            live[key] = clone(value)
+
+
+def is_moshi_command(command):
+    if not isinstance(command, str) or not command:
+        return False
+    token = command.split(" ", 1)[0].strip("'\"")
+    return token.rsplit("/", 1)[-1] in MOSHI_BINARIES
+
+
+def moshi_groups(groups):
+    for group in groups if isinstance(groups, list) else []:
+        if not isinstance(group, dict):
+            continue
+        entries = group.get("hooks")
+        if isinstance(entries, list) and any(
+            isinstance(e, dict) and is_moshi_command(e.get("command")) for e in entries
+        ):
+            yield group
+
+
+def enforce_moshi_hooks(live, baseline):
+    hooks = live if isinstance(live, dict) else {}
+    for event, groups in baseline.items():
+        existing = hooks.get(event)
+        if not isinstance(existing, list):
+            existing = hooks[event] = []
+        for group in groups:
+            matcher = group.get("matcher")
+            if not any(g.get("matcher") == matcher for g in moshi_groups(existing)):
+                existing.append(clone(group))
+    for groups in hooks.values():
+        for group in moshi_groups(groups):
+            for entry in group["hooks"]:
+                if isinstance(entry, dict) and is_moshi_command(entry.get("command")):
+                    entry["command"] = MOSHI_COMMAND
+    return hooks
+
+
+raw = sys.stdin.read()
+try:
+    current = json.loads(raw) if raw.strip() else {}
+except ValueError:
+    current = {}
+if not isinstance(current, dict):
+    current = {}
+
+fill_defaults(current, {k: v for k, v in BASELINE.items() if k != "hooks"})
+current["hooks"] = enforce_moshi_hooks(current.get("hooks"), BASELINE["hooks"])
+
+print(json.dumps(current, indent=2, sort_keys=True))
