@@ -9,20 +9,7 @@
         "ctrl+o": "app:toggleTranscript",
         "ctrl+shift+b": "app:toggleBrief",
         "ctrl+r": "history:search",
-        "ctrl+x t": "app:toggleTerminal",
-        "ctrl+x n": "strip:next",
-        "ctrl+x p": "strip:previous",
-        "ctrl+x c": "strip:new",
-        "ctrl+x s": "strip:toggle",
-        "ctrl+x 1": "strip:jump1",
-        "ctrl+x 2": "strip:jump2",
-        "ctrl+x 3": "strip:jump3",
-        "ctrl+x 4": "strip:jump4",
-        "ctrl+x 5": "strip:jump5",
-        "ctrl+x 6": "strip:jump6",
-        "ctrl+x 7": "strip:jump7",
-        "ctrl+x 8": "strip:jump8",
-        "ctrl+x 9": "strip:jump9"
+        "ctrl+shift+t": "app:toggleTerminal"
       }
     },
     {
@@ -31,7 +18,6 @@
         "escape": "chat:cancel",
         "ctrl+l": "chat:clearInput",
         "cmd+k": "chat:clearScreen",
-        "ctrl+x ctrl+k": "chat:killAgents",
         "shift+tab": "chat:cycleMode",
         "meta+p": "chat:modelPicker",
         "meta+o": "chat:fastMode",
@@ -45,11 +31,13 @@
         "ctrl+-": "chat:undo",
         "ctrl+shift+-": "chat:undo",
         "ctrl+shift+_": "chat:undo",
-        "ctrl+x ctrl+e": "chat:externalEditor",
         "ctrl+g": "chat:externalEditor",
         "ctrl+s": "chat:stash",
         "ctrl+v": "chat:imagePaste",
-        "space": "voice:pushToTalk"
+        "space": "voice:pushToTalk",
+        "ctrl+x ctrl+k": null,
+        "ctrl+x ctrl+e": null,
+        "ctrl+shift+k": "chat:killAgents"
       }
     },
     {
@@ -159,8 +147,9 @@
     {
       "context": "Task",
       "bindings": {
-        "ctrl+x ctrl+b": "task:background",
-        "ctrl+b": "task:background"
+        "ctrl+b": "task:background",
+        "ctrl+x ctrl+b": null,
+        "alt+b": "task:background"
       }
     },
     {
