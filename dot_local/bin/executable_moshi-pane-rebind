@@ -132,6 +132,12 @@ def has_transcript(record):
     return bool(p) and os.path.exists(p)
 
 
+def find_transcript(sid):
+    hits = glob.glob(os.path.join(PROJECTS, "*", sid + ".jsonl"))
+    # A session that moved twice leaves a stub behind in the directory it came from.
+    return max(hits, key=os.path.getmtime) if hits else None
+
+
 if not os.path.isdir(RECORDS):
     sys.exit(0)
 
