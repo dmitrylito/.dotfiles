@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly prune of finished Claude Code agent-view sessions
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+AccuracySec=5m
+RandomizedDelaySec=2m
+
+[Install]
+WantedBy=timers.target
