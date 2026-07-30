@@ -82,6 +82,7 @@ starship
 sudo
 tailscale
 tectonic
+time
 tmux
 tpm2-tools
 tree-sitter
