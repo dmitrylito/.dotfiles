@@ -272,6 +272,8 @@
         "pageup": "scroll:pageUp",
         "pagedown": "scroll:pageDown",
         "ctrl+u": "scroll:halfPageUp",
+        "alt+u": "scroll:halfPageUp",
+        "alt+d": "scroll:halfPageDown",
         "space": "scroll:fullPageDown",
         "shift+space": "scroll:fullPageUp",
         "b": "scroll:fullPageUp",
