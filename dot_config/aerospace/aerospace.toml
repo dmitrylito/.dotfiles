@@ -155,8 +155,8 @@ cmd-ctrl-alt-tab = 'workspace-back-and-forth'
 # Move Workspace to Next Monitor (Tab + Shift + Hyper)
 cmd-ctrl-alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
-# Fullscreen State (Shift + f + Hyper)
-cmd-ctrl-alt-shift-f = 'fullscreen'
+# Fullscreen State (f + Hyper) — matches Hyprland's SUPER+F
+cmd-ctrl-alt-f = 'fullscreen'
 
 # Enter Service Mode (Shift + Semicolon + Hyper)
 cmd-ctrl-alt-shift-semicolon = 'mode service'
@@ -179,9 +179,13 @@ cmd-ctrl-alt-shift-l = ['join-with right', 'mode main']
 # ==============================================================================
 
 # Auto-float utility and system applications that don't tile well (Apple stuff & dialogs)
+
+# Finder browser windows tile normally; only its auxiliary windows float.
+# Get Info windows are titled "<name> Info"; copy/move progress is a sheet AeroSpace never sees.
 [[on-window-detected]]
 if.app-id = 'com.apple.finder'
-run = 'layout floating'        # Floats all Finder windows (info, transfer, etc.)
+if.window-title-regex-substring = ' Info$|^Finder Settings$|^Connect to Server$'
+run = 'layout floating'
 
 [[on-window-detected]]
 if.app-id = 'com.apple.systempreferences'             # System Settings / Preferences
