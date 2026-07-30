@@ -182,6 +182,8 @@
         "alt+g": "scroll:top",
         "alt+shift+g": "scroll:bottom",
         "ctrl+u": "scroll:halfPageUp",
+        "alt+u": "scroll:halfPageUp",
+        "alt+d": "scroll:halfPageDown",
         "ctrl+f": "scroll:fullPageDown",
         "ctrl+b": "scroll:fullPageUp",
         "ctrl+shift+c": "selection:copy",
