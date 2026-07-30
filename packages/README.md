@@ -12,28 +12,26 @@ Columns: **O** = omarchy, **S** = server, **M** = mac. `·` = absent, `—` = N/
 
 ## Shell
 
-| tool | O | S | M | note |
-|---|---|---|---|---|
-| zsh | ✓ | ✓ | ✓ | |
-| starship | — | ✓ | ✓ | omarchy gets it from base.packages |
-| zsh-autocomplete / -autosuggestions / -syntax-highlighting | ✓ | · | · | **redundant** — the playbook clones all four as oh-my-zsh custom plugins |
-| zsh-you-should-use (AUR) | ✓ | · | · | **redundant** — same |
-| zsh-completions | ✓ | · | · | **unused** — not in the `plugins=()` list |
-| zsh-uv-env-git (AUR) | ✓ | · | · | **unused** — `.zshrc` uses omz's `uv` plugin |
-| direnv | ✓ | ✓ | ✓ | |
-| sesh / sesh-bin | ✓ | ✓ | ✓ | |
+`zsh` on all three. `starship` on server + mac (omarchy: base.packages). `direnv` and
+`sesh`/`sesh-bin` on all three.
+
+The four zsh plugins (`zsh-autocomplete`, `zsh-autosuggestions`, `zsh-syntax-highlighting`,
+`you-should-use`) are **not** packages on any profile — the playbook clones them as oh-my-zsh
+custom plugins, which is what `.zshrc`'s `plugins=()` loads. Don't re-add the distro packages.
 
 ## Editor & code intelligence
 
 | tool | O | S | M | note |
 |---|---|---|---|---|
-| bob | ✓ | ✓ | ✓ | the neovim version manager — owns `nvim` |
-| neovim | ✓ | · | · | **conflicts with bob**; `/usr/bin/nvim` is shadowed |
-| tree-sitter(-cli) | — | ✓ | ✓ | omarchy: base.packages |
+| bob | ✓ | ✓ | ✓ | the neovim version manager — owns `nvim` on every profile |
+| tree-sitter(-cli) | — | ✓ | ✓ | omarchy: base.packages (`tree-sitter-cli`) |
 | luarocks | — | ✓ | ✓ | omarchy: base.packages |
 | ast-grep | ✓ | ✓ | ✓ | |
 | ripgrep / ripgrep-all | — | ✓ | ✓ | omarchy: base.packages |
 | pre-commit | ✓ | · | ✓ | |
+
+Distro `neovim` must stay off every list — bob owns `nvim` and a packaged copy just gets
+shadowed in `PATH`.
 
 ## Files, viewers, navigation
 
@@ -44,7 +42,7 @@ Server adds `ncdu`, `pv`, `lsof`, `rsync`. Yazi previewer deps on mac/server: `g
 ## Git & VCS
 
 `git`, `git-delta`, `lazygit` everywhere. `chezmoi` everywhere. `gh` (mac) / `github-cli`
-(omarchy base). `stow` (mac only) — superseded by chezmoi.
+(omarchy base). `stow` is gone from every profile — chezmoi replaced it.
 
 ## Terminal
 
@@ -55,27 +53,28 @@ Server adds `ncdu`, `pv`, `lsof`, `rsync`. Yazi previewer deps on mac/server: `g
 
 | tool | O | S | M | note |
 |---|---|---|---|---|
-| claude (`~/.local/bin`) | playbook | playbook | playbook | installed by SECTION 7 curl script |
-| `claude` (AUR) | ✓ | · | · | **duplicate** of the above, 478 MB |
-| codex (`~/.local/bin`) | playbook | playbook | playbook | SECTION 7 |
-| `openai-codex-bin` | ✓ | · | · | **duplicate**, 341 MB, `/usr/bin/codex` shadowed |
-| `gemini-cli` | ✓ | · | · | **duplicate** — `gemini` resolves to the mise/npm copy |
+| claude CLI (`~/.local/bin`) | playbook | playbook | playbook | installed by the playbook's AI-CLI section |
+| codex CLI (`~/.local/bin`) | playbook | playbook | playbook | same |
+| `claude` (AUR) | ✓ | · | · | the **desktop app**, not the CLI — intentional, keep |
 | ollama / ollama-cuda | · | ✓ | · | |
 | llama.cpp-cuda (AUR) | · | ✓ | · | |
+
+The CLIs come from vendor install scripts, so `openai-codex-bin` and `gemini-cli` packages
+must stay off the lists — they shadow `~/.local/bin` copies. `gemini` comes from mise/npm.
 
 ## Runtimes & build
 
 | tool | O | S | M | note |
 |---|---|---|---|---|
 | mise | — | ✓ | ✓ | omarchy: base.packages. Owns node/python/bun/pnpm |
-| node | · | · | ✓ | **violates the mise rule** |
-| uv | ✓ | ✓ (`python-uv`) | ✓ | omarchy also has the astral installer copy in `~/.local/bin` |
+| uv | · | ✓ (`python-uv`) | ✓ | omarchy uses the astral installer copy in `~/.local/bin` |
 | go | ✓ | ✓ | ✓ | |
 | cmake | ✓ | — | ✓ | server: `base-devel` |
 | jdk17-openjdk | ✓ | · | · | only JDK, default java (Android Studio / Gradle) |
 | gcc / base-devel | — | ✓ | — | |
-| cpio | ✓ | · | · | nothing depends on it — leftover |
 | pigz | ✓ | ✓ | · | |
+
+No `node` package on any profile — mise owns it.
 
 ## Cloud, remote, sync
 
@@ -106,11 +105,22 @@ Server equivalents: `smartmontools`, `ethtool`, `lsof`, `pcp`, `udisks2`, `quota
 `webcamoid` (omarchy), `gimp` (omarchy), `ffmpeg`/`imagemagick` (server + mac),
 `tectonic` (server + mac).
 
-## GUI apps (omarchy)
+## GUI apps
 
-`telegram-desktop`, `slack-desktop`, `android-studio`, `steam`, `discordupdater`,
-`etcher-bin`, `ventoy-bin`, `gogcli`. Mac casks: `aerospace`, `slack`, `telegram`,
-`keymapp`, `ghostty`, nerd fonts.
+Omarchy: `telegram-desktop`, `slack-desktop`, `android-studio`, `steam`, `discordupdater`,
+`etcher-bin`, `ventoy-bin`, `gogcli`.
+Mac casks are deliberately limited to things the dotfiles configure — `aerospace`, `ghostty`,
+the nerd fonts — plus `gcloud-cli`. Chat/media apps are installed by hand on mac, not synced.
+
+## GPU compute stacks are drivers, not packages
+
+CUDA (`cuda`, `cudnn`) and ROCm (`migraphx`, `rocm-*`, `hip*`, `miopen-hip`, `comgr`, `hsa-*`)
+are matched by `DRIVER_REGEX` in `scripts/update_package_lists.sh`, so on omarchy they land in
+`drivers.txt` — tracked for reference, never installed by the playbook. They're multi-GB and
+only valid for the GPU vendor a given machine actually has, so syncing them is wrong.
+
+The server script (`update_server_package_lists.sh`) has no driver filter by design: its
+`ollama-cuda` / `llama.cpp-cuda` / `nvidia-open-lts` entries are wanted there.
 
 ## Server-only data stack
 
@@ -118,10 +128,11 @@ Server equivalents: `smartmontools`, `ethtool`, `lsof`, `pcp`, `udisks2`, `quota
 `cups`/`cups-filters`, `linux`/`linux-lts` kernels, `nvidia-open-lts`,
 `nvidia-container-toolkit`, `yay-bin`.
 
-## Cross-machine gaps worth knowing
+## Known rough edges
 
-- Mac has no container runtime and no `btop`; omarchy/server both do.
 - `taps.txt` carries `barutsrb/tap`, whose only formula is `omniwm` — nothing in
   `brew.txt`/`casks.txt` references it.
-- ROCm (`migraphx` → `rocm-llvm`, `miopen-hip`, `hipblaslt`, …) is installed on omarchy,
-  which has an NVIDIA-only GPU. ~15 GB, zero reverse dependencies outside its own tree.
+- `DRIVER_REGEX`'s pre-existing unanchored `t2` token also matches `libgit2`, `libxfont2`,
+  and `webkit2gtk-4.1`. Harmless today because none of them are explicitly installed, but it
+  would misfile them as drivers if any ever were.
+- Mac has no container runtime.
