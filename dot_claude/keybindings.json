@@ -8,8 +8,21 @@
         "ctrl+t": "app:toggleTodos",
         "ctrl+o": "app:toggleTranscript",
         "ctrl+shift+b": "app:toggleBrief",
-        "ctrl+shift+o": "app:toggleTeammatePreview",
-        "ctrl+r": "history:search"
+        "ctrl+r": "history:search",
+        "ctrl+x t": "app:toggleTerminal",
+        "ctrl+x n": "strip:next",
+        "ctrl+x p": "strip:previous",
+        "ctrl+x c": "strip:new",
+        "ctrl+x s": "strip:toggle",
+        "alt+1": "strip:jump1",
+        "alt+2": "strip:jump2",
+        "alt+3": "strip:jump3",
+        "alt+4": "strip:jump4",
+        "alt+5": "strip:jump5",
+        "alt+6": "strip:jump6",
+        "alt+7": "strip:jump7",
+        "alt+8": "strip:jump8",
+        "alt+9": "strip:jump9"
       }
     },
     {
@@ -45,7 +58,9 @@
         "tab": "autocomplete:accept",
         "escape": "autocomplete:dismiss",
         "up": "autocomplete:previous",
-        "down": "autocomplete:next"
+        "down": "autocomplete:next",
+        "ctrl+n": "autocomplete:next",
+        "ctrl+p": "autocomplete:previous"
       }
     },
     {
@@ -58,20 +73,18 @@
         "j": "select:next",
         "ctrl+p": "select:previous",
         "ctrl+n": "select:next",
+        "g": "select:first",
+        "shift+g": "select:last",
+        "ctrl+f": "select:pageDown",
+        "ctrl+b": "select:pageUp",
         "space": "select:accept",
-        "enter": "settings:close",
+        "enter": "select:accept",
         "/": "settings:search",
         "r": "settings:retry",
         "d": "settings:periodDay",
         "w": "settings:periodWeek",
         "t": "settings:sortByTokens",
         "ctrl+u": "scroll:halfPageUp"
-      }
-    },
-    {
-      "context": "Doctor",
-      "bindings": {
-        "f": "doctor:fix"
       }
     },
     {
@@ -83,6 +96,10 @@
         "escape": "confirm:no",
         "up": "confirm:previous",
         "down": "confirm:next",
+        "j": "confirm:next",
+        "k": "confirm:previous",
+        "l": "confirm:nextField",
+        "h": "confirm:previousField",
         "tab": "confirm:nextField",
         "space": "confirm:toggle",
         "shift+tab": "confirm:cycleMode",
@@ -95,7 +112,9 @@
         "tab": "tabs:next",
         "shift+tab": "tabs:previous",
         "right": "tabs:next",
-        "left": "tabs:previous"
+        "left": "tabs:previous",
+        "l": "tabs:next",
+        "h": "tabs:previous"
       }
     },
     {
@@ -154,6 +173,13 @@
         "wheeldown": "scroll:lineDown",
         "ctrl+home": "scroll:top",
         "ctrl+end": "scroll:bottom",
+        "alt+j": "scroll:lineDown",
+        "alt+k": "scroll:lineUp",
+        "alt+g": "scroll:top",
+        "alt+shift+g": "scroll:bottom",
+        "ctrl+u": "scroll:halfPageUp",
+        "ctrl+f": "scroll:fullPageDown",
+        "ctrl+b": "scroll:fullPageUp",
         "ctrl+shift+c": "selection:copy",
         "cmd+c": "selection:copy",
         "shift+left": "selection:extendLeft",
@@ -175,8 +201,11 @@
       "bindings": {
         "right": "attachments:next",
         "left": "attachments:previous",
+        "l": "attachments:next",
+        "h": "attachments:previous",
         "backspace": "attachments:remove",
         "delete": "attachments:remove",
+        "x": "attachments:remove",
         "down": "attachments:exit",
         "escape": "attachments:exit"
       }
@@ -190,6 +219,10 @@
         "ctrl+n": "footer:down",
         "right": "footer:next",
         "left": "footer:previous",
+        "j": "footer:down",
+        "k": "footer:up",
+        "l": "footer:next",
+        "h": "footer:previous",
         "enter": "footer:openSelected",
         "escape": "footer:clearSelection",
         "x": "footer:close"
@@ -208,10 +241,12 @@
         "shift+up": "messageSelector:top",
         "meta+up": "messageSelector:top",
         "shift+k": "messageSelector:top",
+        "g": "messageSelector:top",
         "ctrl+down": "messageSelector:bottom",
         "shift+down": "messageSelector:bottom",
         "meta+down": "messageSelector:bottom",
         "shift+j": "messageSelector:bottom",
+        "shift+g": "messageSelector:bottom",
         "enter": "messageSelector:select"
       }
     },
@@ -221,6 +256,8 @@
         "escape": "diff:dismiss",
         "left": "diff:previousSource",
         "right": "diff:nextSource",
+        "h": "diff:previousSource",
+        "l": "diff:nextSource",
         "up": "diff:previousFile",
         "down": "diff:nextFile",
         "enter": "diff:viewDetails",
@@ -228,6 +265,7 @@
         "k": "diff:previousFile",
         "pageup": "scroll:pageUp",
         "pagedown": "scroll:pageDown",
+        "ctrl+u": "scroll:halfPageUp",
         "space": "scroll:fullPageDown",
         "shift+space": "scroll:fullPageUp",
         "b": "scroll:fullPageUp",
@@ -242,6 +280,8 @@
       "bindings": {
         "left": "modelPicker:decreaseEffort",
         "right": "modelPicker:increaseEffort",
+        "h": "modelPicker:decreaseEffort",
+        "l": "modelPicker:increaseEffort",
         "s": "modelPicker:thisSessionOnly"
       }
     },
@@ -256,8 +296,12 @@
         "ctrl+p": "select:previous",
         "pageup": "select:pageUp",
         "pagedown": "select:pageDown",
+        "ctrl+f": "select:pageDown",
+        "ctrl+b": "select:pageUp",
         "home": "select:first",
         "end": "select:last",
+        "g": "select:first",
+        "shift+g": "select:last",
         "enter": "select:accept",
         "escape": "select:cancel"
       }
