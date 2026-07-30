@@ -165,6 +165,23 @@ for sock, pane, session, window, title in panes():
         changes.append(f"bound {pane} -> {sid[:8]} ({title})")
     bound[pane] = sid
 
+for path in glob.glob(os.path.join(RECORDS, "*.json")):
+    try:
+        with open(path) as fh:
+            record = json.load(fh)
+    except Exception:
+        continue
+    if has_transcript(record):
+        continue
+    sid = os.path.basename(path)[:-5]
+    found = find_transcript(sid)
+    if not found:
+        continue
+    record["transcriptPath"] = found
+    save(path, record)
+    changes.append(f"repaired transcript for {sid[:8]} -> "
+                   f"{os.path.basename(os.path.dirname(found))}")
+
 # Resolve panes with more than one claimant: whichever the gateway picks, the losers make
 # it answer 404. A pane matched to a job has an exact answer; otherwise prefer a claimant
 # that can actually serve a transcript, falling back to the newest.
