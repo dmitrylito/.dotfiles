@@ -1,0 +1,6 @@
+[Unit]
+Description=Drop stale finished sessions out of Claude Code's agent view
+
+[Service]
+Type=oneshot
+ExecStart={{ .chezmoi.homeDir }}/.local/bin/claude-prune-agents
