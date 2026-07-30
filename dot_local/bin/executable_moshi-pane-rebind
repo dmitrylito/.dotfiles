@@ -38,6 +38,7 @@ import sys
 STATE = os.path.expanduser(os.environ.get("MOSHI_STATE_DIR", "~/.local/state/moshi"))
 RECORDS = os.path.join(STATE, "claude-sessions")
 JOBS = os.path.expanduser("~/.claude/jobs")
+PROJECTS = os.path.expanduser("~/.claude/projects")
 TMUX = next((p for p in ("/usr/bin/tmux", "/usr/sbin/tmux", "/opt/homebrew/bin/tmux")
              if os.path.exists(p)), "tmux")
 TMUX_FIELDS = ("tmuxSession", "tmuxWindow", "tmuxPane", "tmuxSocket", "terminalKind")
