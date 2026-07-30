@@ -15,5 +15,3 @@ sesh-bin
 ventoy-bin
 webcamoid
 zsa-keymapp-bin
-zsh-uv-env-git
-zsh-you-should-use

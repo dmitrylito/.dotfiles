@@ -1,9 +1,12 @@
 amd-ucode
+cuda
+cudnn
 kernel-modules-hook
 lib32-nvidia-utils
 lib32-vulkan-radeon
 libva-nvidia-driver
 linux-firmware
+migraphx
 nvidia-container-toolkit
 nvidia-open-dkms
 nvidia-settings
