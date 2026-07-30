@@ -196,6 +196,9 @@ hyprctl() {
 # Pull + apply + push dotfiles in the background so no machine drifts behind master.
 # Throttled and script-excluded; see ~/.local/bin/chezmoi-autoupdate for why.
 if [[ -o interactive ]] && [[ -x "$HOME/.local/bin/chezmoi-autoupdate" ]]; then
+  # Local-only apply, synchronous: no network, so an already-pulled change lands on
+  # this shell rather than waiting out the throttle.
+  "$HOME/.local/bin/chezmoi-autoupdate" --local
   # `sz` exports this so a deliberate reload syncs now instead of waiting out the
   # throttle; unset first or every child process inherits the force flag.
   if [[ -n ${CHEZMOI_AUTOUPDATE_FORCE:-} ]]; then
