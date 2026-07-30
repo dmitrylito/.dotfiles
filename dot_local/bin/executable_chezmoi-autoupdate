@@ -40,13 +40,38 @@ log() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >"$LOG"; }
 
 case "${1:-}" in
     --status) [ -r "$LOG" ] && cat "$LOG" || echo "chezmoi-autoupdate: never run"; exit 0 ;;
-    --force)  FORCE=1 ;;
-    "")       FORCE=0 ;;
+    --local)  LOCAL=1; FORCE=0 ;;
+    --force)  LOCAL=0; FORCE=1 ;;
+    "")       LOCAL=0; FORCE=0 ;;
     *)        echo "chezmoi-autoupdate: unknown option: $1" >&2; exit 2 ;;
 esac
 
 command -v chezmoi >/dev/null 2>&1 || exit 0
 mkdir -p "$CACHE_DIR"
+
+# --local is the synchronous half: apply what an earlier background run already
+# pulled. No network, so it costs ~20ms and belongs in the shell's critical path —
+# a change fetched an hour ago lands on the next shell instead of waiting out the
+# throttle. Safe to rewrite ~/.zshrc while zsh is sourcing it: chezmoi replaces
+# targets by atomic rename, so the running shell keeps reading the old inode.
+# Non-blocking lock, or a concurrent background apply would stall shell startup on
+# chezmoi's persistent-state lock.
+if [ "${LOCAL:-0}" -eq 1 ]; then
+    apply_local() {
+        local src rc
+        src=$(chezmoi source-path 2>/dev/null) || return
+        git -C "$src" diff --quiet HEAD 2>/dev/null || return
+        chezmoi apply --exclude scripts >/dev/null 2>&1
+        rc=$?
+        [ "$rc" -eq 0 ] || log "failed: local apply returned $rc"
+    }
+    if command -v flock >/dev/null 2>&1; then
+        ( flock -n 9 || exit 0; apply_local ) 9>"$LOCK"
+    else
+        apply_local
+    fi
+    exit 0
+fi
 
 # -mmin is supported by both GNU and BSD find, unlike `stat` format flags.
 if [ "$FORCE" -eq 0 ] && [ -f "$STAMP" ] &&
