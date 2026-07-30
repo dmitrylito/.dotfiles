@@ -15,9 +15,15 @@
 # re-trigger constantly and must never fire unattended from a shell prompt. Run a
 # bare `chezmoi apply` by hand when you actually want the package sync.
 #
-# Bails out silently when: the source tree is dirty, the pull is not a fast-forward,
-# another run holds the lock, or the machine is offline. Outcome of every run is
-# written to $LOG (one line), which is what --status reads.
+# Also pushes any local commits the source repo is ahead by — chezmoi's autoPush
+# only fires on commits chezmoi itself makes, so commits from editors, agents, or a
+# failed pacman-hook push would otherwise sit unpushed indefinitely. The push is
+# attempted on every path, including the dirty/pull-failed bails: sending already
+# committed work is safe regardless of the working tree's state.
+#
+# Bails out of the *apply* silently when: the source tree is dirty, the pull is not a
+# fast-forward, another run holds the lock, or the machine is offline. Outcome of every
+# run is written to $LOG (one line), which is what --status reads.
 #
 # Serialised against scripts/sync-package-lists.sh via the same lock file, so a
 # shell starting mid-pacman-transaction cannot corrupt the source repo's git state.
