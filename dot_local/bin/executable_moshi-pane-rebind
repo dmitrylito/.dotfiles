@@ -20,6 +20,12 @@
 #
 # Panes whose bound session has no transcript, and which match no job, have the stale
 # claim removed so they stop hijacking the pane.
+#
+# Records whose transcriptPath no longer exists are repointed at ~/.claude/projects/*/<id>.jsonl.
+# Claude Code files a transcript under a directory derived from the session's cwd, so entering
+# a worktree moves it and removing that worktree moves it back; only job-matched panes get an
+# authoritative path (linkScanPath), so an interactive session that relocated otherwise keeps a
+# dead path and the app serves an empty chat.
 
 import argparse
 import glob
