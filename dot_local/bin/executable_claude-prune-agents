@@ -40,14 +40,25 @@ def finished_sessions():
 
 
 def pinned_ids():
+    # pins.json's shape is Claude's to change, so harvest every string in it
+    # rather than assuming a key: a missed pin would delete a session the user
+    # deliberately kept.
     try:
         with open(os.path.join(JOBS, "pins.json")) as fh:
             pins = json.load(fh)
     except (OSError, ValueError):
         return set()
-    if isinstance(pins, dict):
-        pins = pins.get("pins") or pins.get("ids") or []
-    return {p if isinstance(p, str) else (p or {}).get("id") for p in pins}
+    found = set()
+    stack = [pins]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, str):
+            found.add(node)
+        elif isinstance(node, dict):
+            stack.extend(node.values())
+        elif isinstance(node, list):
+            stack.extend(node)
+    return found
 
 
 def idle_hours(job_id):
