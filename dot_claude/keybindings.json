@@ -14,15 +14,15 @@
         "ctrl+x p": "strip:previous",
         "ctrl+x c": "strip:new",
         "ctrl+x s": "strip:toggle",
-        "alt+1": "strip:jump1",
-        "alt+2": "strip:jump2",
-        "alt+3": "strip:jump3",
-        "alt+4": "strip:jump4",
-        "alt+5": "strip:jump5",
-        "alt+6": "strip:jump6",
-        "alt+7": "strip:jump7",
-        "alt+8": "strip:jump8",
-        "alt+9": "strip:jump9"
+        "ctrl+x 1": "strip:jump1",
+        "ctrl+x 2": "strip:jump2",
+        "ctrl+x 3": "strip:jump3",
+        "ctrl+x 4": "strip:jump4",
+        "ctrl+x 5": "strip:jump5",
+        "ctrl+x 6": "strip:jump6",
+        "ctrl+x 7": "strip:jump7",
+        "ctrl+x 8": "strip:jump8",
+        "ctrl+x 9": "strip:jump9"
       }
     },
     {
