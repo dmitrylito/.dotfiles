@@ -1,8 +1,31 @@
+{{- $mac := eq (.profile | lower) "mac" -}}
 # Voxtype Configuration
 #
 # Location: ~/.config/voxtype/config.toml
 # All settings can be overridden via CLI flags
 #
+# Shared between the omarchy and mac profiles. The omarchy values are tuned for
+# that box's GPU and for Wayland's uinput typing path (dotool); neither applies
+# on macOS, which types through the accessibility API and has no XDG_RUNTIME_DIR.
+{{ if $mac -}}
+# Parakeet is EXPERIMENTAL on macOS and ships no downloaded model, so mac stays
+# on whisper. To switch after fetching one: voxtype setup model
+engine = "whisper"
+
+# No XDG_RUNTIME_DIR on macOS, so "auto" has nowhere to resolve to. The FN
+# hotkey drives recording directly, so no external state consumer needs it.
+state_file = "disabled"
+
+[hotkey]
+# macOS has no compositor keybinding, so voxtype owns the hotkey itself.
+# Cmd+Z mirrors the SUPER+Z dictation binding in hypr/bindings.conf (same
+# physical keys). It shadows Undo, which voxtype's CGEvent tap swallows while
+# the daemon runs — pick another key here if that bites.
+enabled = true
+key = "Z"
+modifiers = ["cmd"]
+mode = "toggle"
+{{- else -}}
 # State file for external integrations (Waybar, polybar, etc.)
 # Use "auto" for default location ($XDG_RUNTIME_DIR/voxtype/state),
 # a custom path, or "disabled" to turn off. The daemon writes state
@@ -19,6 +42,7 @@ key = "HOME"
 mode = "toggle"
 # key = "HOME"
 # mode = "toggle"
+{{- end }}
 
 [audio]
 # Audio input device ("default" uses system default)
@@ -38,53 +62,10 @@ pause_media = false
 enabled = false
 theme = "default"
 volume = 0.7
-# [audio.feedback]
-# Enable audio feedback sounds (beeps when recording starts/stops)
-# enabled = true
-#
-# Sound theme: "default", "subtle", "mechanical", or path to custom theme directory
-# theme = "default"
-#
-# Volume level (0.0 to 1.0)
-# volume = 0.7
 
-# [whisper]
-# # Model to use for transcription
-# # Options: tiny, tiny.en, base, base.en, small, small.en, medium, medium.en, large-v3, large-v3-turbo
-# # .en models are English-only but faster and more accurate for English
-# # large-v3-turbo is faster than large-v3 with minimal accuracy loss (recommended for GPU)
-# # Or provide absolute path to a custom .bin model file
-# model = "base.en"
-#
-# # Language for transcription
-# # Use "en" for English, "auto" for auto-detection
-# # See: https://github.com/openai/whisper#available-models-and-languages
-# language = "en"
-#
-# # Translate non-English speech to English
-# translate = false
-# mode = "local"
-# flash_attention = true
-# on_demand_loading = false
-# gpu_isolation = false
-# eager_processing = false
-#
-# # Number of CPU threads for inference (omit for auto-detection)
-# # threads = 4
-#
 [output]
 # Primary output mode: "type" or "clipboard"
-# - type: Simulates keyboard input at cursor position (requires ydotool)
-# - clipboard: Copies text to clipboard (requires wl-copy)
 mode = "type"
-
-# Compositor integration hooks (modifier key fix)
-# pre_recording_command = "hyprctl dispatch submap voxtype_recording"
-# pre_output_command = "hyprctl dispatch submap voxtype_suppress"
-# post_output_command = "hyprctl dispatch submap reset"
-
-driver_order = ["dotool", "clipboard"]
-
 
 # Fall back to clipboard if typing fails
 fallback_to_clipboard = true
@@ -92,25 +73,31 @@ fallback_to_clipboard = true
 # Delay between typed characters in milliseconds
 # 0 = fastest possible, increase if characters are dropped
 type_delay_ms = 0
+auto_submit = false
+shift_enter_newlines = false
+{{ if $mac }}
+# driver_order is deliberately unset: every named driver (wtype, eitype, dotool,
+# ydotool, xclip) is a Linux tool, so macOS falls through to its own
+# accessibility-API typing path.
+
+# No uinput device to settle on macOS, so nothing to guard against here.
+pre_type_delay_ms = 0
+{{- else }}
+# Compositor integration hooks (modifier key fix)
+# pre_recording_command = "hyprctl dispatch submap voxtype_recording"
+# pre_output_command = "hyprctl dispatch submap voxtype_suppress"
+# post_output_command = "hyprctl dispatch submap reset"
+
+# Preferred driver order: prioritize dotool (via persistent dotoold daemon)
+# to avoid Wayland device-churn and focus jitter under streaming mode.
+driver_order = ["dotool", "clipboard"]
 
 # Delay before typing starts (ms), helps prevent first character drop.
 # Safe at 0 because the persistent dotoold daemon keeps one uinput device alive,
 # so there's no per-output device-settle race to guard against. Bump to ~5 only
 # if you ever see the first character dropped.
 pre_type_delay_ms = 25
-auto_submit = false
-shift_enter_newlines = false
-
-
-# Post-processing command (optional)
-# Pipe transcribed text through an external command for cleanup before output.
-# The command receives text on stdin and outputs processed text on stdout.
-# Useful for LLM-based text cleanup, grammar correction, filler word removal.
-# On any failure (timeout, error), falls back to original transcription.
-#
-# [output.post_process]
-# command = "perl -0777 -Mutf8 -CS -pe 's/^\\s+//; s/\\s+$//'"
-# timeout_ms = 1000
+{{- end }}
 
 [output.notification]
 # Show notification when recording starts (hotkey pressed)
@@ -123,14 +110,44 @@ on_recording_stop = false
 on_transcription = false
 show_engine_icon = false
 
-# [text]
-# Text processing options (word replacements, spoken punctuation)
-#
-# Enable spoken punctuation conversion (e.g., say "period" to get ".")
-# spoken_punctuation = false
-#
-# Custom word replacements (case-insensitive)
-# replacements = { "hyperwhisper" = "hyprwhspr" }
+[text]
+spoken_punctuation = false
+smart_auto_submit = false
+
+[meeting]
+enabled = false
+
+[meeting.diarization]
+enabled = false
+
+[meeting.audio]
+source = "default"
+
+[vad]
+# Enable Voice Activity Detection to filter out empty recordings
+enabled = false
+backend = "auto"
+threshold = 0.5
+
+[status]
+icon_theme = {{ if $mac }}"default"{{ else }}"omarchy"{{ end }}
+
+[whisper]
+{{- if $mac }}
+model = "base.en"
+language = "en"
+translate = false
+mode = "local"
+on_demand_loading = false
+{{- else }}
+gpu_isolation = false
+on_demand_loading = false
+flash_attention = true
+eager_processing = true
+model = ""
+mode = "local"
+language = "auto"
+translate = false
 
 [parakeet]
 # only streaming-capable Parakeet model (int8 is batch-only)
@@ -152,6 +169,7 @@ streaming_left_context_secs = 5.6
 streaming_right_context_secs = 0.80
 
 [osd]
+# gtk4 frontend is Linux-only; macOS draws its overlay with AppKit instead.
 enabled = false
 frontend = "gtk4"
 position = "bottom-center"
@@ -163,37 +181,4 @@ opacity = 0.95
 waveform_window_secs = 3.0
 peak_decay_db_per_sec = 6.0
 waveform_gain = 10.0
-
-[text]
-spoken_punctuation = false
-smart_auto_submit = false
-
-[meeting]
-enabled = false
-
-[meeting.diarization]
-enabled = false
-
-[meeting.audio]
-source = "default"
-
-[status]
-icon_theme = "omarchy"
-
-[vad]
-# Enable Voice Activity Detection to filter out empty recordings
-enabled = false
-backend = "auto"
-threshold = 0.5
-
-[whisper]
-gpu_isolation = false
-on_demand_loading = false
-flash_attention = true
-eager_processing = true
-model = ""
-mode = "local"
-language = "auto"
-translate = false
-# Preferred driver order: prioritize dotool (via persistent dotoold daemon)
-# to avoid Wayland device-churn and focus jitter under streaming mode.
+{{- end }}
