@@ -136,6 +136,20 @@ _remote_session_precmd() {
 add-zsh-hook preexec _remote_session_preexec
 add-zsh-hook precmd _remote_session_precmd
 
+# moshi-hook binds a tmux pane to a Claude session at SessionStart only, so a session that
+# starts unbound (or claims a pane it does not occupy) stays wrong until something repairs it.
+# The rebind timer covers that, but not for ~20s; one detached run closes the startup gap.
+# preexec, not precmd: while claude holds the pane the shell renders no prompt and runs no
+# hooks, so the sleep has to outlive the launch rather than wait for the next prompt.
+_moshi_rebind_preexec() {
+  local -a words=(${(z)1})
+  [[ $words[1] == claude && -n $TMUX_PANE ]] || return
+  (( $+commands[moshi-pane-rebind] )) || return
+  ( sleep 3; moshi-pane-rebind >/dev/null 2>&1 ) &!
+}
+
+add-zsh-hook preexec _moshi_rebind_preexec
+
 source_if_exists "$HOME/.aliases"
 # iTerm2 only ships this on macOS; the guard makes it a no-op everywhere else.
 source_if_exists "$HOME/.iterm2_shell_integration.zsh"
