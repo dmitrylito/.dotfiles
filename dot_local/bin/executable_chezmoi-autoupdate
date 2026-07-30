@@ -54,29 +54,50 @@ if [ "$FORCE" -eq 0 ] && [ -f "$STAMP" ] &&
     exit 0
 fi
 
+PUSH_NOTE=""
+
+push_local_commits() {
+    local src=$1 ahead
+    PUSH_NOTE=""
+    git -C "$src" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1 || return
+    ahead=$(git -C "$src" rev-list --count '@{u}..HEAD' 2>/dev/null) || return
+    [ "${ahead:-0}" -gt 0 ] || return
+    if git -C "$src" push --quiet >/dev/null 2>&1; then
+        PUSH_NOTE="; pushed $ahead"
+    else
+        PUSH_NOTE="; push failed ($ahead unpushed)"
+    fi
+}
+
 run() {
     # Let the shell finish sourcing its rc files before apply can rewrite them.
     sleep 3
 
     : >"$STAMP"
 
-    local src
+    local src rc
     src=$(chezmoi source-path 2>/dev/null) || { log "skipped: no source path"; return; }
 
     if ! git -C "$src" diff --quiet HEAD 2>/dev/null; then
-        log "skipped: source has uncommitted changes"
+        push_local_commits "$src"
+        log "skipped: source has uncommitted changes$PUSH_NOTE"
         return
     fi
 
     if ! git -C "$src" pull --ff-only --quiet >/dev/null 2>&1; then
-        log "skipped: pull failed (offline, or not a fast-forward)"
+        push_local_commits "$src"
+        log "skipped: pull failed (offline, or not a fast-forward)$PUSH_NOTE"
         return
     fi
 
-    if chezmoi apply --exclude scripts >/dev/null 2>&1; then
-        log "ok: applied $(git -C "$src" rev-parse --short HEAD)"
+    chezmoi apply --exclude scripts >/dev/null 2>&1
+    rc=$?
+    push_local_commits "$src"
+
+    if [ "$rc" -eq 0 ]; then
+        log "ok: applied $(git -C "$src" rev-parse --short HEAD)$PUSH_NOTE"
     else
-        log "failed: chezmoi apply returned $?"
+        log "failed: chezmoi apply returned $rc$PUSH_NOTE"
     fi
 }
 
