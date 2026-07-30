@@ -3,6 +3,3 @@ font-jetbrains-mono-nerd-font
 font-symbols-only-nerd-font
 gcloud-cli
 ghostty
-keymapp
-slack
-telegram
