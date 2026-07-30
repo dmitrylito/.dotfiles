@@ -116,7 +116,9 @@
         "right": "tabs:next",
         "left": "tabs:previous",
         "l": "tabs:next",
-        "h": "tabs:previous"
+        "h": "tabs:previous",
+        "alt+h": "tabs:previous",
+        "alt+l": "tabs:next"
       }
     },
     {
@@ -213,7 +215,9 @@
         "delete": "attachments:remove",
         "x": "attachments:remove",
         "down": "attachments:exit",
-        "escape": "attachments:exit"
+        "escape": "attachments:exit",
+        "alt+h": "attachments:previous",
+        "alt+l": "attachments:next"
       }
     },
     {
@@ -231,7 +235,9 @@
         "h": "footer:previous",
         "enter": "footer:openSelected",
         "escape": "footer:clearSelection",
-        "x": "footer:close"
+        "x": "footer:close",
+        "alt+h": "footer:previous",
+        "alt+l": "footer:next"
       }
     },
     {
@@ -280,7 +286,9 @@
         "g": "scroll:top",
         "shift+g": "scroll:bottom",
         "home": "scroll:top",
-        "end": "scroll:bottom"
+        "end": "scroll:bottom",
+        "alt+h": "diff:previousSource",
+        "alt+l": "diff:nextSource"
       }
     },
     {
@@ -290,7 +298,9 @@
         "right": "modelPicker:increaseEffort",
         "h": "modelPicker:decreaseEffort",
         "l": "modelPicker:increaseEffort",
-        "s": "modelPicker:thisSessionOnly"
+        "s": "modelPicker:thisSessionOnly",
+        "alt+h": "modelPicker:decreaseEffort",
+        "alt+l": "modelPicker:increaseEffort"
       }
     },
     {
