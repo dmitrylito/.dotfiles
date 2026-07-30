@@ -42,4 +42,3 @@ else
   alias ls="ls --color=auto"
   alias lsa="ls -a --color=auto"
 fi
-# local-apply smoke test
