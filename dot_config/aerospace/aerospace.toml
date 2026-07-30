@@ -29,15 +29,22 @@ default-root-container-layout = 'tiles'
 #               tall monitor (anything higher than wide) gets vertical orientation
 default-root-container-orientation = 'auto'
 
-# Mouse focus configurations:
-# Mouse follows focus when window focus changes (moves pointer to window center)
-on-focus-changed = ['move-mouse window-lazy-center']
+# Mouse focus configurations.
+#
+# 'move-mouse' posts a synthetic mouseMoved CGEvent (not a silent CGWarp), so any
+# hover-to-focus tool (AutoFocus, or AeroSpace's own focus-follows-mouse) sees it as a
+# real mouse move and refocuses. Warping on EVERY focus change therefore ping-pongs
+# focus, and yanking the cursor mid-interaction dismisses menus and dropdowns.
+# So: no warp on window focus change — keyboard focus just sticks.
+on-focus-changed = []
 
-# Mouse follows focus when focused monitor changes
+# Warp only when the focused MONITOR changes, otherwise the cursor is stranded on the old
+# display and the next hover steals focus back. Targets the focused window rather than the
+# monitor centre so the hover-refocus this warp triggers lands on that same window.
 # See https://nikitabobko.github.io/AeroSpace/guide#on-focus-changed-callbacks
 # See https://nikitabobko.github.io/AeroSpace/commands#move-mouse
 # Fallback value (if you omit the key): on-focused-monitor-changed = []
-on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+on-focused-monitor-changed = ['move-mouse window-lazy-center']
 
 # You can effectively turn off macOS "Hide application" (cmd-h) feature by toggling this flag
 # Useful if you don't use this macOS feature, but accidentally hit cmd-h or cmd-cmd-h key
