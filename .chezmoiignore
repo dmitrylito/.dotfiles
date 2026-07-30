@@ -43,6 +43,7 @@ scripts/
 {{ if ne (.profile | lower) "mac"}}
 .config/aerospace/
 .config/sketchybar/
+.config/borders/
 {{ end }}
 
 {{ if eq (.profile | lower) "mac" }}

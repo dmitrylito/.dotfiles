@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# JankyBorders config (brew felixkratz/formulae/borders).
+# `borders` executes this file when started with no arguments — i.e. by
+# `brew services start borders`, which is how it runs on this box.
+# Re-invoking `borders` here updates the already-running instance, so running
+# this script by hand applies changes live without a service restart.
+#
+# Width/rounding mirror the Hyprland looknfeel on the omarchy profile
+# (border_size = 4, rounding = 10); colors are Catppuccin Mocha.
+
+options=(
+  style=round
+  width=4.0
+  hidpi=on
+  active_color=0xff89b4fa
+  inactive_color=0x40585b70
+)
+
+borders "${options[@]}"
