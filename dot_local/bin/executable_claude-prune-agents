@@ -92,7 +92,7 @@ def main():
         job_id, state = session.get("id"), session.get("state")
         if not job_id or state not in keep_states:
             continue
-        if job_id in pinned:
+        if job_id in pinned or session.get("pinned"):
             continue
         age = idle_hours(job_id)
         if age is None or age < args.hours:
