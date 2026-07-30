@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""Drop stale finished sessions out of Claude Code's agent view.
+
+Usage: claude-prune-agents [--hours N] [--states done,stopped] [--dry-run]
+       Run by the claude-prune-agents.timer systemd user unit, hourly.
+
+Claude prunes ~/.claude/projects, plans, tasks and friends at startup via
+cleanupPeriodDays, but ~/.claude/jobs is not in that sweep, so the agent-view
+list grows forever. This calls `claude rm <id>`, which drops the row and the
+job dir while KEEPING the transcript — `claude --resume` / `/resume` still
+reach the conversation.
+
+Only finished sessions age out. Anything pinned (~/.claude/jobs/pins.json),
+still running, or waiting on input is left alone, as is any state not listed in
+--states. `claude rm` refuses to discard a worktree with uncommitted changes or
+unpushed commits, so it is the only safe way to do this — never rm -rf a job dir.
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import time
+
+JOBS = os.path.expanduser("~/.claude/jobs")
+
+
+def finished_sessions():
+    out = subprocess.run(
+        ["claude", "agents", "--json", "--all"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    if out.returncode != 0:
+        sys.exit(f"claude agents --json --all failed: {out.stderr.strip()}")
+    return [s for s in json.loads(out.stdout) if s.get("kind") == "background"]
+
+
+def pinned_ids():
+    try:
+        with open(os.path.join(JOBS, "pins.json")) as fh:
+            pins = json.load(fh)
+    except (OSError, ValueError):
+        return set()
+    if isinstance(pins, dict):
+        pins = pins.get("pins") or pins.get("ids") or []
+    return {p if isinstance(p, str) else (p or {}).get("id") for p in pins}
+
+
+def idle_hours(job_id):
+    path = os.path.join(JOBS, job_id, "state.json")
+    try:
+        with open(path) as fh:
+            stamp = json.load(fh).get("updatedAt")
+        seconds = time.time() - time.mktime(
+            time.strptime(stamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+        ) + time.timezone
+    except (OSError, ValueError, TypeError):
+        try:
+            seconds = time.time() - os.path.getmtime(os.path.join(JOBS, job_id))
+        except OSError:
+            return None
+    return seconds / 3600
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--hours", type=float, default=24)
+    ap.add_argument("--states", default="done,stopped")
+    ap.add_argument("--dry-run", action="store_true")
+    args = ap.parse_args()
+
+    keep_states = {s.strip() for s in args.states.split(",") if s.strip()}
+    pinned = pinned_ids()
+    removed = kept = 0
+
+    for session in finished_sessions():
+        job_id, state = session.get("id"), session.get("state")
+        if not job_id or state not in keep_states:
+            continue
+        if job_id in pinned:
+            continue
+        age = idle_hours(job_id)
+        if age is None or age < args.hours:
+            kept += 1
+            continue
+        name = session.get("name") or "(unnamed)"
+        if args.dry_run:
+            print(f"would remove {job_id} [{state}, {age:.0f}h] {name}")
+            removed += 1
+            continue
+        rm = subprocess.run(
+            ["claude", "rm", job_id], capture_output=True, text=True, timeout=120
+        )
+        if rm.returncode == 0:
+            print(f"removed {job_id} [{state}, {age:.0f}h] {name}")
+            removed += 1
+        else:
+            print(f"kept {job_id}: {(rm.stderr or rm.stdout).strip()}")
+            kept += 1
+
+    print(f"{'would remove' if args.dry_run else 'removed'} {removed}, kept {kept}")
+
+
+if __name__ == "__main__":
+    main()
