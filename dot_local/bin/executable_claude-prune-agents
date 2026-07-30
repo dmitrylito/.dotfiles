@@ -17,6 +17,7 @@ unpushed commits, so it is the only safe way to do this — never rm -rf a job d
 """
 
 import argparse
+import calendar
 import json
 import os
 import subprocess
