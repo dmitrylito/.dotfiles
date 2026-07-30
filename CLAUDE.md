@@ -12,7 +12,8 @@ This is the **chezmoi source directory** (`~/.local/share/chezmoi`) — the Git-
 
 - **Files here are templates/sources, not the live files.** A source file named `dot_zshrc.tmpl` becomes `~/.zshrc`. Editing a source file does nothing until you `chezmoi apply`.
 - **`autoCommit` and `autoPush` are enabled** (`.chezmoi.toml.tmpl`). `chezmoi apply`/`chezmoi edit` auto-commit and push to GitHub. Direct file edits with other tools do **not** auto-commit — commit manually only when asked.
-- **Source naming conventions** (chezmoi): `dot_` → leading `.`; `.tmpl` → rendered as a Go template; `executable_` → `+x`; `run_onchange_` → a script chezmoi executes (not deployed as a file) whenever its rendered content changes.
+- **Source naming conventions** (chezmoi): `dot_` → leading `.`; `.tmpl` → rendered as a Go template; `executable_` → `+x`; `run_onchange_` → a script chezmoi executes (not deployed as a file) whenever its rendered content changes; `modify_` → a script chezmoi runs with the current target on stdin, whose stdout becomes the target.
+- **`~/.claude/settings.json` is a `modify_` script, not a tracked file** (`dot_claude/modify_settings.json.tmpl`). Claude Code rewrites that file at runtime (`/model`, `/config`, `/plugin`) and `moshi-hook service install` rewrites its whole hooks block, so tracking it as a file meant permanent drift, an overwrite prompt on every apply, and lost settings. The script merges instead: baseline keys are defaults (`model` is seed-only on purpose), the moshi guard hook wiring is enforced. Do not convert it back to a plain file. `--exclude scripts` does **not** skip `modify_` entries, so `chezmoi-autoupdate` still repairs the wiring.
 - **The active profile** is chosen at `chezmoi init` (prompt in `.chezmoi.toml.tmpl`) and read as `.profile`. Templates and `.chezmoiignore` branch on `.profile | lower`.
 
 ## Common commands
