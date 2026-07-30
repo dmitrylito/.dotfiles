@@ -23,6 +23,7 @@ scripts/
 
 {{ if and (ne (.profile | lower) "omarchy") (ne (.profile | lower) "mac") }}
 .config/ghostty/
+.config/voxtype/
 {{ end }}
 
 {{ if ne (.profile | lower) "omarchy" }}
@@ -33,7 +34,6 @@ scripts/
 .config/systemd/user/graphical-session.target.wants/
 .config/mimeapps.list
 .config/spotify-flags.conf
-.config/voxtype/
 .config/walker/
 .local/bin/restore-hyprlock
 .local/share/applications/
@@ -44,6 +44,9 @@ scripts/
 .config/aerospace/
 .config/sketchybar/
 .config/borders/
+# macOS voxtype ignores XDG_CONFIG_HOME and only reads this path, so mac
+# symlinks it at .config/voxtype/ rather than keeping a second copy.
+Library/
 {{ end }}
 
 {{ if eq (.profile | lower) "mac" }}

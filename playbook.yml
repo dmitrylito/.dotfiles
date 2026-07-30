@@ -53,6 +53,12 @@
     mac_cask_file: "{{ chezmoi_source_dir }}/packages/mac/casks.txt"
     mac_taps_file: "{{ chezmoi_source_dir }}/packages/mac/taps.txt"
 
+    # Homebrew refuses to LOAD a cask from a non-official tap until it is
+    # trusted, so an untrusted entry here fails the cask install outright rather
+    # than degrading. Fully-qualified names, kept in sync with casks.txt.
+    mac_third_party_casks:
+      - peteonrails/voxtype/voxtype
+
     # Paths to Omarchy-specific auto-generated lists
     pacman_file: "{{ chezmoi_source_dir }}/packages/omarchy/added-pacman.txt"
     aur_file: "{{ chezmoi_source_dir }}/packages/omarchy/added-aur.txt"
@@ -105,6 +111,12 @@
             [ -x "$home/.local/bin/$c" ] && clis="$clis $c"
           done
 
+          # Quotes are stripped so this can be embedded in the JSON line below;
+          # gates substring-match cask names against it. brew keeps this at
+          # $XDG_CONFIG_HOME/homebrew/ when that is set, else ~/.homebrew/.
+          brew_trust=$(cat "$home/.config/homebrew/trust.json" \
+                           "$home/.homebrew/trust.json" 2>/dev/null | tr -d ' \n"')
+
           {% if p == 'server' %}
           key_trusted=$(yn pacman-key --list-keys {{ archzfs_key }})
           {% else %}
@@ -119,6 +131,7 @@
           printf '"makeflags":%s,' "$(yn grep -qxF '{{ makeflags_line }}' /etc/makepkg.conf)"
           printf '"pacman_hooks_dir":%s,' "$(yn test -d /etc/pacman.d/hooks)"
           printf '"pacman_hook":%s,' "$(yn grep -qF '{{ pacman_hook_exec }}' {{ pacman_hook_path }})"
+          printf '"brew_trust":"%s",' "$brew_trust"
           printf '"archzfs_key":%s' "$key_trusted"
           printf '}\n'
       register: state_probe
@@ -190,6 +203,14 @@
             name: "{{ mac_brew_packages }}"
             state: present
           when: mac_brew_packages | length > 0
+
+        # Must precede the cask install: an untrusted third-party cask is a hard
+        # load failure, not a prompt. Empty loop => no module invocation.
+        - name: Trust third-party macOS casks
+          ansible.builtin.command:
+            cmd: "brew trust --cask {{ item }}"
+          loop: "{{ mac_third_party_casks | reject('in', st.brew_trust) | list }}"
+          changed_when: true
 
         - name: Install macOS Homebrew casks
           community.general.homebrew_cask:
