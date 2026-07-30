@@ -15,6 +15,8 @@
 # The merge policy:
 #   - BASELINE keys are DEFAULTS: filled in only where the live file lacks them, so a
 #     setting changed inside Claude Code sticks, and a new BASELINE key still propagates.
+#     "model" relies on this deliberately — it is seed-only, so switching between opus and
+#     fable is never tracked or reverted. Do not move it into the enforced set.
 #   - hooks are ENFORCED: every moshi hook command is forced back to the guard wrapper and
 #     any missing event/matcher is re-added. Without this, `moshi-hook service install`
 #     silently repoints the hooks at raw moshi-hook, which makes tty-less sessions bind to
