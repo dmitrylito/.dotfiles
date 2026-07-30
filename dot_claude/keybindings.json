@@ -126,6 +126,8 @@
         "escape": "transcript:exit",
         "q": "transcript:exit",
         "ctrl+u": "scroll:halfPageUp",
+        "alt+u": "scroll:halfPageUp",
+        "alt+d": "scroll:halfPageDown",
         "ctrl+b": "scroll:fullPageUp",
         "ctrl+f": "scroll:fullPageDown",
         "ctrl+n": "scroll:lineDown",
