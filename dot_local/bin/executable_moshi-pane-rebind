@@ -4,8 +4,8 @@
 #
 # Usage: moshi-pane-rebind [--dry-run] [--verbose]
 #        Run periodically (moshi-pane-rebind.timer). Safe to run any time; it only edits
-#        the tmux* fields of records under ~/.local/state/moshi/claude-sessions/ and
-#        never deletes a record.
+#        the tmux* and transcriptPath fields of records under
+#        ~/.local/state/moshi/claude-sessions/ and never deletes a record.
 #
 # Why: Moshi assumes one tmux pane == one agent session. Viewing a background job in a
 # pane breaks that — the job owns the conversation but is tty-less, while the terminal
