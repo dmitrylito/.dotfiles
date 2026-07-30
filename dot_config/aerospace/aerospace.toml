@@ -29,11 +29,12 @@ default-root-container-layout = 'tiles'
 #               tall monitor (anything higher than wide) gets vertical orientation
 default-root-container-orientation = 'auto'
 
-# Mouse focus configurations.
+# Mouse focus configurations. Hover-to-focus itself lives in [focus-follows-mouse] below.
 #
-# 'move-mouse' posts a synthetic mouseMoved CGEvent (not a silent CGWarp), so any
-# hover-to-focus tool (AutoFocus, or AeroSpace's own focus-follows-mouse) sees it as a
-# real mouse move and refocuses. Warping on EVERY focus change therefore ping-pongs
+# 'move-mouse' posts a synthetic mouseMoved CGEvent (not a silent CGWarp), so anything
+# doing hover-to-focus — including AeroSpace's own focus-follows-mouse, which listens on a
+# global .mouseMoved monitor and has no guard against focus changes it caused itself — sees
+# it as a real mouse move and refocuses. Warping on EVERY focus change therefore ping-pongs
 # focus, and yanking the cursor mid-interaction dismisses menus and dropdowns.
 # So: no warp on window focus change — keyboard focus just sticks.
 on-focus-changed = []
@@ -68,6 +69,19 @@ exec-on-workspace-change = [
   '-c',
   'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
+
+# Hover-to-focus, i.e. Hyprland's input:follow_mouse = 1. Replaces the AutoFocus.app that
+# used to do this: AutoFocus's "focus without raising" set AXFocusedWindow without
+# activating the app, so macOS's frontmost app never changed and anything keyed off it
+# (JankyBorders' active-window highlight, sketchybar) only caught up when you clicked.
+# AeroSpace focuses through its own machinery and activates the window properly.
+#
+# Undocumented in the stable guide as of 0.21.3-Beta but real; single 'enabled' bool,
+# defaults to false. See Sources/AppBundle/config/parseFocusFollowsMouse.swift.
+# Keep on-focus-changed empty above or this loops — it has no self-caused-focus guard.
+# Table header must stay below every top-level bare key, or TOML swallows them into it.
+[focus-follows-mouse]
+enabled = true
 
 [workspace-to-monitor-force-assignment]
 1 = ['main', 'secondary']
