@@ -17,6 +17,11 @@
 #     setting changed inside Claude Code sticks, and a new BASELINE key still propagates.
 #     "model" relies on this deliberately — it is seed-only, so switching between opus and
 #     fable is never tracked or reverted. Do not move it into the enforced set.
+#   - permissions.allow is ENFORCED as a union: every BASELINE rule is re-added if missing,
+#     and rules added live (via /permissions) are kept. It has to be enforced rather than a
+#     default because it is a LIST that already exists on every established machine, so
+#     fill_defaults skipped it wholesale and each new rule silently reached only fresh boxes.
+#     Removing a rule therefore means deleting it HERE, not in /permissions.
 #   - hooks are ENFORCED: every moshi hook command is forced back to the guard wrapper and
 #     any missing event/matcher is re-added. Without this, `moshi-hook service install`
 #     silently repoints the hooks at raw moshi-hook, which makes tty-less sessions bind to
@@ -189,6 +194,17 @@ def enforce_moshi_hooks(live, baseline):
     return hooks
 
 
+def enforce_allow(live, baseline):
+    permissions = live.setdefault("permissions", {})
+    allow = permissions.get("allow")
+    if not isinstance(allow, list):
+        allow = permissions["allow"] = []
+    for rule in baseline.get("allow", []):
+        if rule not in allow:
+            allow.append(rule)
+    return allow
+
+
 raw = sys.stdin.read()
 try:
     current = json.loads(raw) if raw.strip() else {}
@@ -199,5 +215,6 @@ if not isinstance(current, dict):
 
 fill_defaults(current, {k: v for k, v in BASELINE.items() if k != "hooks"})
 current["hooks"] = enforce_moshi_hooks(current.get("hooks"), BASELINE["hooks"])
+enforce_allow(current, BASELINE["permissions"])
 
 print(json.dumps(current, indent=2, sort_keys=True))
