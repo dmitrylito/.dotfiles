@@ -143,6 +143,14 @@ cmd-ctrl-alt-shift-j = 'move down'
 cmd-ctrl-alt-shift-k = 'move up'
 cmd-ctrl-alt-shift-l = 'move right'
 
+# Join into a nested container (Arrows + Shift + Hyper) — the dwindle-style split.
+# 'join-with' rather than 'split': split is a no-op while
+# enable-normalization-flatten-containers is on.
+cmd-ctrl-alt-shift-left = 'join-with left'
+cmd-ctrl-alt-shift-down = 'join-with down'
+cmd-ctrl-alt-shift-up = 'join-with up'
+cmd-ctrl-alt-shift-right = 'join-with right'
+
 # Resize Windows
 cmd-ctrl-alt-minus = 'resize smart -50'
 cmd-ctrl-alt-equal = 'resize smart +50'
@@ -188,11 +196,6 @@ esc = ['reload-config', 'mode main']
 r = ['flatten-workspace-tree', 'mode main']                # Reset layout
 f = ['layout floating tiling', 'mode main']                # Toggle float/tile layout
 backspace = ['close-all-windows-but-current', 'mode main']
-
-cmd-ctrl-alt-shift-h = ['join-with left', 'mode main']
-cmd-ctrl-alt-shift-j = ['join-with down', 'mode main']
-cmd-ctrl-alt-shift-k = ['join-with up', 'mode main']
-cmd-ctrl-alt-shift-l = ['join-with right', 'mode main']
 
 
 # ==============================================================================
