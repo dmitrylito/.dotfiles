@@ -17,6 +17,7 @@ go
 i2c-tools
 jdk17-openjdk
 kdeconnect
+mbedtls
 mosh
 nvtop
 nwg-displays
