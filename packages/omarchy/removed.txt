@@ -1,5 +1,6 @@
 bluetui
 dust
+gnome-calculator
 hypridle
 hyprlock
 impala
