@@ -1,5 +1,6 @@
 ansible
 ast-grep
+bluez
 bluez-tools
 bluez-utils
 bob
@@ -27,9 +28,11 @@ inotify-tools
 jdk17-openjdk
 kdeconnect
 libvips
+lua51
 moonlight-qt
 mosh
 mpv-mpris
+neovim
 networkmanager
 nvtop
 nwg-displays
@@ -61,6 +64,7 @@ tensaku
 tesseract
 tesseract-data-eng
 tpm2-tools
+ttf-jetbrains-mono-nerd-basic
 ttfx
 udiskie
 voxtype-bin

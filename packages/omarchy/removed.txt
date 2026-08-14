@@ -1,1 +1,17 @@
+bluetui
+dust
+hypridle
+hyprlock
+impala
+iwd
+iwd
+mako
+omarchy-walker
+playerctl
+polkit-gnome
+satty
+swaybg
+swayosd
 ttf-jetbrains-mono-nerd
+waybar
+wiremix
