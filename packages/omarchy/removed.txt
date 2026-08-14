@@ -5,6 +5,7 @@ hyprlock
 impala
 iwd
 iwd
+kvantum-qt5
 mako
 omarchy-walker
 playerctl
