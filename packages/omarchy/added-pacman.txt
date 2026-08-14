@@ -8,6 +8,7 @@ direnv
 dmidecode
 easyeffects
 efibootmgr
+fakeroot
 fwupd
 gamescope
 ghostty
@@ -20,9 +21,12 @@ kdeconnect
 mosh
 nvtop
 nwg-displays
+omarchy-dev
 omarchy-keyring
+omarchy-settings-dev
 omazed
 openrgb
+pacman-contrib
 pesign
 pigz
 pre-commit
