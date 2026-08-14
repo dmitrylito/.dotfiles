@@ -11,6 +11,7 @@ mako
 omarchy-walker
 playerctl
 polkit-gnome
+python-terminaltexteffects
 satty
 swaybg
 swayosd
