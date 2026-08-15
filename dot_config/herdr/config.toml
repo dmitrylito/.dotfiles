@@ -63,6 +63,11 @@ next_tab = ["prefix+n", "alt+right"]
 move_tab_previous = "alt+shift+left"
 move_tab_next = "alt+shift+right"
 
+# Pickers — workspace_picker also on alt+a where the sesh launcher lived.
+# goto moved off its prefix+g default because lazygit takes that key below.
+workspace_picker = ["prefix+w", "alt+a"]
+goto = "prefix+a"
+
 # Sessions -> workspaces
 new_workspace = "prefix+shift+c"
 rename_workspace = "prefix+shift+r"
