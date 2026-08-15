@@ -1,3 +1,4 @@
+onboarding = false
 # Mirrors the Omarchy tmux config in config/tmux/tmux.conf
 # tmux session -> herdr workspace, tmux window -> herdr tab, tmux pane -> herdr pane
 
@@ -42,6 +43,12 @@ focus_pane_right = "ctrl+l"
 
 resize_mode = ["prefix+ctrl+left", "prefix+ctrl+down", "prefix+ctrl+up", "prefix+ctrl+right"]
 
+# Like resize-pane on C-M-S-arrows
+resize_pane_left = "ctrl+alt+shift+left"
+resize_pane_down = "ctrl+alt+shift+down"
+resize_pane_up = "ctrl+alt+shift+up"
+resize_pane_right = "ctrl+alt+shift+right"
+
 # No tmux equivalent; herdr's default prefix+shift+p is taken by previous session
 rename_pane = "prefix+shift+o"
 
@@ -52,6 +59,10 @@ close_tab = "prefix+k"
 switch_tab = ["prefix+1..9", "alt+1..9"]
 previous_tab = ["prefix+p", "alt+left", "alt+h"]
 next_tab = ["prefix+n", "alt+right", "alt+l"]
+
+# Like swap-window -t -1/+1 on M-S-Left/Right
+move_tab_previous = "alt+shift+left"
+move_tab_next = "alt+shift+right"
 
 # Pickers — goto (the navigator) on alt+a where the sesh launcher lived;
 # it moved off its prefix+g default because lazygit takes that key below.
@@ -91,8 +102,9 @@ height = "60%"
 [ui]
 accent = "blue"
 
-# tmux drew single-line dividers between adjacent panes
+# tmux drew single-line dividers between adjacent panes and no outer frame
 pane_gaps = false
+pane_outer_borders = false
 
 # tmux had no scrollbar column beside its panes
 pane_scrollbars = false
@@ -106,8 +118,16 @@ prompt_new_tab_name = false
 # set -g mouse on
 mouse_capture = true
 
+# status-right had the zoom flag followed by #h
+tab_bar_right = [{ type = "zoom" }, { type = "hostname" }]
+
 # Written by herdr's settings UI; keep in sync here or apply stomps it
 agent_panel_sort = "spaces"
+
+# set -g set-titles on / set -g set-titles-string '#h:#W', where tmux's #W was
+# the basename of the pane cwd. This is what Hyprland shows in the group bar,
+# and it resolves on the server so remote sessions name the remote host.
+window_title = "{hostname}: {workspace}"
 
 # Agent done/request chimes off — the dlco remote session was dinging on every
 # Claude turn-end with no visible notification (see herdr-agent-sounds memory)
