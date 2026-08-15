@@ -58,6 +58,7 @@ solaar
 steam
 stress-ng
 sudo
+swaync
 tailscale
 telegram-desktop
 tensaku
