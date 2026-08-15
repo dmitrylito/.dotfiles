@@ -18,4 +18,3 @@ herdr pane split "$main" --direction down --ratio 0.20 --cwd "$cwd" --no-focus >
 sleep 0.5
 herdr pane run "$main" nvim >/dev/null
 herdr pane run "$right" gemini >/dev/null
-herdr pane focus "$main" >/dev/null 2>&1 || true
