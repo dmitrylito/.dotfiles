@@ -92,11 +92,9 @@ pre_type_delay_ms = 0
 # to avoid Wayland device-churn and focus jitter under streaming mode.
 driver_order = ["dotool", "clipboard"]
 
-# Delay before typing starts (ms), helps prevent first character drop.
-# Safe at 0 because the persistent dotoold daemon keeps one uinput device alive,
-# so there's no per-output device-settle race to guard against. Bump to ~5 only
-# if you ever see the first character dropped.
-pre_type_delay_ms = 25
+# No delay before typing starts; the persistent dotoold daemon keeps one uinput
+# device alive, so there is no per-output device-settle race to guard against.
+pre_type_delay_ms = 0
 {{- end }}
 
 [output.notification]
