@@ -19,7 +19,8 @@
     st: "{{ state_probe.stdout | from_json }}"
 
     # Upstream checkouts, all synced by the single task in SECTION 6.
-    # `dest` is relative to the user's home.
+    # `dest` is relative to the user's home; `only` restricts an entry to one
+    # profile.
     tmuxifier_rel: ".cache/tmuxifier-src"
     git_repos:
       - { repo: 'https://github.com/marlonrichert/zsh-autocomplete.git', dest: '.oh-my-zsh/custom/plugins/zsh-autocomplete' }
