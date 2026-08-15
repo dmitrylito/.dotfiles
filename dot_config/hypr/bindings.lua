@@ -62,26 +62,33 @@ o.bind("RETURN", "Stop dictation", "voxtype record stop", { non_consuming = true
 
 -- Window management
 --
--- SUPER+U pops the focused window out into a centered 16:10 float and puts it
--- back.  How much can be put back is a property of dwindle, measured on this
--- box (Hyprland 0.56.2, force_split=2, preserve_split=true):
---   * Floating a tiled window DELETES its node and its sibling expands into the
---     parent rect.  Re-tiling only ever splits a single leaf, so the tree is
---     recoverable exactly when that sibling was ONE window.  When the sibling is
---     a subtree -- common past ~4 windows -- no sequence of swaps or resizes
---     rebuilds it, and forcing the recorded sizes actively mangles the layout.
---     So the exact path is taken only when the sibling is a leaf.
---   * swap only permutes windows between existing rectangles -- it can never
---     restore a split ratio.  Only resize moves a divider.
+-- SUPER+U pops the focused window out into a centered 16:10 float and puts the
+-- whole workspace back exactly as it was.
+--
+-- Floating a tiled window DELETES its node from the dwindle tree and its
+-- sibling expands into the parent rect; re-tiling only ever splits ONE leaf, so
+-- simply un-floating can rebuild the old tree only when the sibling was a
+-- single window (exactly 2 windows in any dwindle spiral, whatever the count).
+-- So the restore rebuilds instead: the saved rectangles are decomposed back
+-- into a guillotine tree, every window is re-tiled in an order that reproduces
+-- that tree, and the split ratios are then replayed as sizes.  Any valid
+-- decomposition works -- what has to come back is the rectangles, not dwindle's
+-- private tree.
+--
+-- Two dispatcher quirks this relies on, both verified on this box:
+--   * swap only permutes windows between existing rectangles; it never restores
+--     a split ratio.  Only resize moves a divider.
 --   * hl.dsp.window.resize ignores a `window` field (it always resizes the
 --     ACTIVE window) and is only correct on the LEFT/TOP child of a split; on
---     the right/bottom child it moves the divider the wrong way.
+--     the right/bottom child it lands on 2*current-target, so a missed target
+--     is re-asked for with that same mirror.
 local popout_state = {}
 local popout_dir = (os.getenv("XDG_RUNTIME_DIR") or "/tmp") .. "/hypr-popout"
 os.execute("mkdir -p " .. popout_dir)
 
-local EDGE_TOLERANCE = 8
-local GAP_TOLERANCE = 60
+local CUT_TOLERANCE = 2
+local SIZE_TOLERANCE = 1
+local RESIZE_PASSES = 8
 
 local function popout_file(address)
   return popout_dir .. "/" .. address:gsub("[^%w]", "_")
@@ -95,22 +102,28 @@ end
 local function popout_save(address, state)
   local file = io.open(popout_file(address), "w")
   if file == nil then return end
-  file:write(state.workspace, " ", state.tiled, " ", state.sibling, " ", state.side,
-    " ", state.left_child, " ", state.left_width, " ", state.top_height, "\n")
+  file:write(state.workspace, "\n")
+  for _, item in ipairs(state.windows) do
+    file:write(item.address, " ", item.x, " ", item.y, " ", item.width, " ", item.height, "\n")
+  end
   file:close()
 end
 
 local function popout_load(address)
   local file = io.open(popout_file(address), "r")
   if file == nil then return nil end
-  local line = file:read("*l")
+  local workspace = tonumber(file:read("*l"))
+  local windows = {}
+  for line in file:lines() do
+    local item, x, y, width, height = line:match("^(%S+) (%S+) (%S+) (%S+) (%S+)$")
+    if item ~= nil then
+      windows[#windows + 1] = { address = item, x = tonumber(x), y = tonumber(y),
+        width = tonumber(width), height = tonumber(height) }
+    end
+  end
   file:close()
-  local workspace, tiled, sibling, side, left_child, left_width, top_height =
-    (line or ""):match("^(%S+) (%S+) (%S+) (%S+) (%S+) (%S+) (%S+)$")
-  if workspace == nil then return nil end
-  return { workspace = tonumber(workspace), tiled = tonumber(tiled), sibling = sibling,
-    side = side, left_child = left_child, left_width = tonumber(left_width),
-    top_height = tonumber(top_height) }
+  if workspace == nil or #windows == 0 then return nil end
+  return { workspace = workspace, windows = windows }
 end
 
 local function popout_clear(address)
@@ -118,134 +131,153 @@ local function popout_clear(address)
   os.remove(popout_file(address))
 end
 
-local function popout_rect(window)
-  local x, y = popout_coord(window.at, "x"), popout_coord(window.at, "y")
-  local w, h = popout_coord(window.size, "x"), popout_coord(window.size, "y")
-  return { x = x, y = y, w = w, h = h, r = x + w, b = y + h }
+-- Split `items` along one axis, if some cut line separates them cleanly.
+local function popout_cut(items, axis)
+  local far = axis == "x" and "right" or "bottom"
+  local near = axis == "x" and "x" or "y"
+  local cuts = {}
+  for _, item in ipairs(items) do cuts[#cuts + 1] = item[far] end
+  table.sort(cuts)
+
+  for _, cut in ipairs(cuts) do
+    local low, high = {}, {}
+    local clean = true
+    for _, item in ipairs(items) do
+      if item[far] <= cut + CUT_TOLERANCE then
+        low[#low + 1] = item
+      elseif item[near] >= cut - CUT_TOLERANCE then
+        high[#high + 1] = item
+      else
+        clean = false
+        break
+      end
+    end
+    if clean and #low > 0 and #high > 0 then return low, high end
+  end
+
+  return nil
 end
 
--- dwindle's parent of `window` is the smallest rectangle formed by the window
--- plus a complete adjacent region.  Returns that region's members, so a caller
--- can tell a leaf sibling (rebuildable) from a subtree (not rebuildable).
-local function popout_parent(window, windows)
-  local me = popout_rect(window)
-  local others = {}
-  for _, candidate in ipairs(windows) do
-    if not candidate.floating and candidate.address ~= window.address then
-      others[#others + 1] = { address = candidate.address, rect = popout_rect(candidate) }
-    end
-  end
+local function popout_tree(items)
+  if #items == 1 then return { address = items[1].address } end
 
-  local probes = {
-    { side = "l", along = "x", pick = function(r) return r.x >= me.r - EDGE_TOLERANCE end },
-    { side = "r", along = "x", pick = function(r) return r.r <= me.x + EDGE_TOLERANCE end },
-    { side = "u", along = "y", pick = function(r) return r.y >= me.b - EDGE_TOLERANCE end },
-    { side = "d", along = "y", pick = function(r) return r.b <= me.y + EDGE_TOLERANCE end },
+  local orientation = "v"
+  local low, high = popout_cut(items, "x")
+  if low == nil then
+    orientation = "h"
+    low, high = popout_cut(items, "y")
+  end
+  if low == nil then return nil end
+
+  local left = popout_tree(low)
+  local right = popout_tree(high)
+  if left == nil or right == nil then return nil end
+  return { orientation = orientation, left = left, right = right }
+end
+
+local function popout_leader(node)
+  while node.address == nil do node = node.left end
+  return node.address
+end
+
+-- Each step splits an existing leaf, which is how dwindle grows a tree; visiting
+-- a node before its children keeps every anchor a leaf at the moment it is used.
+local function popout_steps(node, steps)
+  if node.address ~= nil then return steps end
+  steps[#steps + 1] = {
+    anchor = popout_leader(node.left),
+    window = popout_leader(node.right),
+    orientation = node.orientation,
   }
+  popout_steps(node.left, steps)
+  popout_steps(node.right, steps)
+  return steps
+end
 
-  local best = nil
-  for _, probe in ipairs(probes) do
-    local members, box = {}, nil
-    for _, other in ipairs(others) do
-      local r = other.rect
-      local within
-      if probe.along == "x" then
-        within = r.y >= me.y - EDGE_TOLERANCE and r.b <= me.b + EDGE_TOLERANCE
-      else
-        within = r.x >= me.x - EDGE_TOLERANCE and r.r <= me.r + EDGE_TOLERANCE
-      end
-      if within and probe.pick(r) then
-        members[#members + 1] = other
-        if box == nil then
-          box = { x = r.x, y = r.y, r = r.r, b = r.b }
-        else
-          box.x, box.y = math.min(box.x, r.x), math.min(box.y, r.y)
-          box.r, box.b = math.max(box.r, r.r), math.max(box.b, r.b)
-        end
-      end
-    end
-
-    if box ~= nil then
-      -- the region must span the window's full perpendicular extent and butt
-      -- up against it, or it is not the sibling half of a single split
-      local spans, touches
-      if probe.along == "x" then
-        spans = math.abs(box.y - me.y) <= EDGE_TOLERANCE and math.abs(box.b - me.b) <= EDGE_TOLERANCE
-        touches = (probe.side == "l" and math.abs(box.x - me.r) <= GAP_TOLERANCE)
-          or (probe.side == "r" and math.abs(me.x - box.r) <= GAP_TOLERANCE)
-      else
-        spans = math.abs(box.x - me.x) <= EDGE_TOLERANCE and math.abs(box.r - me.r) <= EDGE_TOLERANCE
-        touches = (probe.side == "u" and math.abs(box.y - me.b) <= GAP_TOLERANCE)
-          or (probe.side == "d" and math.abs(me.y - box.b) <= GAP_TOLERANCE)
-      end
-
-      if spans and touches then
-        local parent = {
-          x = math.min(me.x, box.x), y = math.min(me.y, box.y),
-          r = math.max(me.r, box.r), b = math.max(me.b, box.b),
-        }
-        local clean = true
-        for _, other in ipairs(others) do
-          local inside = false
-          for _, member in ipairs(members) do
-            if member.address == other.address then inside = true break end
-          end
-          if not inside then
-            local cx = other.rect.x + other.rect.w / 2
-            local cy = other.rect.y + other.rect.h / 2
-            if cx > parent.x and cx < parent.r and cy > parent.y and cy < parent.b then
-              clean = false
-              break
-            end
-          end
-        end
-
-        local area = (parent.r - parent.x) * (parent.b - parent.y)
-        if clean and (best == nil or area < best.area) then
-          best = { side = probe.side, members = members, box = box, area = area }
-        end
-      end
+local function popout_retile(state, tree)
+  for _, item in ipairs(state.windows) do
+    local window = hl.get_window("address:" .. item.address)
+    if window ~= nil and not window.floating then
+      hl.dispatch(hl.dsp.window.float({ action = "toggle", window = "address:" .. item.address }))
     end
   end
 
-  if best == nil then return nil end
+  hl.dispatch(hl.dsp.window.float({ action = "toggle", window = "address:" .. popout_leader(tree) }))
 
-  local leaf = #best.members == 1
-  local sibling = best.members[1]
-  local left_child, left_width, top_height = "-", 0, 0
-  if leaf then
-    if best.side == "l" then left_child, left_width, top_height = window.address, me.w, me.h
-    elseif best.side == "r" then left_child, left_width, top_height = sibling.address, sibling.rect.w, me.h
-    elseif best.side == "u" then left_child, left_width, top_height = window.address, me.w, me.h
-    else left_child, left_width, top_height = sibling.address, me.w, sibling.rect.h end
+  for _, step in ipairs(popout_steps(tree, {})) do
+    hl.dispatch(hl.dsp.focus({ window = "address:" .. step.anchor }))
+    hl.dispatch(hl.dsp.window.float({ action = "toggle", window = "address:" .. step.window }))
+
+    local anchor = hl.get_window("address:" .. step.anchor)
+    local placed = hl.get_window("address:" .. step.window)
+    if anchor ~= nil and placed ~= nil then
+      local dx = math.abs(popout_coord(anchor.at, "x") - popout_coord(placed.at, "x"))
+      local dy = math.abs(popout_coord(anchor.at, "y") - popout_coord(placed.at, "y"))
+      if (dx > dy) ~= (step.orientation == "v") then
+        hl.dispatch(hl.dsp.focus({ window = "address:" .. step.window }))
+        hl.dispatch(hl.dsp.layout("togglesplit"))
+      end
+    end
+  end
+end
+
+-- resize is exact on a left/top child and lands on 2*current-target on a
+-- right/bottom one, so a missed target is simply re-asked for mirrored.
+local function popout_set_axis(address, key, target)
+  local window = hl.get_window("address:" .. address)
+  if window == nil then return end
+  local other = key == "x" and "y" or "x"
+
+  local function ask(value)
+    local current = hl.get_window("address:" .. address)
+    if current == nil then return end
+    local args = { relative = false }
+    args[key] = math.floor(value)
+    args[other] = math.floor(popout_coord(current.size, other))
+    hl.dispatch(hl.dsp.focus({ window = "address:" .. address }))
+    hl.dispatch(hl.dsp.window.resize(args))
   end
 
-  return { leaf = leaf, side = best.side, sibling = sibling.address,
-    left_child = left_child, left_width = math.floor(left_width),
-    top_height = math.floor(top_height) }
+  ask(target)
+  local landed = hl.get_window("address:" .. address)
+  if landed ~= nil and math.abs(popout_coord(landed.size, key) - target) > SIZE_TOLERANCE then
+    ask(2 * popout_coord(landed.size, key) - target)
+  end
+end
+
+local function popout_apply_sizes(state)
+  for _ = 1, RESIZE_PASSES do
+    local worst = 0
+    for _, item in ipairs(state.windows) do
+      local window = hl.get_window("address:" .. item.address)
+      if window ~= nil and not window.floating then
+        local dw = math.abs(popout_coord(window.size, "x") - item.width)
+        local dh = math.abs(popout_coord(window.size, "y") - item.height)
+        worst = math.max(worst, dw, dh)
+        if dw > SIZE_TOLERANCE then popout_set_axis(item.address, "x", item.width) end
+        if dh > SIZE_TOLERANCE then popout_set_axis(item.address, "y", item.height) end
+      end
+    end
+    if worst <= SIZE_TOLERANCE then break end
+  end
 end
 
 local function popout_float(window)
   local monitor = hl.get_active_monitor()
   if monitor == nil then return end
 
-  local windows = hl.get_workspace_windows(window.workspace.id)
-  local tiled = 0
-  for _, candidate in ipairs(windows) do
-    if not candidate.floating then tiled = tiled + 1 end
+  local snapshot = {}
+  for _, candidate in ipairs(hl.get_workspace_windows(window.workspace.id)) do
+    if not candidate.floating then
+      snapshot[#snapshot + 1] = { address = candidate.address,
+        x = popout_coord(candidate.at, "x"), y = popout_coord(candidate.at, "y"),
+        width = popout_coord(candidate.size, "x"),
+        height = popout_coord(candidate.size, "y") }
+    end
   end
+  if #snapshot == 0 then return end
 
-  local parent = popout_parent(window, windows)
-  local exact = parent ~= nil and parent.leaf
-  local state = {
-    workspace = window.workspace.id,
-    tiled = tiled,
-    sibling = exact and parent.sibling or "-",
-    side = exact and parent.side or "-",
-    left_child = exact and parent.left_child or "-",
-    left_width = exact and parent.left_width or 0,
-    top_height = exact and parent.top_height or 0,
-  }
+  local state = { workspace = window.workspace.id, windows = snapshot }
   popout_state[window.address] = state
   popout_save(window.address, state)
 
@@ -269,47 +301,36 @@ end
 
 local function popout_restore(window, state)
   local address = window.address
-  local sibling = state.sibling ~= "-" and hl.get_window("address:" .. state.sibling) or nil
+
+  -- Every saved window must still be here and tiled (bar the popped one), or
+  -- the recorded rectangles no longer describe a layout worth rebuilding.
+  local present = 0
+  for _, item in ipairs(state.windows) do
+    local candidate = hl.get_window("address:" .. item.address)
+    if candidate == nil then break end
+    if item.address == address or not candidate.floating then present = present + 1 end
+  end
 
   local tiled = 0
-  for _, candidate in ipairs(hl.get_workspace_windows(window.workspace.id)) do
+  for _, candidate in ipairs(hl.get_workspace_windows(state.workspace)) do
     if not candidate.floating then tiled = tiled + 1 end
   end
 
-  -- No rebuildable slot (sibling was a subtree, has gone, or the tiled set
-  -- changed).  Re-tile wherever dwindle wants: any swap or forced resize from
-  -- here mangles the layout instead of restoring it.
-  if sibling == nil or sibling.floating or tiled + 1 ~= state.tiled then
+  local items = {}
+  for _, item in ipairs(state.windows) do
+    items[#items + 1] = { address = item.address, x = item.x, y = item.y,
+      right = item.x + item.width, bottom = item.y + item.height }
+  end
+  local tree = popout_tree(items)
+
+  if tree == nil or present ~= #state.windows or tiled + 1 ~= #state.windows then
     hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
     popout_clear(address)
     return
   end
 
-  hl.dispatch(hl.dsp.focus({ window = "address:" .. state.sibling }))
-  hl.dispatch(hl.dsp.window.float({ action = "toggle", window = "address:" .. address }))
-
-  local me = hl.get_window("address:" .. address)
-  local neighbor = hl.get_window("address:" .. state.sibling)
-  if me ~= nil and neighbor ~= nil then
-    local px, py = popout_coord(me.at, "x"), popout_coord(me.at, "y")
-    local nx, ny = popout_coord(neighbor.at, "x"), popout_coord(neighbor.at, "y")
-    -- force_split=2 always drops the re-inserted window right/bottom
-    if (state.side == "l" and px > nx) or (state.side == "r" and px < nx)
-      or (state.side == "u" and py > ny) or (state.side == "d" and py < ny) then
-      hl.dispatch(hl.dsp.focus({ window = "address:" .. address }))
-      hl.dispatch(hl.dsp.window.swap({ direction = state.side }))
-    end
-  end
-
-  if state.left_child ~= "-" and state.left_width > 0 and state.top_height > 0 then
-    hl.dispatch(hl.dsp.focus({ window = "address:" .. state.left_child }))
-    hl.dispatch(hl.dsp.window.resize({
-      x = state.left_width,
-      y = state.top_height,
-      relative = false,
-    }))
-  end
-
+  popout_retile(state, tree)
+  popout_apply_sizes(state)
   hl.dispatch(hl.dsp.focus({ window = "address:" .. address }))
   popout_clear(address)
 end
