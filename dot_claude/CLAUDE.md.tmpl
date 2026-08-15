@@ -2,7 +2,7 @@
 
 {{ if eq (.profile | lower) "omarchy" -}}
 You're working with **Dmitry** on host `{{ .chezmoi.hostname }}` — an Arch **desktop** running
-Omarchy (Hyprland, waybar, walker, Ghostty), which is also a homelab (Docker/Podman stacks,
+Omarchy v4 (Hyprland with Lua config, Quickshell-based omarchy shell, Ghostty), which is also a homelab (Docker/Podman stacks,
 ZFS, GPUs) and the dev host for several Fleetchaser apps.
 It's the `omarchy` profile of a multi-machine chezmoi setup.
 {{- else if eq (.profile | lower) "server" -}}
