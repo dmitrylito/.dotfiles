@@ -1,12 +1,11 @@
--- keymaps --
--- 1. UNIVERSAL MAPPINGS (Work in both)
+-- Universal mappings
 vim.keymap.set("i", "jj", "<ESC>", { silent = true })
 -- System Clipboard
 vim.keymap.set({ "n", "v" }, "<leader>d", '"_d')
 -- Terminal Mode Escape (double-tap Esc)
 vim.keymap.set("t", "<Esc><Esc>", [[<C-\><C-n>]], { silent = true })
 
--- 2. VS CODE SPECIFIC MAPPINGS (Antigravity)
+-- VS Code (Antigravity) only
 if vim.g.vscode then
   local vscode = require("vscode-neovim")
 
@@ -39,7 +38,7 @@ if vim.g.vscode then
   vim.keymap.set("n", "<leader>t", function()
     vscode.action("workbench.action.terminal.toggleTerminal")
   end)
-  -- 3. TERMINAL NEOVIM ONLY
+  -- Terminal Neovim only
 else
   vim.keymap.set("i", "<M-n>", function()
     vim.lsp.inline_completion.select()

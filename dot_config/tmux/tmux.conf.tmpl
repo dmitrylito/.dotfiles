@@ -8,7 +8,6 @@ bind C-Space send-prefix
 bind-key -T copy-mode-vi / command-prompt -i -p "search down" "send -X search-forward-incremental \"%%%\""
 bind-key -T copy-mode-vi ? command-prompt -i -p "search up" "send -X search-backward-incremental \"%%%\""
 
-# Set default terminal inside tmux
 set -g default-terminal "tmux-256color"
 
 # Tell Tmux that Ghostty supports Truecolor (Tc)
@@ -19,9 +18,6 @@ set -ag terminal-overrides ",xterm-256color:Tc"
 set -sg escape-time 0
 set -g focus-events on
 set -g allow-passthrough on
-
-# Optional later: synchronize panes
-# bind S setw synchronize-panes
 
 bind q source-file ~/.config/tmux/tmux.conf \; display "Reloaded!"
 

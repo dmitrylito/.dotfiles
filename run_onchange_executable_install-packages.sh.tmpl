@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# Exit immediately if a command exits with a non-zero status,
-# or if an uninitialized variable is used.
 set -euo pipefail
 
 # This script is managed by Chezmoi.
@@ -29,7 +27,6 @@ set -euo pipefail
 
 profile="{{ .profile | lower }}"
 
-# Fallback/normalization of profile
 if [ -z "${profile}" ]; then
     if [ "$(uname)" = "Darwin" ]; then
         echo "⚠️ Warning: No machine profile set! Detected macOS, defaulting to 'mac' profile."
@@ -42,7 +39,6 @@ fi
 
 echo "📦 Syncing packages ({{ .profile | lower }} profile)…"
 
-# 1. Ensure Ansible is installed
 if ! command -v ansible-playbook >/dev/null 2>&1; then
     echo "🔧 Installing Ansible..."
     if [ "${profile}" = "mac" ]; then
@@ -57,7 +53,6 @@ if ! command -v ansible-playbook >/dev/null 2>&1; then
     fi
 fi
 
-# 2. Run the Ansible playbook
 # We only use sudo (privilege escalation) for Linux profiles (Omarchy/server)
 # because Homebrew on macOS cannot and should not be run as root.
 #
