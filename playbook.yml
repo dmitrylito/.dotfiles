@@ -474,7 +474,7 @@
             echo "updated $dest"
           }
 
-          {% for r in git_repos %}
+          {% for r in git_repos if r.only | default(p) == p %}
           sync_repo {{ r.repo | quote }} "$home/{{ r.dest }}" & pids="$pids $!"
           {% endfor %}
           for pid in $pids; do wait "$pid" || rc=1; done
