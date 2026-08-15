@@ -75,6 +75,11 @@ close_workspace = "prefix+shift+k"
 previous_workspace = ["prefix+shift+p", "alt+up", "alt+k"]
 next_workspace = ["prefix+shift+n", "alt+down", "alt+j"]
 
+# Agents — alt+shift mirrors the alt workspace keys
+focus_agent = "alt+shift+1..9"
+previous_agent = "alt+shift+k"
+next_agent = "alt+shift+j"
+
 # tmux prefix+g lazygit popup
 [[keys.command]]
 key = "prefix+g"
