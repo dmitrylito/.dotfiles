@@ -8,7 +8,7 @@ Welcome! This system is heavily customized and uses specific configuration tools
 
 This home directory uses **[chezmoi](https://www.chezmoi.io/)** to manage dotfiles.
 
-* **Managed Files:** Most core configuration files (such as `.zshrc`, `.zshenv`, `.config/waybar/`, `.config/walker/`, and `.config/yazi/`) are managed by `chezmoi`.
+* **Managed Files:** Most core configuration files (such as `.zshrc`, `.zshenv`, `.config/hypr/`, `.config/omarchy/`, and `.config/yazi/`) are managed by `chezmoi`.
 * **The Golden Rule:** **DO NOT** edit managed files directly in their target locations (e.g., `~/.zshrc`). Any direct edits will be wiped out next time `chezmoi apply` is run.
 * **How to Edit Managed Files:**
   * Use the alias: `ce <file>` (which expands to `chezmoi edit --apply <file>`).
