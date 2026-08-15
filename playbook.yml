@@ -62,17 +62,22 @@
     mac_third_party_casks:
       - peteonrails/voxtype/voxtype
 
-    # Paths to Omarchy-specific auto-generated lists
-    pacman_file: "{{ chezmoi_source_dir }}/packages/omarchy/added-pacman.txt"
-    aur_file: "{{ chezmoi_source_dir }}/packages/omarchy/added-aur.txt"
+    # Paths to this machine's auto-generated lists. Per host, not per profile:
+    # every Omarchy box regenerates these from its own system, so one shared copy
+    # would have each machine overwrite the other's and the prune below would then
+    # uninstall whatever the last writer happened to lack. st.host comes from the
+    # probe and uses the same `hostname -s` the generator writes with.
+    omarchy_dir: "{{ chezmoi_source_dir }}/packages/omarchy/{{ st.host }}"
+    pacman_file: "{{ omarchy_dir }}/added-pacman.txt"
+    aur_file: "{{ omarchy_dir }}/added-aur.txt"
     # drivers.txt is auto-tracked for reference only — drivers are hardware-
-    # specific and must be installed MANUALLY, so the playbook never reads it.
-    removed_file: "{{ chezmoi_source_dir }}/packages/omarchy/removed.txt"
+    # specific and must be installed MANUALLY, so the playbook never installs it.
+    removed_file: "{{ omarchy_dir }}/removed.txt"
     reference_files:
-      - "{{ chezmoi_source_dir }}/packages/omarchy/base.packages"
-      - "{{ chezmoi_source_dir }}/packages/omarchy/other.packages"
-    drivers_file: "{{ chezmoi_source_dir }}/packages/omarchy/drivers.txt"
-    untracked_regex_file: "{{ chezmoi_source_dir }}/packages/omarchy/untracked.regex"
+      - "{{ omarchy_dir }}/base.packages"
+      - "{{ omarchy_dir }}/other.packages"
+    drivers_file: "{{ omarchy_dir }}/drivers.txt"
+    untracked_regex_file: "{{ omarchy_dir }}/untracked.regex"
 
     # Paths to server-specific auto-generated lists
     # (regenerate with scripts/update_server_package_lists.sh on the server)
@@ -110,6 +115,8 @@
           # no getent.
           home=$(eval echo "~{{ non_root_user }}")
           yn() { if "$@" >/dev/null 2>&1; then printf true; else printf false; fi; }
+          host=$(hostname -s 2>/dev/null || uname -n)
+          host_lists="{{ chezmoi_source_dir }}/packages/omarchy/$host/added-pacman.txt"
 
           installed=
           orphans=
@@ -138,6 +145,8 @@
 
           printf '{'
           printf '"home":"%s",' "$home"
+          printf '"host":"%s",' "$host"
+          printf '"host_lists":%s,' "$(yn test -f "$host_lists")"
           printf '"installed":"%s",' "$installed"
           printf '"orphans":"%s",' "$orphans"
           printf '"explicit":"%s",' "$explicit"
@@ -165,13 +174,18 @@
       when: is_linux
       vars:
         have: "{{ st.installed.split() }}"
-        want_native: "{{ (common_linux_packages + (lookup('file', server_pacman_file if p == 'server' else pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list)) | unique }}"
-        want_aur: "{{ lookup('file', server_aur_file if p == 'server' else aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
-        unwanted: "{{ (lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if p == 'omarchy' else [] }}"
+        # A machine that has never run the generator has no directory yet. Fall
+        # back to the baseline and remove NOTHING rather than treating "no list"
+        # as "nothing is declared", which would prune the whole system. The
+        # pacman hook creates the directory on its next transaction.
+        listed: "{{ p == 'server' or (p == 'omarchy' and st.host_lists) }}"
+        want_native: "{{ (common_linux_packages + ((lookup('file', server_pacman_file if p == 'server' else pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if listed else [])) | unique }}"
+        want_aur: "{{ (lookup('file', server_aur_file if p == 'server' else aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if listed else [] }}"
+        unwanted: "{{ (lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if (p == 'omarchy' and listed) else [] }}"
         omarchy_reference: "{{ ((lookup('file', reference_files[0]) + '\n' + lookup('file', reference_files[1])).splitlines()
-                                | reject('match', '^#') | reject('match', '^$') | list) if p == 'omarchy' else [] }}"
-        omarchy_drivers: "{{ (lookup('file', drivers_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if p == 'omarchy' else [] }}"
-        untracked_pattern: "{{ (lookup('file', untracked_regex_file).splitlines() | reject('match', '^$') | join('|')) if p == 'omarchy' else '$^' }}"
+                                | reject('match', '^#') | reject('match', '^$') | list) if (p == 'omarchy' and listed) else [] }}"
+        omarchy_drivers: "{{ (lookup('file', drivers_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if (p == 'omarchy' and listed) else [] }}"
+        untracked_pattern: "{{ (lookup('file', untracked_regex_file).splitlines() | reject('match', '^$') | join('|')) if (p == 'omarchy' and listed) else '$^' }}"
       ansible.builtin.set_fact:
         installed_packages: "{{ have }}"
         pacman_missing: "{{ want_native | difference(have) }}"
@@ -193,7 +207,7 @@
                        | difference(omarchy_drivers)
                        | difference(['base', 'base-devel'])
                        | reject('search', untracked_pattern) | list)
-                      if p == 'omarchy' else [] }}"
+                      if (p == 'omarchy' and listed) else [] }}"
 
     # =========================================================================
     # SECTION 1: BUILD CONFIGURATION (Omarchy & server profiles)

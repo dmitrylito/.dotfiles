@@ -2,13 +2,20 @@
 # Automatically regenerates the package sync lists for Ansible
 
 CHEZMOI_DIR="$HOME/.local/share/chezmoi"
-OMARCHY_BASE="$CHEZMOI_DIR/packages/omarchy/base.packages"
-OMARCHY_OTHER="$CHEZMOI_DIR/packages/omarchy/other.packages"
 
 # Refresh the tracked reference from the installed Omarchy. Without this the
 # reference stays at whatever version it was copied from, and every package a
 # later Omarchy release adds to its defaults looks like one the user installed
 # (the v4 update alone put 31 of its own defaults into added-*.txt).
+# Lists are per host: every Omarchy box regenerates them from its own system, so
+# a single shared copy would make each machine's run overwrite the other's, and
+# the playbook's prune would then uninstall whatever the last writer lacked.
+HOST="$(hostname -s 2>/dev/null || uname -n)"
+OUT_DIR="$CHEZMOI_DIR/packages/omarchy/$HOST"
+mkdir -p "$OUT_DIR"
+
+OMARCHY_BASE="$OUT_DIR/base.packages"
+OMARCHY_OTHER="$OUT_DIR/other.packages"
 OMARCHY_SRC="/usr/share/omarchy/install"
 [ -f "$OMARCHY_SRC/omarchy-base.packages" ] && cp "$OMARCHY_SRC/omarchy-base.packages" "$OMARCHY_BASE"
 [ -f "$OMARCHY_SRC/omarchy-other.packages" ] && cp "$OMARCHY_SRC/omarchy-other.packages" "$OMARCHY_OTHER"
@@ -56,13 +63,13 @@ expac -Q '%n %p' | tr ' ' '\n' | sort -u > /tmp/current_all_installed_and_provid
 
 echo "Calculating differences..."
 
-grep -iE "$DRIVER_REGEX" /tmp/all_explicit.txt | grep -ivE "$REPO_SPECIFIC_REGEX" | grep -ivE "$DEBUG_PKG_REGEX" | sort > "$CHEZMOI_DIR/packages/omarchy/drivers.txt"
+grep -iE "$DRIVER_REGEX" /tmp/all_explicit.txt | grep -ivE "$REPO_SPECIFIC_REGEX" | grep -ivE "$DEBUG_PKG_REGEX" | sort > "$OUT_DIR/drivers.txt"
 
-grep -vxFf /tmp/omarchy_ref.txt /tmp/current_native_explicit.txt | grep -ivE "$DRIVER_REGEX" | grep -ivE "$PREINSTALL_REGEX" | grep -ivE "$REPO_SPECIFIC_REGEX" | grep -ivE "$DEBUG_PKG_REGEX" | sort > "$CHEZMOI_DIR/packages/omarchy/added-pacman.txt"
+grep -vxFf /tmp/omarchy_ref.txt /tmp/current_native_explicit.txt | grep -ivE "$DRIVER_REGEX" | grep -ivE "$PREINSTALL_REGEX" | grep -ivE "$REPO_SPECIFIC_REGEX" | grep -ivE "$DEBUG_PKG_REGEX" | sort > "$OUT_DIR/added-pacman.txt"
 
-grep -vxFf /tmp/omarchy_ref.txt /tmp/current_aur_explicit.txt | grep -ivE "$DRIVER_REGEX" | grep -ivE "$PREINSTALL_REGEX" | grep -ivE "$REPO_SPECIFIC_REGEX" | grep -ivE "$DEBUG_PKG_REGEX" | sort > "$CHEZMOI_DIR/packages/omarchy/added-aur.txt"
+grep -vxFf /tmp/omarchy_ref.txt /tmp/current_aur_explicit.txt | grep -ivE "$DRIVER_REGEX" | grep -ivE "$PREINSTALL_REGEX" | grep -ivE "$REPO_SPECIFIC_REGEX" | grep -ivE "$DEBUG_PKG_REGEX" | sort > "$OUT_DIR/added-aur.txt"
 
-grep -vxFf /tmp/current_all_installed_and_provides.txt /tmp/omarchy_ref.txt | sort > "$CHEZMOI_DIR/packages/omarchy/removed.txt"
+grep -vxFf /tmp/current_all_installed_and_provides.txt /tmp/omarchy_ref.txt | sort > "$OUT_DIR/removed.txt"
 
 # Everything the lists above deliberately exclude. The playbook's prune must
 # treat "untracked on purpose" as protected, or it would remove this machine's
@@ -71,14 +78,14 @@ grep -vxFf /tmp/current_all_installed_and_provides.txt /tmp/omarchy_ref.txt | so
 # playbook so the patterns have one definition; they match names, not this
 # machine's packages, so the file is portable to the other Omarchy box.
 printf '%s\n' "$DRIVER_REGEX" "$REPO_SPECIFIC_REGEX" "$DEBUG_PKG_REGEX" "$PREINSTALL_REGEX" \
-    > "$CHEZMOI_DIR/packages/omarchy/untracked.regex"
+    > "$OUT_DIR/untracked.regex"
 
 rm /tmp/omarchy_ref.txt /tmp/current_native_explicit.txt /tmp/current_aur_explicit.txt /tmp/all_explicit.txt /tmp/current_all_installed_and_provides.txt
 
 echo "======================================"
 echo "✅ Package Lists Updated Successfully!"
-echo "Added Pacman:  $(wc -l < "$CHEZMOI_DIR/packages/omarchy/added-pacman.txt") packages"
-echo "Added AUR:     $(wc -l < "$CHEZMOI_DIR/packages/omarchy/added-aur.txt") packages"
-echo "Removed:       $(wc -l < "$CHEZMOI_DIR/packages/omarchy/removed.txt") packages"
-echo "Local Drivers: $(wc -l < "$CHEZMOI_DIR/packages/omarchy/drivers.txt") packages"
+echo "Added Pacman:  $(wc -l < "$OUT_DIR/added-pacman.txt") packages"
+echo "Added AUR:     $(wc -l < "$OUT_DIR/added-aur.txt") packages"
+echo "Removed:       $(wc -l < "$OUT_DIR/removed.txt") packages"
+echo "Local Drivers: $(wc -l < "$OUT_DIR/drivers.txt") packages"
 echo "======================================"

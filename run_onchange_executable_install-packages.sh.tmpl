@@ -12,11 +12,11 @@ set -euo pipefail
 # Tracked package files and playbook:
 # playbook.yml hash: {{ include "playbook.yml" | sha256sum }}
 {{- if eq (.profile | lower) "omarchy" }}
-# packages/omarchy/added-pacman.txt hash: {{ include "packages/omarchy/added-pacman.txt" | sha256sum }}
-# packages/omarchy/added-aur.txt hash: {{ include "packages/omarchy/added-aur.txt" | sha256sum }}
-# packages/omarchy/drivers.txt hash: {{ include "packages/omarchy/drivers.txt" | sha256sum }}
-# packages/omarchy/removed.txt hash: {{ include "packages/omarchy/removed.txt" | sha256sum }}
-# packages/omarchy/untracked.regex hash: {{ include "packages/omarchy/untracked.regex" | sha256sum }}
+# Globbed rather than listed by name: the lists live under this machine's own
+# directory, and a box that has not generated them yet must still render.
+{{- range (glob (joinPath .chezmoi.sourceDir "packages/omarchy" .chezmoi.hostname "*")) }}
+# packages/omarchy/{{ $.chezmoi.hostname }}/{{ base . }} hash: {{ include . | sha256sum }}
+{{- end }}
 {{- else if eq (.profile | lower) "server" }}
 # packages/server/pacman.txt hash: {{ include "packages/server/pacman.txt" | sha256sum }}
 # packages/server/aur.txt hash: {{ include "packages/server/aur.txt" | sha256sum }}
