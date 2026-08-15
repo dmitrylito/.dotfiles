@@ -50,10 +50,13 @@
           "id": "omarchy.audio"
         },
         {
+          "id": "omarchy.power"
+        },
+        {
           "id": "omarchy.monitor"
         },
         {
-          "id": "omarchy.power"
+          "id": "omacom.notification-center"
         }
       ]
     },
