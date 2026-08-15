@@ -15,4 +15,5 @@ nvidia-utils
 sof-firmware
 thermald
 vpl-gpu-rt
+vulkan-intel
 vulkan-tools
