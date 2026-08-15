@@ -1,4 +1,7 @@
 android-studio
+antigravity
+antigravity-ide
+appmenu-glib-translator-git
 claude-desktop
 coolercontrol-bin
 discordupdater
