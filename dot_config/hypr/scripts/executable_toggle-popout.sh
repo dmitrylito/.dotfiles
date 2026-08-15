@@ -56,7 +56,10 @@ NEIGHBOR_JQ='
 
 if [ "$FLOAT" = "true" ]; then
   # ---------- Return to tiling ----------
-  [ -f "$STATE" ] || { hyprctl dispatch togglefloating; exit 0; }
+  [ -f "$STATE" ] || {
+    hyprctl dispatch 'hl.dsp.window.float({ action = "toggle" })'
+    exit 0
+  }
   read -r NEIGHBOR SIDE TILED N2 LCW TCH < "$STATE"; rm -f "$STATE"
   WS=$(echo "$WIN" | jq -r '.workspace.id')
 
