@@ -120,6 +120,7 @@
 
           installed=
           orphans=
+          explicit=
           if command -v pacman >/dev/null 2>&1; then
             installed=$(pacman -Qq | tr '\n' ' ')
             orphans=$(pacman -Qdtq 2>/dev/null | tr '\n' ' ')
@@ -264,6 +265,11 @@
           community.general.homebrew_cask:
             name: "{{ mac_brew_casks }}"
             state: present
+            # Homebrew refuses a cask when its app already exists in
+            # /Applications but is not yet registered as installed. Adopt
+            # identical existing artifacts instead of failing the whole run.
+            install_options:
+              - adopt
           when: mac_brew_casks | length > 0
 
     # =========================================================================

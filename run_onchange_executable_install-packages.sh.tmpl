@@ -64,11 +64,18 @@ ansible_cfg="{{ joinPath .chezmoi.sourceDir "ansible.cfg" }}"
 playbook="{{ joinPath .chezmoi.sourceDir "playbook.yml" }}"
 extra_vars="chezmoi_source_dir={{ .chezmoi.sourceDir }} non_root_user={{ .chezmoi.username }} profile=${profile}"
 
+# Ansible's default ~/.ansible/tmp can be unwritable on macOS after a
+# migration, restore, or a previous sudo-based install. Use a private,
+# per-user directory under the system temporary directory instead.
+ansible_local_tmp="${TMPDIR:-/tmp}/ansible-${USER}"
+mkdir -p "${ansible_local_tmp}"
+chmod 700 "${ansible_local_tmp}"
+
 if [ "${profile}" = "mac" ]; then
-    ANSIBLE_CONFIG="${ansible_cfg}" ansible-playbook \
+    ANSIBLE_CONFIG="${ansible_cfg}" ANSIBLE_LOCAL_TEMP="${ansible_local_tmp}" ansible-playbook \
         -i "localhost," -c local --extra-vars "${extra_vars}" "${playbook}"
 else
-    sudo ANSIBLE_CONFIG="${ansible_cfg}" ansible-playbook \
+    sudo ANSIBLE_CONFIG="${ansible_cfg}" ANSIBLE_LOCAL_TEMP="${ansible_local_tmp}" ansible-playbook \
         -i "localhost," -c local --extra-vars "${extra_vars}" "${playbook}"
 fi
 
