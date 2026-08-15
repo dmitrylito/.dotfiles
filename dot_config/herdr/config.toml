@@ -75,6 +75,31 @@ close_workspace = "prefix+shift+k"
 previous_workspace = ["prefix+shift+p", "alt+up"]
 next_workspace = ["prefix+shift+n", "alt+down"]
 
+# tmux prefix+g lazygit popup
+[[keys.command]]
+key = "prefix+g"
+type = "popup"
+command = "lazygit"
+description = "lazygit"
+width = "90%"
+height = "90%"
+
+# tmux prefix+u URL picker popup
+[[keys.command]]
+key = "prefix+u"
+type = "popup"
+command = "~/.config/herdr/url_picker.sh"
+description = "open a URL from scrollback"
+width = "80%"
+height = "60%"
+
+# tmux prefix+T tmuxifier Dev layout
+[[keys.command]]
+key = "prefix+shift+t"
+type = "shell"
+command = "~/.config/herdr/dev_layout.sh"
+description = "Dev layout: nvim / shell / agent"
+
 [ui]
 accent = "blue"
 
