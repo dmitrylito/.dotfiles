@@ -115,6 +115,9 @@ mouse_capture = true
 # status-right had the zoom flag followed by #h
 tab_bar_right = [{ type = "zoom" }, { type = "hostname" }]
 
+# Written by herdr's settings UI; keep in sync here or apply stomps it
+agent_panel_sort = "spaces"
+
 # set -g set-titles on / set -g set-titles-string '#h:#W', where tmux's #W was
 # the basename of the pane cwd. This is what Hyprland shows in the group bar,
 # and it resolves on the server so remote sessions name the remote host.
