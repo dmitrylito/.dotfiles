@@ -64,6 +64,11 @@ zstyle ':autocomplete:*' list-lines 8    # smaller live list = far less redraw
 
 source "$ZSH/oh-my-zsh.sh"
 
+if command -v herdr >/dev/null 2>&1; then
+  eval "$(herdr completion zsh)"
+  compdef _herdr herdr
+fi
+
 # Cap syntax-highlighting work: without this, zsh-syntax-highlighting re-parses
 # the whole buffer on every keystroke, so long lines / big pastes flood the
 # terminal with redraws and crash the window under tmux (zsh-syntax-highlighting #295).
