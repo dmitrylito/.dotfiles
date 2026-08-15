@@ -127,3 +127,8 @@ agent_panel_sort = "spaces"
 # the basename of the pane cwd. This is what Hyprland shows in the group bar,
 # and it resolves on the server so remote sessions name the remote host.
 window_title = "{hostname}: {workspace}"
+
+# Agent done/request chimes off — the dlco remote session was dinging on every
+# Claude turn-end with no visible notification (see herdr-agent-sounds memory)
+[ui.sound]
+enabled = false
