@@ -30,6 +30,8 @@
       # NOT under /tmp: /tmp is tmpfs, so a /tmp clone forced a full re-clone of
       # tmuxifier after every reboot.
       - { repo: 'https://github.com/jimeh/tmuxifier.git', dest: "{{ tmuxifier_rel }}" }
+      # Omarchy shell plugin; shell.json (chezmoi-managed) references it by id.
+      - { repo: 'https://github.com/omacom-io/omarchy-notification-center-plugin.git', dest: '.config/omarchy/plugins/omacom.notification-center', only: omarchy }
 
     ai_clis:
       - { name: claude, url: 'https://claude.ai/install.sh', runner: bash }
