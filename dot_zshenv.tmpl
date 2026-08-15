@@ -9,6 +9,12 @@ if [[ -z "${TERM:-}" || "$TERM" == "dumb" ]] || ! tput longname >/dev/null 2>&1;
   export TERM="xterm-256color"
 fi
 
+# herdr's server spawns pane shells with no LANG/LC_*; in the C locale zle
+# counts multibyte prompt glyphs per-byte, so every redraw drifts right.
+if [[ -z "${LANG:-}" && -z "${LC_ALL:-}" ]]; then
+  export LANG="C.UTF-8"
+fi
+
 export EDITOR="$HOME/.local/share/bob/nvim-bin/nvim"
 export VISUAL="$EDITOR"
 export PAGER="less"
