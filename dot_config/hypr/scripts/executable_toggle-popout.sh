@@ -73,13 +73,13 @@ if [ "$FLOAT" = "true" ]; then
     '[.[]|select(.address==$n)]|length')
   if [ "$NEIGHBOR" = "-" ] || [ "$HAVE_NEIGHBOR" = "0" ] \
      || [ "$((CUR_TILED + 1))" != "$TILED" ]; then
-    hyprctl dispatch togglefloating
+    hyprctl dispatch 'hl.dsp.window.float({ action = "toggle" })'
     exit 0
   fi
 
   # Re-anchor on the neighbour so dwindle re-splits it back into our old slot.
-  hyprctl dispatch focuswindow "address:$NEIGHBOR" >/dev/null
-  hyprctl dispatch togglefloating "address:$ADDR" >/dev/null
+  hyprctl dispatch "hl.dsp.focus({ window = \"address:$NEIGHBOR\" })" >/dev/null
+  hyprctl dispatch "hl.dsp.window.float({ action = \"toggle\", window = \"address:$ADDR\" })" >/dev/null
 
   # force_split=2 always drops the re-inserted window to the neighbour's
   # right/bottom; if we belonged on the other side, one swap fixes it.
