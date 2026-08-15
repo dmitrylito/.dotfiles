@@ -7,7 +7,6 @@ kernel-modules-hook
 lib32-nvidia-utils
 libva-nvidia-driver
 linux-firmware
-llama.cpp-cuda
 migraphx
 nvidia-open-dkms
 nvidia-settings
