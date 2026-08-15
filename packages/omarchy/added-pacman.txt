@@ -15,6 +15,7 @@ dua-cli
 easyeffects
 efibootmgr
 fakeroot
+foot
 fwupd
 gamescope
 gemini-cli
@@ -35,12 +36,19 @@ mosh
 mpv-mpris
 neovim
 networkmanager
+moonlight-qt
+mosh
+mpv-mpris
 neovim
+networkmanager
 nvtop
 nwg-displays
+omacalc
+omacut
 omarchy-dev
 omarchy-keyring
 omarchy-settings-dev
+omawrite
 omazed
 openrgb
 pacman-contrib
