@@ -31,12 +31,6 @@ kdeconnect
 libvips
 lua51
 moonlight-qt
-mbedtls
-mosh
-mpv-mpris
-neovim
-networkmanager
-moonlight-qt
 mosh
 mpv-mpris
 neovim
@@ -64,7 +58,6 @@ solaar
 steam
 stress-ng
 sudo
-swaync
 tailscale
 telegram-desktop
 tensaku

@@ -1,14 +1,17 @@
 bluetui
 dust
+gnome-calculator
 hypridle
 hyprlock
 impala
 iwd
 iwd
+kvantum-qt5
 mako
 omarchy-walker
 playerctl
 polkit-gnome
+python-terminaltexteffects
 satty
 swaybg
 swayosd
