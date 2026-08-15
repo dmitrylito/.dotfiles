@@ -40,6 +40,18 @@ STAMP="$CACHE_DIR/chezmoi-autoupdate.stamp"
 LOG="$CACHE_DIR/chezmoi-autoupdate.log"
 LOCK="${TMPDIR:-/tmp}/chezmoi-git-$(id -u).lock"
 
+# Hard bounds on every apply, so no failure mode can ever wedge a shell or the
+# lock. `timeout` is coreutils-only, so degrade to unbounded where it is absent.
+TIMEOUT_LOCAL=${CHEZMOI_AUTOUPDATE_TIMEOUT:-10}
+TIMEOUT_BG=${CHEZMOI_AUTOUPDATE_TIMEOUT_BG:-300}
+if command -v timeout >/dev/null 2>&1; then
+    APPLY_TIMEOUT="timeout $TIMEOUT_LOCAL"
+    BG_TIMEOUT="timeout $TIMEOUT_BG"
+else
+    APPLY_TIMEOUT=""
+    BG_TIMEOUT=""
+fi
+
 log() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >"$LOG"; }
 
 case "${1:-}" in
@@ -61,13 +73,24 @@ mkdir -p "$CACHE_DIR"
 # Non-blocking lock, or a concurrent background apply would stall shell startup on
 # chezmoi's persistent-state lock.
 if [ "${LOCAL:-0}" -eq 1 ]; then
+    # --no-tty is load-bearing. A target that drifted makes chezmoi ask
+    # "<path> has changed since chezmoi last wrote it?", and it opens /dev/tty
+    # directly to do it — redirecting stdin alone does NOT stop that. With stdout
+    # swallowed the prompt is invisible, so it waits forever in the shell's
+    # critical path holding chezmoi's state lock, and every later run then bails
+    # silently on `flock -n`: applies just stop landing. --no-tty sends the prompt
+    # to stdin instead, which is /dev/null, so it fails fast. timeout is the second
+    # belt; the captured stderr is what makes the next failure diagnosable.
+    # Deliberately NOT --force: that would silently overwrite whatever drifted.
     apply_local() {
-        local src rc
+        local src rc err
         src=$(chezmoi source-path 2>/dev/null) || return
         git -C "$src" diff --quiet HEAD 2>/dev/null || return
-        chezmoi apply --exclude scripts >/dev/null 2>&1
+        err=$($APPLY_TIMEOUT chezmoi apply --no-tty --exclude scripts 2>&1 >/dev/null </dev/null)
         rc=$?
-        [ "$rc" -eq 0 ] || log "failed: local apply returned $rc"
+        [ "$rc" -eq 0 ] && return
+        [ "$rc" -eq 124 ] && err="timed out after ${TIMEOUT_LOCAL}s"
+        log "failed: local apply returned $rc${err:+ - ${err##*$'\n'}}"
     }
     if command -v flock >/dev/null 2>&1; then
         ( flock -n 9 || exit 0; apply_local ) 9>"$LOCK"
@@ -119,12 +142,17 @@ run() {
         return
     fi
 
-    chezmoi apply --exclude scripts >/dev/null 2>&1
+    # Same reasoning as apply_local (see --no-tty there): a wedged background apply
+    # holds the lock and silently starves every --local run. Longer bound; it is
+    # off the shell's critical path.
+    $BG_TIMEOUT chezmoi apply --no-tty --exclude scripts >/dev/null 2>&1 </dev/null
     rc=$?
     push_local_commits "$src"
 
     if [ "$rc" -eq 0 ]; then
         log "ok: applied $(git -C "$src" rev-parse --short HEAD)$PUSH_NOTE"
+    elif [ "$rc" -eq 124 ]; then
+        log "failed: apply timed out after ${TIMEOUT_BG}s$PUSH_NOTE"
     else
         log "failed: chezmoi apply returned $rc$PUSH_NOTE"
     fi
