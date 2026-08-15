@@ -24,7 +24,9 @@ export REMEMBER_BRANCH={{ .profile }}
 {{- if eq .profile "omarchy" }}
 # Hyprland/Wayland only — nothing else on any profile reads these.
 export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
-export HYPRLAND_CONFIG="$XDG_CONFIG_HOME/hypr/hyprland.conf"
+# HYPRLAND_CONFIG must NOT be exported globally: Omarchy v4's Hyprland treats it
+# as an explicit config override and skips the hyprland.lua provider entirely.
+# hyprmon gets it per-command via an alias in .zshrc.
 {{- end }}
 
 typeset -U path
