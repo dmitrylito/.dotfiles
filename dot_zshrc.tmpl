@@ -85,12 +85,6 @@ source_if_exists() {
 
 source_if_exists "$HOME/Projects/fc-cli/zsh_completion.sh"
 
-source_if_exists "$HOME/.fzf.zsh" ||
-  source_if_exists "/opt/homebrew/opt/fzf/shell/key-bindings.zsh" ||
-  source_if_exists "/usr/share/fzf/key-bindings.zsh"
-source_if_exists "/opt/homebrew/opt/fzf/shell/completion.zsh" ||
-  source_if_exists "/usr/share/fzf/completion.zsh"
-
 bindkey '^[[A' fzf-history-widget
 bindkey '^[OA' fzf-history-widget
 
