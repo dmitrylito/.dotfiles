@@ -45,8 +45,6 @@ return {
     },
   },
 
-  -- Enable blink.cmp plugin for enhanced completion navigation
-
   {
     "saghen/blink.cmp",
     opts = function(_, opts)
@@ -62,8 +60,6 @@ return {
       }
     end,
   },
-
-  -- Configure conform.nvim to use shfmt for zsh files
 
   {
     "stevearc/conform.nvim",

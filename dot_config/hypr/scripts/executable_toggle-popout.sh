@@ -1,24 +1,16 @@
 #!/bin/bash
-# Toggle the active window between a centered 16:10 floating "pop-out" and its
-# tiled spot. Pop-out size adapts to the window's monitor (any resolution).
+# Bash fallback for the SUPER+U pop-out, bound to SUPER+SHIFT+U; the native Lua
+# version lives in ~/.config/hypr/bindings.lua.
 #
-# Restoring a dwindle window exactly is the hard part: floating removes it from
-# the layout tree, and un-floating re-inserts it by splitting whichever tiled
-# window was last focused -- so clicking away while popped out would otherwise
-# scramble the layout. To restore the exact slot we record, at pop-out time,
-# the window's adjacent tiled neighbour and which side of it we sat on. On
-# return we focus that neighbour first, so the window re-splits it back into
-# place, then correct the side (force_split drops it right/bottom) and, for a
-# plain 2-window split, re-apply the original divider so an offset split keeps
-# its offset instead of snapping to 50/50.
-#
-# Exact for a single-neighbour slot (incl. offset 2-window splits); best-effort
-# when the neighbour is a group of windows -- dwindle cannot rebuild an
-# arbitrary subtree from a re-inserted leaf. Bound to SUPER+U.
+# Floating removes a window from the dwindle tree and un-floating re-inserts it
+# by splitting whichever tiled window was last focused, so pop-out records the
+# adjacent tiled neighbour and the side we sat on and restore re-focuses that
+# neighbour first. Exact for a single-neighbour slot (incl. offset 2-window
+# splits); best-effort when the neighbour is a subtree, which dwindle cannot
+# rebuild from a re-inserted leaf.
 
-# Tunables
-MAX_W_FRAC=0.80   # up to 80% of monitor width
-MAX_H_FRAC=0.82   # up to 82% of monitor height
+MAX_W_FRAC=0.80
+MAX_H_FRAC=0.82
 RATIO=1.6         # 16:10
 EDGE_TOL=100      # px: max gap between window edges still counted as "adjacent"
 
@@ -31,9 +23,8 @@ ADDR=$(echo "$WIN" | jq -r '.address // empty')
 FLOAT=$(echo "$WIN" | jq -r '.floating')
 STATE="$STATE_DIR/$ADDR"
 
-# Pick the tiled window adjacent to <addr> that shares the longest edge, and
-# which side <addr> sits on relative to it. Emits "<neighbour-addr> <l|r|u|d>"
-# or "" if <addr> has no tiled neighbour. Args via --argjson ws / --arg a.
+# Emits "<neighbour-addr> <l|r|u|d>" for the adjacent tiled window sharing the
+# longest edge, or "" if there is none. Args via --argjson ws / --arg a.
 NEIGHBOR_JQ='
 . as $c
 | ($c[]|select(.address==$a)) as $p
@@ -55,7 +46,6 @@ NEIGHBOR_JQ='
 | if . == null then "" else "\(.addr) \(.side)" end'
 
 if [ "$FLOAT" = "true" ]; then
-  # ---------- Return to tiling ----------
   [ -f "$STATE" ] || {
     hyprctl dispatch 'hl.dsp.window.float({ action = "toggle" })'
     exit 0
@@ -103,7 +93,6 @@ if [ "$FLOAT" = "true" ]; then
   hyprctl dispatch "hl.dsp.focus({ window = \"address:$ADDR\" })" >/dev/null
 
 else
-  # ---------- Pop out: record how we're attached to the tree, then float ----------
   WS=$(echo "$WIN" | jq -r '.workspace.id')
   CLIENTS=$(hyprctl clients -j)
   read -r NEIGHBOR SIDE < <(echo "$CLIENTS" \

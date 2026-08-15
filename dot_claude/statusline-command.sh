@@ -13,7 +13,6 @@ five_reset=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
 week=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
 week_reset=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
 
-# Current working directory — just the base name (e.g. "chezmoi")
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty')
 [ -n "$cwd" ] && cwd="${cwd##*/}"
 
@@ -29,7 +28,6 @@ fmt_reset() {
   [ -n "$out" ] && printf '%s' "${out# }"
 }
 
-# Build left side: cwd, then the 5-hour and 7-day rate limits, all joined with " | "
 left=""
 [ -n "$cwd" ] && left="$cwd"
 if [ -n "$five" ]; then
@@ -45,7 +43,6 @@ if [ -n "$week" ]; then
   [ -n "$left" ] && left="$left | $week_part" || left="$week_part"
 fi
 
-# If there is nothing to show at all, exit silently
 [ -z "$left" ] && [ -z "$model" ] && exit 0
 
 # Right-align the model string using terminal width.

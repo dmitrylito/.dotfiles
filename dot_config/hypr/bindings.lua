@@ -62,26 +62,10 @@ o.bind("RETURN", "Stop dictation", "voxtype record stop", { non_consuming = true
 
 -- Window management
 --
--- SUPER+U pops the focused window out into a centered 16:10 float and puts the
--- whole workspace back exactly as it was.
---
--- Floating a tiled window DELETES its node from the dwindle tree and its
--- sibling expands into the parent rect; re-tiling only ever splits ONE leaf, so
--- simply un-floating can rebuild the old tree only when the sibling was a
--- single window (exactly 2 windows in any dwindle spiral, whatever the count).
--- So the restore rebuilds instead: the saved rectangles are decomposed back
--- into a guillotine tree, every window is re-tiled in an order that reproduces
--- that tree, and the split ratios are then replayed as sizes.  Any valid
--- decomposition works -- what has to come back is the rectangles, not dwindle's
--- private tree.
---
--- Two dispatcher quirks this relies on, both verified on this box:
---   * swap only permutes windows between existing rectangles; it never restores
---     a split ratio.  Only resize moves a divider.
---   * hl.dsp.window.resize ignores a `window` field (it always resizes the
---     ACTIVE window) and is only correct on the LEFT/TOP child of a split; on
---     the right/bottom child it lands on 2*current-target, so a missed target
---     is re-asked for with that same mirror.
+-- Floating a tiled window deletes its node from the dwindle tree, so SUPER+U
+-- restores by rebuilding the tree from the saved rectangles rather than by
+-- un-floating.  swap only permutes windows between existing rectangles; only
+-- resize moves a split ratio.
 local popout_state = {}
 local popout_dir = (os.getenv("XDG_RUNTIME_DIR") or "/tmp") .. "/hypr-popout"
 os.execute("mkdir -p " .. popout_dir)
@@ -131,7 +115,6 @@ local function popout_clear(address)
   os.remove(popout_file(address))
 end
 
--- Split `items` along one axis, if some cut line separates them cleanly.
 local function popout_cut(items, axis)
   local far = axis == "x" and "right" or "bottom"
   local near = axis == "x" and "x" or "y"
@@ -180,8 +163,7 @@ local function popout_leader(node)
   return node.address
 end
 
--- Each step splits an existing leaf, which is how dwindle grows a tree; visiting
--- a node before its children keeps every anchor a leaf at the moment it is used.
+-- Visiting a node before its children keeps every anchor a leaf when it is used.
 local function popout_steps(node, steps)
   if node.address ~= nil then return steps end
   steps[#steps + 1] = {
