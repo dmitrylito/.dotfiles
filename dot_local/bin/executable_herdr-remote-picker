@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+set -u
+
+config_file="$HOME/.ssh/config"
+known_hosts_file="$HOME/.ssh/known_hosts"
+
+hosts=$({
+  # Keep the existing target available even before it has been added to SSH
+  # config, then discover aliases and previously contacted hostnames locally.
+  printf '%s\n' dlco
+  awk '$1 == "Host" { for (i = 2; i <= NF; i++) if ($i !~ /[*?!]/) print $i }' "$config_file" 2>/dev/null
+  cut -d ' ' -f 1 "$known_hosts_file" 2>/dev/null \
+    | tr ',' '\n' \
+    | sed -E 's/^\[[^]]+\]:[0-9]+$/ /; /^[|]/d; /^[[:space:]]*$/d'
+} | sort -u)
+
+if ! command -v fzf >/dev/null 2>&1; then
+  printf 'fzf is required for the SSH picker\n' >&2
+  exit 1
+fi
+
+selection=$(printf '%s\n' "$hosts" | fzf \
+  --height=40% \
+  --layout=reverse \
+  --border \
+  --prompt='SSH target > ' \
+  --header='Choose a machine, or type any SSH target' \
+  --print-query \
+  --exit-0)
+
+# With --print-query, the first line is the typed query and the second line is
+# the selected result. If there is no match, use the query as a custom target.
+target=$(printf '%s\n' "$selection" | sed -n '2p')
+if [ -z "$target" ]; then
+  target=$(printf '%s\n' "$selection" | sed -n '1p')
+fi
+
+[ -n "$target" ] || exit 0
+exec herdr --remote "$target" --remote-keybindings server

@@ -23,3 +23,7 @@ o.window({ class = "^(chromium)$", title = "^(Picture-in-Picture)$" }, { float =
 o.window({ class = "^(chromium)$", title = "^(Extension:.*)$" }, { float = true })
 o.window({ class = "^(cs2)$" }, { fullscreen = true, immediate = true, workspace = "1 silent" })
 o.window({ class = "^(gamescope)$" }, { workspace = "1 silent" })
+
+-- Herdr runs inside Ghostty and titles its host window as "hostname: workspace".
+-- Keep agent/session updates from activating it over whatever is being used.
+o.window({ class = "^(com\\.mitchellh\\.ghostty)$", title = "^.+: .+$" }, { focus_on_activate = false })
