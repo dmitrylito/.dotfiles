@@ -93,13 +93,6 @@ description = "open a URL from scrollback"
 width = "80%"
 height = "60%"
 
-# tmux prefix+T tmuxifier Dev layout
-[[keys.command]]
-key = "prefix+shift+t"
-type = "shell"
-command = "~/.config/herdr/dev_layout.sh"
-description = "Dev layout: nvim / shell / agent"
-
 [ui]
 accent = "blue"
 
