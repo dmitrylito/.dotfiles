@@ -1,0 +1,121 @@
+#compdef omarchy
+#
+# Zsh completion for the omarchy CLI.
+#
+# Omarchy ships no completion of its own, so this is generated from
+# `omarchy commands --json` -- the CLI's own machine-readable route listing --
+# rather than hard-coding a command list that would rot on every omarchy update.
+#
+# Routes are cached in $XDG_CACHE_HOME/omarchy/zsh-routes and rebuilt whenever
+# omarchy's bin/ is newer than the cache, so a package update refreshes it with
+# no action from the user. Requires jq (omarchy already depends on it).
+#
+# Install: drop in any $fpath directory (here: ~/.zsh/completions), then start a
+# new shell. If it does not appear, the compdump is stale: rm -f ~/.cache/zsh/.zcompdump*
+
+_omarchy_cache_path() {
+  print -r -- "${XDG_CACHE_HOME:-$HOME/.cache}/omarchy/zsh-routes"
+}
+
+# Rebuild the route cache when missing, empty, or older than omarchy's bin dir.
+# Written to a temp file and renamed so a concurrent completion never reads a
+# half-written cache.
+_omarchy_build_cache() {
+  local cache=$1
+  local bin_dir="${OMARCHY_PATH:-/usr/share/omarchy}/bin"
+
+  [[ -s $cache && -d $bin_dir && $cache -nt $bin_dir ]] && return 0
+  (( $+commands[jq] )) || return 1
+  (( $+commands[omarchy] )) || return 1
+
+  mkdir -p -- "${cache:h}" 2>/dev/null || return 1
+
+  local tmp="$cache.$$"
+  omarchy commands --json 2>/dev/null |
+    jq -r '.commands[] | . as $c | (($c.routes // [$c.route])[]) |
+           [., ($c.summary // "")] | @tsv' >| "$tmp" 2>/dev/null
+
+  if [[ -s $tmp ]]; then
+    mv -f -- "$tmp" "$cache" 2>/dev/null && return 0
+  fi
+  rm -f -- "$tmp"
+  return 1
+}
+
+_omarchy() {
+  local cache; cache=$(_omarchy_cache_path)
+  _omarchy_build_cache "$cache"
+  [[ -r $cache ]] || { _message 'no omarchy route cache (is jq installed?)'; return 1 }
+
+  # Words already typed after "omarchy", excluding the one being completed.
+  local -a typed
+  typed=( ${words[2,CURRENT-1]} )
+  local depth=$#typed
+
+  local -a leaves groups
+  local -A seen_group
+  local line route summary next
+  local -a seg
+  # Declared once: re-running `local i` per iteration would re-declare an
+  # existing parameter, which zsh prints (typeset display) unless TYPESET_SILENT.
+  local i ok
+
+  while IFS=$'\t' read -r route summary; do
+    seg=( ${(z)route} )
+    shift seg                      # drop the literal "omarchy"
+    (( $#seg > depth )) || continue
+
+    # Every already-typed word must match this route's corresponding segment.
+    ok=1
+    for (( i = 1; i <= depth; i++ )); do
+      [[ $seg[i] == $typed[i] ]] || { ok=0; break }
+    done
+    (( ok )) || continue
+
+    next=$seg[depth+1]
+    if (( $#seg == depth + 1 )); then
+      leaves+=( "${next}:${summary}" )
+    elif [[ -z $seen_group[$next] ]]; then
+      seen_group[$next]=1
+      groups+=( "${next}:${seg[1,depth+1]} commands" )
+    fi
+  done < "$cache"
+
+  # Enumerable arguments worth completing, rather than leaving the user guessing.
+  if (( depth >= 2 )) && [[ $typed[-1] == set ]]; then
+    case "${typed[1,2]}" in
+      "theme set"|"font set")
+        local -a values
+        values=( ${(f)"$(omarchy ${typed[1]} list 2>/dev/null)"} )
+        if (( $#values )); then
+          _describe -t values "${typed[1]}" values && return 0
+        fi
+        ;;
+    esac
+  fi
+
+  local ret=1
+  (( $#groups )) && { _describe -t groups 'command group' groups && ret=0 }
+  (( $#leaves )) && { _describe -t commands 'command' leaves && ret=0 }
+
+  # Only offer --help where it means something: after a real group or command.
+  if (( depth > 0 )); then
+    local -a helpflag
+    helpflag=( '--help:show help for this command' )
+    _describe -t options 'option' helpflag && ret=0
+  fi
+
+  if (( depth == 1 )) && [[ $typed[1] == commands ]]; then
+    local -a cmdflags
+    cmdflags=(
+      '--all:include hidden commands'
+      '--json:machine-readable listing'
+      '--check:validate command metadata'
+    )
+    _describe -t options 'option' cmdflags && ret=0
+  fi
+
+  return ret
+}
+
+_omarchy "$@"
