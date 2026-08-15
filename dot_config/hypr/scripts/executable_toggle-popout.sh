@@ -98,9 +98,9 @@ if [ "$FLOAT" = "true" ]; then
   # For a plain 2-window split, re-apply the original divider (exact resize is
   # keyed on the left/top child's size), so an offset split stays offset.
   if [ "$N2" = "1" ]; then
-    hyprctl dispatch resizeactive exact "$LCW" "$TCH" >/dev/null
+    hyprctl dispatch "hl.dsp.window.resize({ x = $LCW, y = $TCH, relative = false })" >/dev/null
   fi
-  hyprctl dispatch focuswindow "address:$ADDR" >/dev/null
+  hyprctl dispatch "hl.dsp.focus({ window = \"address:$ADDR\" })" >/dev/null
 
 else
   # ---------- Pop out: record how we're attached to the tree, then float ----------
