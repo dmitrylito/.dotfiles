@@ -87,12 +87,12 @@ if [ "$FLOAT" = "true" ]; then
     '.[]|select(.address==$a)|"\(.at[0]) \(.at[1])"')
   read -r NX NY < <(hyprctl clients -j | jq -r --arg a "$NEIGHBOR" \
     '.[]|select(.address==$a)|"\(.at[0]) \(.at[1])"')
-  hyprctl dispatch focuswindow "address:$ADDR" >/dev/null
+  hyprctl dispatch "hl.dsp.focus({ window = \"address:$ADDR\" })" >/dev/null
   case "$SIDE" in
-    l) [ "$PX" -gt "$NX" ] && hyprctl dispatch swapwindow l >/dev/null ;;
-    r) [ "$PX" -lt "$NX" ] && hyprctl dispatch swapwindow r >/dev/null ;;
-    u) [ "$PY" -gt "$NY" ] && hyprctl dispatch swapwindow u >/dev/null ;;
-    d) [ "$PY" -lt "$NY" ] && hyprctl dispatch swapwindow d >/dev/null ;;
+    l) [ "$PX" -gt "$NX" ] && hyprctl dispatch 'hl.dsp.window.swap({ direction = "l" })' >/dev/null ;;
+    r) [ "$PX" -lt "$NX" ] && hyprctl dispatch 'hl.dsp.window.swap({ direction = "r" })' >/dev/null ;;
+    u) [ "$PY" -gt "$NY" ] && hyprctl dispatch 'hl.dsp.window.swap({ direction = "u" })' >/dev/null ;;
+    d) [ "$PY" -lt "$NY" ] && hyprctl dispatch 'hl.dsp.window.swap({ direction = "d" })' >/dev/null ;;
   esac
 
   # For a plain 2-window split, re-apply the original divider (exact resize is
