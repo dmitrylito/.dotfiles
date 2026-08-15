@@ -30,6 +30,7 @@ kdeconnect
 lolcat
 lsof
 matugen
+mbedtls
 mesa-demos
 mesa-utils
 nano
