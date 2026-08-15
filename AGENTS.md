@@ -23,11 +23,12 @@ This home directory uses **[chezmoi](https://www.chezmoi.io/)** to manage dotfil
 
 This system runs **[Omarchy](https://omarchy.org/)**—an opinionated, beautiful Arch Linux distribution using Hyprland.
 
-* **Never Modify the Core:** Do **not** edit files inside `~/.local/share/omarchy/`. These are read-only source files managed by git. Any changes will break system updates.
-* **User Customizations:** Make all user-level customizations in `~/.config/` (such as `~/.config/hypr/` for Hyprland rules/keybindings, or `~/.config/omarchy/`).
+* **Never Modify the Core:** Do **not** edit files inside `/usr/share/omarchy/`. These are read-only files owned by the omarchy package; local changes are overwritten on `omarchy update`.
+* **User Customizations:** Make all user-level customizations in `~/.config/` (such as `~/.config/hypr/*.lua` for Hyprland rules/keybindings, or `~/.config/omarchy/shell.json` for the bar/notifications).
 * **Sourcing Rules & Reloads:**
-  * **Hyprland:** Config files auto-reload on save. Always validate changes by running `hyprctl reload` followed by `hyprctl configerrors`.
-  * **Waybar / Walker / Terminals:** These do **not** auto-reload. You must run `omarchy restart waybar` (or `walker`, `terminal`) after making changes.
+  * **Hyprland:** Lua config files auto-reload on save. Always validate changes by running `hyprctl reload` followed by `hyprctl configerrors`.
+  * **Omarchy shell:** `shell.json` and user plugins hot-reload on save; `omarchy restart shell` if needed.
+  * **Terminals:** Do **not** auto-reload — run `omarchy restart terminal` after making changes.
 * **Helpful CLI Tools:**
   * `omarchy commands` — lists all built-in commands.
   * `omarchy theme set "<Theme Name>"` — changes the system theme safely.
