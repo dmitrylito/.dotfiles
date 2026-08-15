@@ -141,5 +141,7 @@ else
     }')
   [ -z "$POPW" ] && { POPW=2800; POPH=1750; }
 
-  hyprctl --batch "dispatch togglefloating ; dispatch resizeactive exact $POPW $POPH ; dispatch centerwindow"
+  hyprctl dispatch 'hl.dsp.window.float({ action = "toggle" })'
+  hyprctl dispatch "hl.dsp.window.resize({ x = $POPW, y = $POPH, relative = false })"
+  hyprctl dispatch 'hl.dsp.window.center()'
 fi
