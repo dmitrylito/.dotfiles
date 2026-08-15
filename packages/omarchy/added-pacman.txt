@@ -30,7 +30,6 @@ kdeconnect
 lolcat
 lsof
 matugen
-mbedtls
 mesa-demos
 mesa-utils
 nano
@@ -54,6 +53,7 @@ qt6ct
 rclone
 rsync
 sbctl
+scdoc
 solaar
 speech-dispatcher
 steam
