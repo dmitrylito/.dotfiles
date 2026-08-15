@@ -46,7 +46,6 @@ omarchy-keyring
 omarchy-settings-dev
 omawrite
 omazed
-openai-codex-bin
 openrgb
 pacman-contrib
 pesign
