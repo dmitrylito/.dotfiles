@@ -434,9 +434,9 @@
           become_user: "{{ non_root_user }}"
 
     # =========================================================================
-    # SECTION 6: UPSTREAM CHECKOUTS (zsh plugins + tmuxifier)
+    # SECTION 6: UPSTREAM CHECKOUTS (zsh plugins + tmuxifier + shell plugins)
     # =========================================================================
-    # One task, all five repos, fetched CONCURRENTLY. These were five separate
+    # One task, every repo, fetched CONCURRENTLY. These were five separate
     # `ansible.builtin.git` tasks with update:true, which cost ~1.2s of serial
     # network latency plus ~600ms of task overhead on every run. `forks` cannot
     # parallelise a loop against a single host, so the concurrency lives here:
