@@ -30,7 +30,7 @@ chezmoi, tooling, python, shell, and memory. This file is orientation, not a rul
 - Persistent facts about me and my projects → auto memory (`MEMORY.md` index)
 {{ if eq (.profile | lower) "omarchy" }}
 ## Desktop
-Omarchy owns the desktop config (`~/.config/hypr`, `waybar`, `walker`, `swaync`, `ghostty`).
-Use the `omarchy` skill for end-user customization of those; `~/.local/share/omarchy/` is
-upstream source, not yours to edit.
+Omarchy owns the desktop config (`~/.config/hypr/*.lua`, `~/.config/omarchy/` — shell.json is
+the bar/notifications — and `~/.config/ghostty`). Use the `omarchy` skill for end-user
+customization of those; `/usr/share/omarchy/` is the packaged source, not yours to edit.
 {{- end }}
