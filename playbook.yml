@@ -68,6 +68,11 @@
     # drivers.txt is auto-tracked for reference only — drivers are hardware-
     # specific and must be installed MANUALLY, so the playbook never reads it.
     removed_file: "{{ chezmoi_source_dir }}/packages/omarchy/removed.txt"
+    reference_files:
+      - "{{ chezmoi_source_dir }}/packages/omarchy/base.packages"
+      - "{{ chezmoi_source_dir }}/packages/omarchy/other.packages"
+    drivers_file: "{{ chezmoi_source_dir }}/packages/omarchy/drivers.txt"
+    untracked_regex_file: "{{ chezmoi_source_dir }}/packages/omarchy/untracked.regex"
 
     # Paths to server-specific auto-generated lists
     # (regenerate with scripts/update_server_package_lists.sh on the server)
@@ -111,6 +116,7 @@
           if command -v pacman >/dev/null 2>&1; then
             installed=$(pacman -Qq | tr '\n' ' ')
             orphans=$(pacman -Qdtq 2>/dev/null | tr '\n' ' ')
+            explicit=$(pacman -Qetq 2>/dev/null | tr '\n' ' ')
           fi
 
           clis=
@@ -134,6 +140,7 @@
           printf '"home":"%s",' "$home"
           printf '"installed":"%s",' "$installed"
           printf '"orphans":"%s",' "$orphans"
+          printf '"explicit":"%s",' "$explicit"
           printf '"clis":"%s",' "$clis"
           printf '"omz":%s,' "$(yn test -f "$home/.oh-my-zsh/oh-my-zsh.sh")"
           printf '"makeflags":%s,' "$(yn grep -qxF '{{ makeflags_line }}' /etc/makepkg.conf)"
@@ -161,6 +168,10 @@
         want_native: "{{ (common_linux_packages + (lookup('file', server_pacman_file if p == 'server' else pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list)) | unique }}"
         want_aur: "{{ lookup('file', server_aur_file if p == 'server' else aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list }}"
         unwanted: "{{ (lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if p == 'omarchy' else [] }}"
+        omarchy_reference: "{{ ((lookup('file', reference_files[0]) + '\n' + lookup('file', reference_files[1])).splitlines()
+                                | reject('match', '^#') | reject('match', '^$') | list) if p == 'omarchy' else [] }}"
+        omarchy_drivers: "{{ (lookup('file', drivers_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if p == 'omarchy' else [] }}"
+        untracked_pattern: "{{ (lookup('file', untracked_regex_file).splitlines() | reject('match', '^$') | join('|')) if p == 'omarchy' else '$^' }}"
       ansible.builtin.set_fact:
         installed_packages: "{{ have }}"
         pacman_missing: "{{ want_native | difference(have) }}"
@@ -168,6 +179,21 @@
         aur_missing: "{{ want_aur | reject('equalto', 'yay-bin') | list | difference(have) }}"
         removed_present: "{{ unwanted | intersect(have) }}"
         yay_installed: "{{ 'yay' in have or 'yay-bin' in have }}"
+        # Explicitly installed, nothing depends on it, and it appears on none of
+        # the lists — i.e. it was installed on this machine and never declared.
+        # -Qet mirrors how the lists are generated, so a package held only as a
+        # dependency is never a candidate. Everything the generator excludes on
+        # purpose (drivers, this machine's kernel, the pre-installs) is protected
+        # via untracked.regex, or the prune would uninstall spotify and the GPU
+        # stack on first run.
+        prunable: "{{ (st.explicit | default('') | split
+                       | difference(want_native)
+                       | difference(want_aur)
+                       | difference(omarchy_reference)
+                       | difference(omarchy_drivers)
+                       | difference(['base', 'base-devel'])
+                       | reject('search', untracked_pattern) | list)
+                      if p == 'omarchy' else [] }}"
 
     # =========================================================================
     # SECTION 1: BUILD CONFIGURATION (Omarchy & server profiles)
@@ -403,6 +429,16 @@
         state: absent
       when: removed_present | default([]) | length > 0
 
+    # Anything installed here but declared nowhere. This is what converges a
+    # second machine: a package dropped from added-*.txt on one box is removed
+    # from the others on their next run. Plain -R, not -Rs — the orphan pass
+    # below reclaims whatever this frees.
+    - name: Remove undeclared packages ({{ prunable | default([]) | join(', ') }})
+      community.general.pacman:
+        name: "{{ prunable }}"
+        state: absent
+      when: prunable | default([]) | length > 0
+
     # Dependencies nothing requires any more. Installing packages never reclaims
     # these, so without a sweep they accumulate for the life of the machine.
     # Looped because removing an orphan orphans its own dependencies in turn.
@@ -416,7 +452,7 @@
           done
       when:
         - is_linux
-        - st.orphans | default('') | trim | length > 0
+        - st.orphans | default('') | trim | length > 0 or prunable | default([]) | length > 0
       changed_when: true
 
     # =========================================================================

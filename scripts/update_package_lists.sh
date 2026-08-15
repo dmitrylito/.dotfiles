@@ -64,6 +64,15 @@ grep -vxFf /tmp/omarchy_ref.txt /tmp/current_aur_explicit.txt | grep -ivE "$DRIV
 
 grep -vxFf /tmp/current_all_installed_and_provides.txt /tmp/omarchy_ref.txt | sort > "$CHEZMOI_DIR/packages/omarchy/removed.txt"
 
+# Everything the lists above deliberately exclude. The playbook's prune must
+# treat "untracked on purpose" as protected, or it would remove this machine's
+# drivers, its kernel, and the pre-installs (spotify, dart, ...) that are
+# filtered out of added-*.txt by design. Emitted rather than duplicated in the
+# playbook so the patterns have one definition; they match names, not this
+# machine's packages, so the file is portable to the other Omarchy box.
+printf '%s\n' "$DRIVER_REGEX" "$REPO_SPECIFIC_REGEX" "$DEBUG_PKG_REGEX" "$PREINSTALL_REGEX" \
+    > "$CHEZMOI_DIR/packages/omarchy/untracked.regex"
+
 rm /tmp/omarchy_ref.txt /tmp/current_native_explicit.txt /tmp/current_aur_explicit.txt /tmp/all_explicit.txt /tmp/current_all_installed_and_provides.txt
 
 echo "======================================"

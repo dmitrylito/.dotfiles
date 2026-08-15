@@ -16,6 +16,7 @@ set -euo pipefail
 # packages/omarchy/added-aur.txt hash: {{ include "packages/omarchy/added-aur.txt" | sha256sum }}
 # packages/omarchy/drivers.txt hash: {{ include "packages/omarchy/drivers.txt" | sha256sum }}
 # packages/omarchy/removed.txt hash: {{ include "packages/omarchy/removed.txt" | sha256sum }}
+# packages/omarchy/untracked.regex hash: {{ include "packages/omarchy/untracked.regex" | sha256sum }}
 {{- else if eq (.profile | lower) "server" }}
 # packages/server/pacman.txt hash: {{ include "packages/server/pacman.txt" | sha256sum }}
 # packages/server/aur.txt hash: {{ include "packages/server/aur.txt" | sha256sum }}
