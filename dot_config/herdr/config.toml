@@ -76,7 +76,7 @@ previous_workspace = ["prefix+shift+p", "alt+up", "alt+k"]
 next_workspace = ["prefix+shift+n", "alt+down", "alt+j"]
 
 # Agents — alt+shift mirrors the alt workspace keys
-focus_agent = "alt+shift+1..9"
+focus_agent = ["alt+shift+1..9", "ctrl+alt+1..9"]
 previous_agent = "alt+shift+k"
 next_agent = "alt+shift+j"
 
