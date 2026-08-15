@@ -37,7 +37,9 @@ end
 -- Applications
 o.bind("SUPER + ALT + RETURN", "Tmux", { launch = 'xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)" tmux new' })
 o.bind("SUPER + semicolon", "Terminal", { launch = 'xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)"' })
-o.bind("SUPER + CTRL + semicolon", "Herdr remote (dlco)", { launch = "xdg-terminal-exec herdr --remote dlco" })
+-- server keybindings: with the default (local) the client owns prefix mode, so the
+-- server-side [[keys.command]] popups (prefix+g lazygit, prefix+u urls) never fire
+o.bind("SUPER + CTRL + semicolon", "Herdr remote (dlco)", { launch = "xdg-terminal-exec herdr --remote dlco --remote-keybindings server" })
 o.bind("SUPER + SHIFT + F", "File manager", { launch = "nautilus --new-window" })
 o.bind("SUPER + ALT + SHIFT + F", "File manager (cwd)", { launch = 'nautilus --new-window "$(omarchy-cmd-terminal-cwd)"' })
 o.bind("SUPER + SHIFT + B", "Browser", "omarchy-launch-browser")
