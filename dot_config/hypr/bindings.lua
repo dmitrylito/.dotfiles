@@ -36,7 +36,7 @@ end
 
 -- Applications
 o.bind("SUPER + ALT + RETURN", "Tmux", { launch = 'xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)" tmux new' })
-o.bind("SUPER + SEMICOLON", "Terminal", { launch = 'xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)"' })
+o.bind("SUPER + semicolon", "Terminal", { launch = 'xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)"' })
 o.bind("SUPER + SHIFT + F", "File manager", { launch = "nautilus --new-window" })
 o.bind("SUPER + ALT + SHIFT + F", "File manager (cwd)", { launch = 'nautilus --new-window "$(omarchy-cmd-terminal-cwd)"' })
 o.bind("SUPER + SHIFT + B", "Browser", "omarchy-launch-browser")
