@@ -27,8 +27,6 @@ scripts/
 
 {{ if ne (.profile | lower) "omarchy" }}
 .config/hypr/
-.config/waybar/
-.config/swaync/
 .config/systemd/user/dotoold.service
 .config/systemd/user/graphical-session.target.wants/
 .config/mimeapps.list
