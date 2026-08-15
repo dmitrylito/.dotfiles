@@ -107,7 +107,11 @@
           yn() { if "$@" >/dev/null 2>&1; then printf true; else printf false; fi; }
 
           installed=
-          command -v pacman >/dev/null 2>&1 && installed=$(pacman -Qq | tr '\n' ' ')
+          orphans=
+          if command -v pacman >/dev/null 2>&1; then
+            installed=$(pacman -Qq | tr '\n' ' ')
+            orphans=$(pacman -Qdtq 2>/dev/null | tr '\n' ' ')
+          fi
 
           clis=
           for c in claude codex; do
@@ -129,6 +133,7 @@
           printf '{'
           printf '"home":"%s",' "$home"
           printf '"installed":"%s",' "$installed"
+          printf '"orphans":"%s",' "$orphans"
           printf '"clis":"%s",' "$clis"
           printf '"omz":%s,' "$(yn test -f "$home/.oh-my-zsh/oh-my-zsh.sh")"
           printf '"makeflags":%s,' "$(yn grep -qxF '{{ makeflags_line }}' /etc/makepkg.conf)"
@@ -397,6 +402,22 @@
         name: "{{ removed_present }}"
         state: absent
       when: removed_present | default([]) | length > 0
+
+    # Dependencies nothing requires any more. Installing packages never reclaims
+    # these, so without a sweep they accumulate for the life of the machine.
+    # Looped because removing an orphan orphans its own dependencies in turn.
+    - name: Remove orphaned dependencies ({{ st.orphans | default('') | trim }})
+      ansible.builtin.shell:
+        cmd: |
+          while :; do
+            orphans=$(pacman -Qdtq 2>/dev/null) || break
+            [ -n "$orphans" ] || break
+            pacman -Rns --noconfirm $orphans || break
+          done
+      when:
+        - is_linux
+        - st.orphans | default('') | trim | length > 0
+      changed_when: true
 
     # =========================================================================
     # SECTION 5: OH MY ZSH (All Profiles)
