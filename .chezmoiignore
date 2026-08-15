@@ -9,9 +9,8 @@ scripts/
 
 # WM / editor state that is machine-specific or generated
 .config/hypr/shaders/
-.config/hypr/monitors.conf
-.config/hypr/envs.conf
-.config/hypr/workspaces.conf
+.config/hypr/monitors.lua
+.config/hypr/workspaces.lua
 .config/nvim/lazy-lock.json
 
 # tmux plugins are installed and managed by tpm, not chezmoi
