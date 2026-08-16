@@ -8,7 +8,6 @@ require("default.hypr.omarchy")
 
 -- Personal overrides, loaded after Omarchy's defaults.
 require("hypr.monitors")
-require("hypr.workspaces")
 require("hypr.input")
 require("hypr.bindings")
 require("hypr.looknfeel")
