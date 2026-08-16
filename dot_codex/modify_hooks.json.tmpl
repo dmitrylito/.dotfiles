@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # Keep Codex's runtime-owned hooks file while enforcing one Moshi hook per event.
-# `moshi-hook service install` appends raw hooks instead of recognizing the
-# compatibility wrapper, so without this merge every event runs twice.
 
 import json
 import sys
 
 HOME = "{{ .chezmoi.homeDir }}"
-MOSHI_COMMAND = HOME + "/.local/bin/moshi-codex-hook"
+MOSHI_COMMAND = HOME + "/.local/bin/moshi-hook codex-hook"
 MOSHI_BINARIES = ("moshi-codex-hook", "moshi-hook", "moshi")
 EVENTS = ("PermissionRequest", "SessionStart", "Stop", "UserPromptSubmit")
 
