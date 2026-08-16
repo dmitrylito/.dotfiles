@@ -24,11 +24,14 @@
 #   {{ include "dot_config/systemd/user/moshi-hook.service.d/10-restart-always.conf" | sha256sum }}
 #   {{ include "dot_config/systemd/user/moshi-pane-rebind.service.tmpl" | sha256sum }}
 #   {{ include "dot_config/systemd/user/moshi-pane-rebind.timer" | sha256sum }}
+#   {{ include "dot_codex/modify_hooks.json.tmpl" | sha256sum }}
 set -eu
 
 MOSHI_HOOK="{{ .chezmoi.homeDir }}/.local/bin/moshi-hook"
 GUARD="{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard"
 SETTINGS="{{ .chezmoi.homeDir }}/.claude/settings.json"
+CODEX_GUARD="{{ .chezmoi.homeDir }}/.local/bin/moshi-codex-hook"
+CODEX_HOOKS="{{ .chezmoi.homeDir }}/.codex/hooks.json"
 UNIT="{{ .chezmoi.homeDir }}/.config/systemd/user/moshi-hook.service"
 
 command -v systemctl >/dev/null 2>&1 || exit 0
@@ -106,5 +109,49 @@ if changed:
         fh.write("\n")
     os.replace(tmp, path)
     print(f"ensure-moshi-units: repointed {changed} Claude hook(s) at the guard wrapper")
+PY
+fi
+
+# The same installer appends raw Codex hooks beside moshi-codex-hook. The
+# modify_ source repairs normal applies; repair immediately here as well so a
+# fresh machine does not finish its first apply with every event duplicated.
+if [ -n "$installed_now" ] && [ -f "$CODEX_HOOKS" ] && [ -x "$CODEX_GUARD" ] &&
+	command -v python3 >/dev/null 2>&1; then
+	python3 - "$CODEX_HOOKS" "$CODEX_GUARD" <<'PY' || echo "ensure-moshi-units: Codex hook repair skipped"
+import json, os, sys
+path, guard = sys.argv[1], sys.argv[2]
+names = ("moshi-codex-hook", "moshi-hook", "moshi")
+events = ("PermissionRequest", "SessionStart", "Stop", "UserPromptSubmit")
+try:
+    with open(path) as fh:
+        current = json.load(fh)
+except Exception:
+    sys.exit(0)
+hooks = current.setdefault("hooks", {})
+for event in events:
+    kept = []
+    for group in hooks.get(event, []):
+        entries = group.get("hooks") if isinstance(group, dict) else None
+        if not isinstance(entries, list):
+            kept.append(group)
+            continue
+        remaining = []
+        for entry in entries:
+            command = entry.get("command") if isinstance(entry, dict) else None
+            token = command.split(" ", 1)[0].strip("'\"") if isinstance(command, str) else ""
+            if token.rsplit("/", 1)[-1] not in names:
+                remaining.append(entry)
+        if remaining:
+            group = dict(group)
+            group["hooks"] = remaining
+            kept.append(group)
+    kept.append({"hooks": [{"command": guard, "type": "command"}]})
+    hooks[event] = kept
+tmp = path + ".moshi.tmp"
+with open(tmp, "w") as fh:
+    json.dump(current, fh, indent=2, sort_keys=True)
+    fh.write("\n")
+os.replace(tmp, path)
+print("ensure-moshi-units: normalized Codex hooks")
 PY
 fi
