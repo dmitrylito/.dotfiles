@@ -1,0 +1,12 @@
+antigravity
+antigravity-ide
+appmenu-glib-translator-git
+coolercontrol-bin
+discordupdater
+gogcli
+google-cloud-cli
+hyprmon-bin
+sesh-bin
+zsa-keymapp-bin
+zsh-uv-env-git
+zsh-you-should-use
