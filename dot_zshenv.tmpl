@@ -22,6 +22,11 @@ export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship.toml"
 export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/gcloud/application_default_credentials.json"
 export GOOGLE_CLOUD_LOCATION="global"
 
+# Machine-local secrets/env (NOT managed by chezmoi — never add it).
+if [[ -f "$HOME/.env" ]]; then
+  source "$HOME/.env"
+fi
+
 # Fullscreen (alt-screen) rendering so Claude Code stops full-viewport
 # redraws on every token, which flicker the cursor under tmux/Ghostty.
 export CLAUDE_CODE_NO_FLICKER=1
@@ -48,10 +53,14 @@ path=(
   $path
 )
 
-# Auth for the github MCP plugin, which expands ${GITHUB_PERSONAL_ACCESS_TOKEN} in its
-# .mcp.json. Read from the gh keyring at startup so no token lands in this pushed file.
-if command -v gh >/dev/null 2>&1; then
-  export GITHUB_PERSONAL_ACCESS_TOKEN="${GITHUB_PERSONAL_ACCESS_TOKEN:-$(gh auth token 2>/dev/null)}"
+# Auth for GitHub MCP clients. Prefer the machine-local .env token, then fall
+# back to the gh keyring so no token lands in this pushed file.
+if [[ -z "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" ]]; then
+  if [[ -n "${GITHUB_MCP_PAT:-}" ]]; then
+    export GITHUB_PERSONAL_ACCESS_TOKEN="$GITHUB_MCP_PAT"
+  elif command -v gh >/dev/null 2>&1; then
+    export GITHUB_PERSONAL_ACCESS_TOKEN="$(gh auth token 2>/dev/null)"
+  fi
 fi
 
 if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
