@@ -22,6 +22,9 @@
 #
 # Re-runs when a unit changes:
 #   {{ include "dot_config/systemd/user/moshi-hook.service.d/10-restart-always.conf" | sha256sum }}
+{{- if eq (.profile | lower) "omarchy" }}
+#   {{ include "dot_config/systemd/user/moshi-hook.service.d/20-herdr-path.conf" | sha256sum }}
+{{- end }}
 #   {{ include "dot_config/systemd/user/moshi-pane-rebind.service.tmpl" | sha256sum }}
 #   {{ include "dot_config/systemd/user/moshi-pane-rebind.timer" | sha256sum }}
 #   {{ include "dot_codex/modify_hooks.json.tmpl" | sha256sum }}
