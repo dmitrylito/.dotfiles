@@ -15,6 +15,13 @@ if [[ -z "${LANG:-}" && -z "${LC_ALL:-}" ]]; then
   export LANG="C.UTF-8"
 fi
 
+# Same herdr gap for XDG_RUNTIME_DIR: without it moshi-hook's client falls back to
+# /tmp/moshi-hook.sock while the daemon listens on $XDG_RUNTIME_DIR/moshi-hook.sock,
+# so hook events are written locally but never reach the Moshi app.
+if [[ -z "${XDG_RUNTIME_DIR:-}" && -d "/run/user/$(id -u)" ]]; then
+  export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+fi
+
 export EDITOR="$HOME/.local/share/bob/nvim-bin/nvim"
 export VISUAL="$EDITOR"
 export PAGER="less"
