@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+# Keep Codex's runtime-owned hooks file while enforcing one Moshi hook per event.
+# `moshi-hook service install` appends raw hooks instead of recognizing the
+# compatibility wrapper, so without this merge every event runs twice.
+
+import json
+import sys
+
+HOME = "{{ .chezmoi.homeDir }}"
+MOSHI_COMMAND = HOME + "/.local/bin/moshi-codex-hook"
+MOSHI_BINARIES = ("moshi-codex-hook", "moshi-hook", "moshi")
+EVENTS = ("PermissionRequest", "SessionStart", "Stop", "UserPromptSubmit")
+
+
+def is_moshi_command(command):
+    if not isinstance(command, str) or not command:
+        return False
+    token = command.split(" ", 1)[0].strip("'\"")
+    return token.rsplit("/", 1)[-1] in MOSHI_BINARIES
+
+
+def without_moshi(groups):
+    kept = []
+    for group in groups if isinstance(groups, list) else []:
+        if not isinstance(group, dict):
+            kept.append(group)
+            continue
+        entries = group.get("hooks")
+        if not isinstance(entries, list):
+            kept.append(group)
+            continue
+        remaining = [
+            entry
+            for entry in entries
+            if not (
+                isinstance(entry, dict)
+                and is_moshi_command(entry.get("command"))
+            )
+        ]
+        if remaining:
+            group = dict(group)
+            group["hooks"] = remaining
+            kept.append(group)
+    return kept
+
+
+raw = sys.stdin.read()
+try:
+    current = json.loads(raw) if raw.strip() else {}
+except ValueError:
+    current = {}
+if not isinstance(current, dict):
+    current = {}
+
+hooks = current.setdefault("hooks", {})
+if not isinstance(hooks, dict):
+    hooks = current["hooks"] = {}
+
+for event in EVENTS:
+    groups = without_moshi(hooks.get(event))
+    groups.append(
+        {"hooks": [{"command": MOSHI_COMMAND, "type": "command"}]}
+    )
+    hooks[event] = groups
+
+print(json.dumps(current, indent=2, sort_keys=True))
