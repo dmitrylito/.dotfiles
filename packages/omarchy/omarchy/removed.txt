@@ -1,0 +1,3 @@
+dell-xps-touchpad-haptics
+lsp-plugins-lv2
+qmk-hid
