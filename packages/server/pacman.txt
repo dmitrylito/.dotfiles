@@ -6,6 +6,8 @@ ast-grep
 base
 base-devel
 bat
+bluez
+bluez-utils
 bob
 btop
 chezmoi
@@ -17,7 +19,7 @@ cockpit-podman
 cockpit-storaged
 cronie
 cups
-cups-filters
+cups-pk-helper
 direnv
 dmidecode
 docker
@@ -37,6 +39,7 @@ ghostscript
 ghostty-terminfo
 git
 git-delta
+github-cli
 go
 imagemagick
 intel-ucode
@@ -50,14 +53,15 @@ linux-headers
 linux-lts
 linux-lts-headers
 lsof
-lua
 luarocks
 man-db
 mise
+mkinitcpio
 mosh
 ncdu
 networkmanager
 nfs-utils
+noto-fonts
 nvidia-container-toolkit
 nvidia-open-lts
 nvtop
@@ -74,12 +78,14 @@ python-pandas
 python-pip
 python-uv
 quota-tools
+ripgrep
 ripgrep-all
 rsync
 samba
 smartmontools
 starship
 sudo
+system-config-printer
 tailscale
 tectonic
 time
@@ -89,6 +95,7 @@ tree-sitter
 udisks2
 udisks2-lvm2
 wget
+wpa_supplicant
 yazi
 zoxide
 zram-generator
