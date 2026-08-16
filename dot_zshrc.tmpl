@@ -192,7 +192,14 @@ alias hyprmon='HYPRLAND_CONFIG="$HOME/.config/hypr/monitors.conf" command hyprmo
 {{ end -}}
 
 {{- if eq .profile "omarchy" }}
-export OMARCHY_PATH="${OMARCHY_PATH:-$HOME/.local/share/omarchy}"
+if [[ -z "$OMARCHY_PATH" ]]; then
+  # Omarchy 4 is package-backed at /usr/share/omarchy; 3.x is a git checkout under ~/.local/share.
+  if [[ -d /usr/share/omarchy ]]; then
+    export OMARCHY_PATH=/usr/share/omarchy
+  else
+    export OMARCHY_PATH="$HOME/.local/share/omarchy"
+  fi
+fi
 if [[ ":$PATH:" != *":$OMARCHY_PATH/bin:"* ]]; then
   export PATH="$OMARCHY_PATH/bin:$PATH"
 fi
