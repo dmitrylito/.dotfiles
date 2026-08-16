@@ -26,7 +26,6 @@ hyprpolkitagent
 hyprpwcenter
 impala
 iotop
-kdeconnect
 lolcat
 matugen
 mesa-demos
@@ -47,14 +46,12 @@ rclone
 rust
 satty
 solaar
-speech-dispatcher
 steam
 stow
 swaybg
 swaync
 swayosd
 tailscale
-telegram-desktop
 voxtype-bin
 waybar
 wayvnc
