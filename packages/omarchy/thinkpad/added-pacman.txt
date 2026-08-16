@@ -31,7 +31,6 @@ openrgb
 pesign
 powertop
 pre-commit
-python-terminaltexteffects
 qt6ct
 rclone
 rust
