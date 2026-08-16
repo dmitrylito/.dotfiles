@@ -102,7 +102,6 @@ tldr
 tobi-try
 tree-sitter-cli
 ttf-ia-writer
-ttf-jetbrains-mono-nerd
 tzupdate
 ufw-docker
 voxtype-bin
