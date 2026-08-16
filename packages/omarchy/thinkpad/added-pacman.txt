@@ -15,7 +15,6 @@ ghostty
 gimp
 git-delta
 github-cli
-gnome-calculator
 go
 hyprlauncher
 hyprpolkitagent
