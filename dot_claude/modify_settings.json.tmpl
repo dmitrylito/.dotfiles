@@ -22,6 +22,12 @@
 #     default because it is a LIST that already exists on every established machine, so
 #     fill_defaults skipped it wholesale and each new rule silently reached only fresh boxes.
 #     Removing a rule therefore means deleting it HERE, not in /permissions.
+#   - ENFORCED_SCALARS are forced to the value here on every apply, overwriting whatever
+#     the live file says. Use this only for settings that must be identical on every
+#     machine. A DEFAULT is not enough for them: fill_defaults skips any key the live file
+#     already has, so a box that once wrote the key keeps its old value forever and the
+#     source silently stops being the truth. Changing one of these means editing it HERE —
+#     a /config change to the same key is reverted on the next apply.
 #   - hooks are ENFORCED: every moshi hook command is forced back to the guard wrapper and
 #     any missing event/matcher is re-added. Without this, `moshi-hook service install`
 #     silently repoints the hooks at raw moshi-hook, which makes tty-less sessions bind to
@@ -148,10 +154,14 @@ BASELINE = {
     "spinnerTipsEnabled": False,
     "spinnerVerbs": {"mode": "replace", "verbs": ["Working"]},
     "statusLine": {"command": "bash ~/.claude/statusline-command.sh", "type": "command"},
-    "terminalProgressBarEnabled": True,
     "theme": "auto",
     "tui": "fullscreen",
     "vimInsertModeRemaps": {"jj": "<Esc>"},
+}
+
+ENFORCED_SCALARS = {
+    "outputStyle": "Proactive",
+    "terminalProgressBarEnabled": False,
 }
 
 
@@ -234,6 +244,12 @@ def enforce_style_hooks(hooks):
     return hooks
 
 
+def enforce_scalars(live, enforced):
+    for key, value in enforced.items():
+        live[key] = clone(value)
+    return live
+
+
 def enforce_allow(live, baseline):
     permissions = live.setdefault("permissions", {})
     allow = permissions.get("allow")
@@ -256,6 +272,7 @@ if not isinstance(current, dict):
 fill_defaults(current, {k: v for k, v in BASELINE.items() if k != "hooks"})
 current["hooks"] = enforce_moshi_hooks(current.get("hooks"), BASELINE["hooks"])
 enforce_style_hooks(current["hooks"])
+enforce_scalars(current, ENFORCED_SCALARS)
 enforce_allow(current, BASELINE["permissions"])
 
 print(json.dumps(current, indent=2, sort_keys=True))
