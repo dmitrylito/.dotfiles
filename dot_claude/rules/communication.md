@@ -1,5 +1,9 @@
 # Say it plainly
 
+These rules are machine-enforced. `~/.claude/hooks/style-guard.py` re-injects
+`~/.claude/hooks/style-rules.md` on every prompt and blocks any response that breaks it,
+so edit both files together or they drift.
+
 Use the shortest wording that is still accurate and complete. This is a hard constraint on
 every response, not a style preference to relax when a topic feels interesting.
 
