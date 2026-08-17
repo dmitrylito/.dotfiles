@@ -51,7 +51,12 @@ BANNED = [
     (r"\b(moreover|furthermore)\b", "moreover / furthermore"),
     (r"\ba testament to\b", "a testament to"),
     (r"\b(game.?chang\w+|cutting.?edge|state.of.the.art)\b", "hype phrase"),
-    (r"\b(i hope this helps|let me know if|feel free to)\b", "closing pleasantry"),
+    (
+        r"\b(i hope this helps|let me know if|feel free to|"
+        r"is there (anything|something) else|anything else (i can|you)|"
+        r"happy to help|glad i could help)\b",
+        "closing pleasantry",
+    ),
     (r"★", "insight block marker"),
     (
         r"\b(i apologi[sz]e|my apologies|sorry about that|my mistake|"
@@ -306,9 +311,10 @@ def do_check(use_judge):
         "STYLE GUARD BLOCKED THIS RESPONSE. It violates the output contract:\n"
         + "\n".join("  - " + p for p in problems)
         + "\n\nRewrite the response now, fixing exactly these violations. Do not apologise, "
-        "do not mention the style guard, do not explain the rewrite — just deliver the "
-        "corrected response. Keep every fact, caveat, and failure report from the original; "
-        "cut words, not substance.",
+        "do not argue, do not mention the style guard, do not explain the rewrite — just "
+        "deliver the corrected response. Keep every fact, caveat, and failure report from "
+        "the original; cut words, not substance. If a flagged word appears only because you "
+        "were quoting or naming the word itself, wrap it in backticks, which are exempt.",
         event,
     )
 
