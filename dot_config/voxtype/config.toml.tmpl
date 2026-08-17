@@ -158,7 +158,7 @@ model = "parakeet-unified-en-0.6b"
 on_demand_loading = false
 streaming = true
 # Encoder frame = 80 ms (subsampling_factor = 8) -> keep values as multiples of 0.08.
-# Floor latency ~= chunk + right + one forward pass = 0.16 + 0.80 = ~0.96 s.
+# Floor latency ~= chunk + right + one forward pass = 0.16 + 1.04 = ~1.2 s.
 # CHUNK is the latency-only knob: it's how much new audio is swallowed per inference
 # step, NOT the model's context. Every output frame still sees the full left+right
 # window regardless of chunk, so shrinking it lowers latency with ZERO accuracy or
