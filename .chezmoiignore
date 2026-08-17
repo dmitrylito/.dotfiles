@@ -20,6 +20,9 @@ scripts/
 # managing it guarantees permanent drift and would sync one box's memories onto another.
 .claude/projects/*/memory/
 
+# Bytecode regenerates on every run; managing it guarantees permanent drift.
+.claude/hooks/__pycache__/
+
 {{ if and (ne (.profile | lower) "omarchy") (ne (.profile | lower) "mac") }}
 .config/ghostty/
 .config/voxtype/
