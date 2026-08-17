@@ -30,6 +30,7 @@ scripts/
 .config/systemd/user/dotoold.service
 # herdr is desktop-only; MOSHI_HERDR_PATH must not point at a missing binary elsewhere.
 .config/systemd/user/moshi-hook.service.d/20-herdr-path.conf
+.config/systemd/user/herdr-server.service
 .config/systemd/user/graphical-session.target.wants/
 .config/mimeapps.list
 .config/spotify-flags.conf

@@ -1,0 +1,30 @@
+# Run the herdr server under systemd so panes inherit the session environment.
+#
+# herdr's server freezes the environment of whatever started it, and every pane
+# it spawns inherits that snapshot for the life of the server — which is days,
+# since restarting it exits every pane. A server started from a stale shell
+# leaves panes without XDG_RUNTIME_DIR (moshi-hook then talks to a dead
+# /tmp socket) and without WAYLAND_DISPLAY (wl-copy, clipboard, GUI launches).
+# systemd's user environment is the complete one uwsm maintains, and
+# `herdr update --handoff` re-execs from it, so updates carry it forward
+# instead of freezing a bad snapshot.
+#
+# Switching over exits every pane:
+#   herdr server stop
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now herdr-server
+# Then reopen herdr — the client attaches to this server instead of spawning one.
+[Unit]
+Description=Herdr terminal workspace server
+Documentation=https://github.com/omacom-io/herdr
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/herdr server
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
