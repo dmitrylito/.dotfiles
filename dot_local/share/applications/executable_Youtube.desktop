@@ -1,6 +1,6 @@
 [Desktop Entry]
 Version=1.0
-Name=Youtube
+Name=YouTube
 Comment=Youtube
 Exec=omarchy-launch-webapp "https://youtube.com" --profile-directory="Default"
 Terminal=false
