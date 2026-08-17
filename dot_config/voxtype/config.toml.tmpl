@@ -52,8 +52,11 @@ device = "default"
 # Sample rate in Hz (whisper expects 16000)
 sample_rate = 16000
 
-# Maximum recording duration in seconds (safety limit)
-max_duration_secs = 60
+# Hard cap: at this many seconds voxtype closes capture mid-sentence and drops the tail.
+# Thinking pauses count toward it, so the stock 60 s cut real dictation off ~9x/day; the TUI
+# help calls 120-300 s normal. Cost of a high cap under streaming+toggle: a forgotten toggle
+# types room noise at the cursor for this long.
+max_duration_secs = 300
 
 # Pause MPRIS media players during recording
 pause_media = false
