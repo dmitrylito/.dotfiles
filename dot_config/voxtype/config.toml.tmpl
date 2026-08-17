@@ -165,10 +165,13 @@ streaming = true
 # punctuation cost -- it just runs more forward passes (cheap on this GPU).
 # RIGHT context = the lookahead that drives accuracy + punctuation -> keep at 0.80.
 #   0.80 s = 10 frames; ~1.04 (13 frames) is the practical ceiling for this model.
-# LEFT context is ~free on latency (compute only) -> 5.6 s = 70 frames.
+# LEFT context costs compute per pass, NOT waiting: encoder.onnx takes only audio_signal +
+# length and exposes no cache tensors, so each pass re-encodes the whole left+chunk+right
+# window from scratch. Redundant work scales as window/chunk (~60x here) -- if the GPU ever
+# falls behind, raise chunk first, since that divides the pass count.
 streaming_chunk_secs = 0.16
-streaming_left_context_secs = 5.6
-streaming_right_context_secs = 0.80
+streaming_left_context_secs = 8.0
+streaming_right_context_secs = 1.04
 
 [osd]
 # gtk4 frontend is Linux-only; macOS draws its overlay with AppKit instead.
