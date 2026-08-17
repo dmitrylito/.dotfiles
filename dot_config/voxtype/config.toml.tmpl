@@ -163,8 +163,10 @@ streaming = true
 # step, NOT the model's context. Every output frame still sees the full left+right
 # window regardless of chunk, so shrinking it lowers latency with ZERO accuracy or
 # punctuation cost -- it just runs more forward passes (cheap on this GPU).
-# RIGHT context = the lookahead that drives accuracy + punctuation -> keep at 0.80.
-#   0.80 s = 10 frames; ~1.04 (13 frames) is the practical ceiling for this model.
+# RIGHT context is pure lookahead: raising it adds that much wait before a word can be
+# emitted, 1:1. It buys accuracy + punctuation and costs latency -- never both. 1.04 s =
+# 13 frames, called the practical ceiling for this model (unverified; audio_signal has
+# dynamic axes, so higher likely runs, just slower with diminishing accuracy return).
 # LEFT context costs compute per pass, NOT waiting: encoder.onnx takes only audio_signal +
 # length and exposes no cache tensors, so each pass re-encodes the whole left+chunk+right
 # window from scratch. Redundant work scales as window/chunk (~60x here) -- if the GPU ever
