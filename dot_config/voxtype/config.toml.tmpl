@@ -59,9 +59,11 @@ max_duration_secs = 60
 pause_media = false
 
 [audio.feedback]
-enabled = false
+enabled = true
 theme = "default"
-volume = 0.7
+# 0.0-1.0, not percent. `voxtype configure` neither reads nor writes this field
+# (always shows 70%) -- edit here, never in the TUI.
+volume = 0.3
 
 [output]
 # Primary output mode: "type" or "clipboard"
