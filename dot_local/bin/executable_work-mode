@@ -2,24 +2,37 @@
 #
 # work-mode — restore the "work" window layout on Hyprland.
 #
-#   ws 1 (DP-1)      : work browser (chromium, Profile 1) + FC Gmail
-#   ws 3 (DP-2)      : Linear
-#   ws 4 (HDMI-A-1)  : FC Chat (left) + Dialpad (right)
-#   ws 5 (HDMI-A-1)  : FC Tasks
-#   scratchpad       : Spotify
+#   ws 1 (Dell U3818DW) : work browser (chromium, Profile 1) left + FC Gmail right
+#   ws 3 (LG UltraGear) : Linear
+#   ws 4 (RTK / HDMI)   : FC Chat (left) + Dialpad (right)
+#   ws 5 (RTK / HDMI)   : FC Tasks
+#   scratchpad          : Spotify
 #
 # Idempotent: apps already open are left untouched.
 #
-# Placement uses transient class-matched `windowrule`s rather than
-# `exec [workspace N silent]`, because exec rules match by spawned PID: the
-# webapps launch through omarchy-launch-webapp and share a chromium profile,
-# so their windows belong to the already-running chromium master — a PID
-# Hyprland never sees. The rules are discarded with `hyprctl reload` at the end.
+# Hyprland 0.56 parses its config in Lua, which changed how a script drives it:
+#   * `hyprctl keyword ...` is refused outright ("keyword can't work with
+#     non-legacy parsers"), so the transient class-matched windowrules this
+#     script used for placement are gone. `hl.window_rule` can be added at
+#     runtime but never removed, so it is no worse than useless here.
+#   * `hyprctl dispatch` arguments are now a Lua expression:
+#     `hyprctl dispatch 'hl.dsp.window.move({ workspace = "4" })'`.
+#   * `hl.dsp.window.resize` takes { x, y, relative?, window? } — OMIT
+#     `relative` for an absolute pixel size. There is no `exact` key.
+#
+# So each window is moved explicitly once it has mapped, and left/right order is
+# corrected from real window positions instead of assumed from launch order: a
+# moved window is re-inserted at the end of the tiling order, which silently
+# swapped the ws-1 pair. Dwindle keeps sizes with slots, not windows, so a swap
+# must happen before the resize.
 
 set -uo pipefail
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
 WEBAPP="$HOME/.local/share/omarchy/bin/omarchy-launch-webapp"
+
+BROWSER_LEFT_WIDTH=2749
+CHAT_LEFT_WIDTH=1153
 
 # Recover the Hyprland instance signature when launched from a bare .desktop env.
 if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
@@ -30,13 +43,22 @@ fi
 
 log() { printf '[work-mode] %s\n' "$*" >&2; }
 
-is_open() {
-  hyprctl clients -j | jq -e --arg c "$1" '.[] | select(.class | test($c))' >/dev/null
+dispatch() {
+  local out
+  out="$(hyprctl dispatch "$1" 2>&1)"
+  [[ "$out" == "ok" ]] && return 0
+  log "WARN  dispatch rejected: $1 -> $out"
+  return 1
 }
 
 addr_of() {
   hyprctl clients -j \
     | jq -r --arg c "$1" 'first(.[] | select(.class | test($c)) | .address) // empty'
+}
+
+prop_of() {
+  hyprctl clients -j \
+    | jq -r --arg a "$1" --arg p "$2" 'first(.[] | select(.address == $a) | .[$p]) // empty'
 }
 
 # Poll up to 15s for a window matching the class regex to map.
@@ -51,21 +73,44 @@ wait_for() {
 }
 
 # launch <label> <class-regex> <workspace> <launch-cmd...>
-# Blocks until the window maps, so launch order determines the left/right
-# split on two-window workspaces.
 launch() {
   local label="$1" class_re="$2" ws="$3"; shift 3
+  local addr
 
-  if is_open "$class_re"; then
+  addr="$(addr_of "$class_re")"
+  if [[ -n "$addr" ]]; then
     log "skip  $label (already open)"
     return 0
   fi
 
   log "open  $label -> workspace $ws"
-  hyprctl keyword windowrule "workspace $ws silent, match:class $class_re" >/dev/null
   setsid -f "$@" >/dev/null 2>&1
 
-  wait_for "$class_re" >/dev/null || log "WARN  $label window never appeared"
+  addr="$(wait_for "$class_re")" || { log "WARN  $label window never appeared"; return 1; }
+  dispatch "hl.dsp.window.move({ workspace = \"$ws\", follow = false, window = \"address:$addr\" })"
+}
+
+# Put <want> in the left slot of a two-window workspace, if it is not already.
+ensure_left() {
+  local want="$1" other="$2" wx ox
+  wx="$(prop_of "$want" at | jq -r '.[0]' 2>/dev/null)"
+  ox="$(prop_of "$other" at | jq -r '.[0]' 2>/dev/null)"
+  [[ -n "$wx" && -n "$ox" ]] || return 0
+  ((wx <= ox)) && return 0
+
+  log "fix   left/right order"
+  dispatch "hl.dsp.focus({ window = \"address:$want\" })" || return 1
+  dispatch "hl.dsp.window.swap({ direction = \"left\" })" || return 1
+  sleep 0.4
+}
+
+# Width only — height comes from the window itself, so gap/bar changes can never
+# make this a magic number that no longer fits.
+set_width() {
+  local addr="$1" width="$2" height
+  height="$(prop_of "$addr" size | jq -r '.[1]' 2>/dev/null)"
+  [[ -n "$height" && "$height" != "null" ]] || return 1
+  dispatch "hl.dsp.window.resize({ x = $width, y = $height, window = \"address:$addr\" })"
 }
 
 # Classes as reported by `hyprctl clients` (Omarchy web-app convention:
@@ -77,6 +122,8 @@ DIALPAD_CLASS='^chrome-dialpad\.com__app_-Profile_1$'
 TASKS_CLASS='^chrome-console\.fleetchaser\.com__tasks_-Profile_2$'
 BROWSER_CLASS='^chromium$'
 SPOTIFY_CLASS='^spotify$'
+
+FOCUS_ADDR="$(hyprctl activewindow -j 2>/dev/null | jq -r '.address // empty')"
 
 launch 'Work browser' "$BROWSER_CLASS" 1 \
   chromium --profile-directory='Profile 1'
@@ -97,15 +144,20 @@ launch 'FC Tasks' "$TASKS_CLASS" 5 \
 launch 'Spotify' "$SPOTIFY_CLASS" 'special:scratchpad' \
   spotify
 
-# Drop the transient placement rules by re-reading the on-disk config.
-hyprctl reload >/dev/null 2>&1
+BROWSER_ADDR="$(addr_of "$BROWSER_CLASS")"
+GMAIL_ADDR="$(addr_of "$GMAIL_CLASS")"
+if [[ -n "$BROWSER_ADDR" && -n "$GMAIL_ADDR" ]]; then
+  ensure_left "$BROWSER_ADDR" "$GMAIL_ADDR"
+  set_width "$BROWSER_ADDR" "$BROWSER_LEFT_WIDTH"
+fi
 
-# Uneven splits on the two-window workspaces. Pin the LEFT window (anchored at
-# the workspace origin, so an exact-pixel resize is deterministic). Must run
-# after `hyprctl reload`, which resets splits back to 50/50.
-[[ -n "${BROWSER_ADDR:=$(addr_of "$BROWSER_CLASS")}" ]] && \
-  hyprctl dispatch resizewindowpixel "exact 2749 1542,address:$BROWSER_ADDR" >/dev/null 2>&1
-[[ -n "${CHAT_ADDR:=$(addr_of "$CHAT_CLASS")}" ]] && \
-  hyprctl dispatch resizewindowpixel "exact 1153 1382,address:$CHAT_ADDR" >/dev/null 2>&1
+CHAT_ADDR="$(addr_of "$CHAT_CLASS")"
+DIALPAD_ADDR="$(addr_of "$DIALPAD_CLASS")"
+if [[ -n "$CHAT_ADDR" && -n "$DIALPAD_ADDR" ]]; then
+  ensure_left "$CHAT_ADDR" "$DIALPAD_ADDR"
+  set_width "$CHAT_ADDR" "$CHAT_LEFT_WIDTH"
+fi
+
+[[ -n "$FOCUS_ADDR" ]] && dispatch "hl.dsp.focus({ window = \"address:$FOCUS_ADDR\" })"
 
 log "done"
