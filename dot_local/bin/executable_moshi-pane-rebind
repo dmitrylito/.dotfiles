@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # moshi-pane-rebind — keep Moshi's pane->conversation bindings pointing at the job each
-# tmux pane is actually displaying.
+# tmux or herdr pane is actually displaying.
 #
 # Usage: moshi-pane-rebind [--dry-run] [--verbose]
 #        Run periodically (moshi-pane-rebind.timer). Safe to run any time; it only edits
-#        the tmux* and transcriptPath fields of records under
+#        the tmux*/herdr* and transcriptPath fields of records under
 #        ~/.local/state/moshi/claude-sessions/ and never deletes a record.
 #
-# Why: Moshi assumes one tmux pane == one agent session. Viewing a background job in a
+# Why: Moshi assumes one pane == one agent session. Viewing a background job in a
 # pane breaks that — the job owns the conversation but is tty-less, while the terminal
 # that displays it registers its own Claude session that is never prompted and so never
 # gets a transcript. Moshi binds the pane to that empty session, the gateway answers 404,
@@ -41,9 +41,18 @@ JOBS = os.path.expanduser("~/.claude/jobs")
 PROJECTS = os.path.expanduser("~/.claude/projects")
 TMUX = next((p for p in ("/usr/bin/tmux", "/usr/sbin/tmux", "/opt/homebrew/bin/tmux")
              if os.path.exists(p)), "tmux")
+# The self-updating copy first: a herdr client only talks to a server of the same protocol,
+# and a distro package can sit a revision ahead of the server that is actually running.
+HERDR = next((p for p in (os.environ.get("MOSHI_HERDR_PATH", ""),
+                          os.path.expanduser("~/.local/bin/herdr"),
+                          "/usr/local/bin/herdr", "/usr/bin/herdr")
+              if p and os.path.exists(p)), "herdr")
 TMUX_FIELDS = ("tmuxSession", "tmuxWindow", "tmuxPane", "tmuxSocket", "terminalKind")
+HERDR_FIELDS = ("herdrPane", "herdrWorkspaceId", "herdrTabId", "terminalKind")
 # Claude Code draws the job name in a horizontal rule: ─── name ──
 DIVIDER = re.compile(r"─+\s(.+?)\s─+\s*$")
+# herdr reports the pane title with Claude Code's status glyph still on it: "◑ my job"
+GLYPH = re.compile(r"^[^\w(\[]+")
 
 args = argparse.ArgumentParser()
 args.add_argument("--dry-run", action="store_true")
@@ -90,6 +99,19 @@ def panes():
                     break
             out.append((sock, pane, session, window, title))
     return out
+
+
+def herdr_panes():
+    """[(pane_id, workspace_id, tab_id, title)]"""
+    try:
+        listed = subprocess.run([HERDR, "pane", "list"],
+                                capture_output=True, text=True, timeout=10)
+        rows = json.loads(listed.stdout)["result"]["panes"]
+    except Exception:
+        return []
+    return [(row.get("pane_id"), row.get("workspace_id"), row.get("tab_id"),
+             (row.get("terminal_title_stripped") or "").strip())
+            for row in rows if row.get("pane_id")]
 
 
 def jobs_by_name():
@@ -144,18 +166,16 @@ if not os.path.isdir(RECORDS):
 by_name = jobs_by_name()
 bound = {}
 
-for sock, pane, session, window, title in panes():
-    job = by_name.get(title) if title else None
+def bind(pane, title, desired, fields):
+    job = by_name.get(title) or by_name.get(GLYPH.sub("", title).strip()) if title else None
     if not job:
-        continue
+        return
     sid = job["sessionId"]
     path, record = load(sid)
     if record is None:
-        continue
+        return
     transcript = job.get("linkScanPath") or record.get("transcriptPath")
-    desired = dict(terminalKind="tmux", tmuxSession=session, tmuxWindow=window,
-                   tmuxPane=pane, tmuxSocket=sock)
-    current = {k: record.get(k) for k in TMUX_FIELDS}
+    current = {k: record.get(k) for k in fields}
     if current != desired or (transcript and record.get("transcriptPath") != transcript
                               and os.path.exists(transcript)):
         record.update(desired)
@@ -164,6 +184,15 @@ for sock, pane, session, window, title in panes():
         save(path, record)
         changes.append(f"bound {pane} -> {sid[:8]} ({title})")
     bound[pane] = sid
+
+
+for sock, pane, session, window, title in panes():
+    bind(pane, title, dict(terminalKind="tmux", tmuxSession=session, tmuxWindow=window,
+                           tmuxPane=pane, tmuxSocket=sock), TMUX_FIELDS)
+
+for pane, workspace, tab, title in herdr_panes():
+    bind(pane, title, dict(terminalKind="herdr", herdrPane=pane,
+                           herdrWorkspaceId=workspace, herdrTabId=tab), HERDR_FIELDS)
 
 for path in glob.glob(os.path.join(RECORDS, "*.json")):
     try:
@@ -189,35 +218,36 @@ for path in glob.glob(os.path.join(RECORDS, "*.json")):
 # Never strip the sole claimant of an unmatched pane just because it has no transcript —
 # that is what a foreground Claude looks like before its first prompt, and moshi-hook only
 # sets the pane at SessionStart, so clearing it would never be undone.
-claimants = {}
-for path in glob.glob(os.path.join(RECORDS, "*.json")):
-    try:
-        with open(path) as fh:
-            record = json.load(fh)
-    except Exception:
-        continue
-    pane = record.get("tmuxPane")
-    if pane:
-        claimants.setdefault(pane, []).append((path, record))
-
-for pane, holders in claimants.items():
-    if pane in bound:
-        keeper = bound[pane]
-    elif len(holders) == 1:
-        continue
-    else:
-        ranked = sorted(holders,
-                        key=lambda h: (has_transcript(h[1]), os.path.getmtime(h[0])),
-                        reverse=True)
-        keeper = os.path.basename(ranked[0][0])[:-5]
-    for path, record in holders:
-        sid = os.path.basename(path)[:-5]
-        if sid == keeper:
+for pane_key, fields in (("tmuxPane", TMUX_FIELDS), ("herdrPane", HERDR_FIELDS)):
+    claimants = {}
+    for path in glob.glob(os.path.join(RECORDS, "*.json")):
+        try:
+            with open(path) as fh:
+                record = json.load(fh)
+        except Exception:
             continue
-        for key in TMUX_FIELDS:
-            record.pop(key, None)
-        save(path, record)
-        changes.append(f"cleared competing claim on {pane} by {sid[:8]}")
+        pane = record.get(pane_key)
+        if pane:
+            claimants.setdefault(pane, []).append((path, record))
+
+    for pane, holders in claimants.items():
+        if pane in bound:
+            keeper = bound[pane]
+        elif len(holders) == 1:
+            continue
+        else:
+            ranked = sorted(holders,
+                            key=lambda h: (has_transcript(h[1]), os.path.getmtime(h[0])),
+                            reverse=True)
+            keeper = os.path.basename(ranked[0][0])[:-5]
+        for path, record in holders:
+            sid = os.path.basename(path)[:-5]
+            if sid == keeper:
+                continue
+            for key in fields:
+                record.pop(key, None)
+            save(path, record)
+            changes.append(f"cleared competing claim on {pane} by {sid[:8]}")
 
 for line in changes:
     log(line)
