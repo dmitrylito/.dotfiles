@@ -37,6 +37,15 @@ HOME = "{{ .chezmoi.homeDir }}"
 MOSHI_COMMAND = "'" + HOME + "/.local/bin/moshi-hook-claude-guard' claude-hook"
 MOSHI_BINARIES = ("moshi-hook", "moshi-hook-claude-guard", "moshi")
 
+STYLE_GUARD = "python3 '" + HOME + "/.claude/hooks/style-guard.py' "
+# event -> (mode, timeout). Stop runs the Haiku judge, so it needs room; SubagentStop uses
+# the pattern-only mode because judging every subagent report is not worth the tokens.
+STYLE_HOOKS = {
+    "UserPromptSubmit": ("inject", 15),
+    "Stop": ("check", 90),
+    "SubagentStop": ("check-fast", 20),
+}
+
 BASELINE = {
     "agentPushNotifEnabled": True,
     "autoCompactEnabled": False,
@@ -194,6 +203,37 @@ def enforce_moshi_hooks(live, baseline):
     return hooks
 
 
+def is_style_group(group):
+    entries = group.get("hooks") if isinstance(group, dict) else None
+    return isinstance(entries, list) and any(
+        isinstance(e, dict) and "style-guard.py" in str(e.get("command", ""))
+        for e in entries
+    )
+
+
+def enforce_style_hooks(hooks):
+    """The style guard is not opt-in: any drifted or deleted copy is replaced by the
+    canonical group, so editing settings.json cannot switch enforcement off. Disable it
+    for one session with STYLE_GUARD=0 in the environment instead."""
+    for event, (mode, timeout) in STYLE_HOOKS.items():
+        groups = hooks.get(event)
+        if not isinstance(groups, list):
+            groups = hooks[event] = []
+        groups[:] = [g for g in groups if not is_style_group(g)]
+        groups.append(
+            {
+                "hooks": [
+                    {
+                        "command": STYLE_GUARD + mode,
+                        "timeout": timeout,
+                        "type": "command",
+                    }
+                ]
+            }
+        )
+    return hooks
+
+
 def enforce_allow(live, baseline):
     permissions = live.setdefault("permissions", {})
     allow = permissions.get("allow")
@@ -215,6 +255,7 @@ if not isinstance(current, dict):
 
 fill_defaults(current, {k: v for k, v in BASELINE.items() if k != "hooks"})
 current["hooks"] = enforce_moshi_hooks(current.get("hooks"), BASELINE["hooks"])
+enforce_style_hooks(current["hooks"])
 enforce_allow(current, BASELINE["permissions"])
 
 print(json.dumps(current, indent=2, sort_keys=True))
