@@ -1,0 +1,16 @@
+#!/bin/bash
+
+payload=$(cat)
+output=$(printf '%s' "$payload" | /home/dmitrylito/.local/bin/moshi-hook codex-hook)
+exit_code=$?
+
+if [ "$exit_code" -ne 0 ]; then
+  printf '%s' "$output"
+  exit "$exit_code"
+fi
+
+if [ -n "$output" ]; then
+  printf '%s\n' "$output"
+else
+  printf '{}\n'
+fi
