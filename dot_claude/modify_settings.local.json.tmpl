@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+# modify_settings.local.json — keeps ~/.claude/settings.local.json from shadowing the
+# settings this repo enforces.
+#
+# Usage: not run by hand. chezmoi executes this on every `apply` with the CURRENT target
+#        on stdin; stdout becomes the new file.
+#
+# Why: Claude Code's /config writes some keys (outputStyle) to settings.local.json, and the
+# Local tier outranks User. Enforcing a key in modify_settings.json alone is therefore
+# defeated the moment /config touches it here. This strips exactly the enforced keys and
+# leaves every other local, machine-specific setting untouched.
+#
+# Keep SHADOWED in sync with ENFORCED_SCALARS in modify_settings.json.tmpl.
+
+import json
+import sys
+
+SHADOWED = ("outputStyle", "terminalProgressBarEnabled")
+
+raw = sys.stdin.read()
+try:
+    current = json.loads(raw) if raw.strip() else {}
+except ValueError:
+    current = {}
+if not isinstance(current, dict):
+    current = {}
+
+for key in SHADOWED:
+    current.pop(key, None)
+
+print(json.dumps(current, indent=2, sort_keys=True, ensure_ascii=False))
