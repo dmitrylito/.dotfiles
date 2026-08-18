@@ -19,7 +19,6 @@ alias cdpc="cd ~/Projects/cer-backend/"
 alias cdpfb="cd ~/Projects/backend/"
 alias cs="claude --model sonnet"
 alias co="claude --model opus"
-alias cw="claude --worktree"
 alias dvsc="docker-volume-snapshot create fleetchaser_db_volume $HOME/Projects/tmp/docker/fleetchaser_db_volume"
 alias dvsr="docker-volume-snapshot restore $HOME/Projects/tmp/docker/fleetchaser_db_volume fleetchaser_db_volume"
 
