@@ -1,0 +1,16 @@
+# moshi-reguard.service — re-apply the two agent hook configs from their chezmoi modify_
+# sources, which is what forces every Moshi hook command back to its guard wrapper.
+#
+# Usage: not run by hand; triggered by moshi-reguard.path. Safe to run any time — a
+#        targeted apply of these paths writes nothing when they already match, so it does
+#        not retrigger the path unit, and it never touches the chezmoi source or git.
+#
+# --exclude=scripts because no run_onchange script should fire from this trigger.
+
+[Unit]
+Description=Re-guard Moshi agent hook wiring
+Documentation=https://github.com/dmitrylito/dotfiles/pull/4
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/chezmoi apply --exclude=scripts {{ .chezmoi.homeDir }}/.claude/settings.json {{ .chezmoi.homeDir }}/.codex/hooks.json

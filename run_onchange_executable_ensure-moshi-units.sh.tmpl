@@ -27,6 +27,8 @@
 {{- end }}
 #   {{ include "dot_config/systemd/user/moshi-pane-rebind.service.tmpl" | sha256sum }}
 #   {{ include "dot_config/systemd/user/moshi-pane-rebind.timer" | sha256sum }}
+#   {{ include "dot_config/systemd/user/moshi-reguard.path.tmpl" | sha256sum }}
+#   {{ include "dot_config/systemd/user/moshi-reguard.service.tmpl" | sha256sum }}
 #   {{ include "dot_codex/modify_hooks.json.tmpl" | sha256sum }}
 set -eu
 
@@ -60,6 +62,7 @@ fi
 
 systemctl --user daemon-reload
 systemctl --user enable --now moshi-pane-rebind.timer
+systemctl --user enable --now moshi-reguard.path
 
 # A drop-in only reaches the daemon on restart, and the base unit exists only
 # once `moshi-hook service install` has succeeded.
