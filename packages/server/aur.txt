@@ -2,7 +2,8 @@
 # Regenerate with: scripts/update_server_package_lists.sh
 claude-code
 cockpit-sensors
-gogcli
+gogcli-bin
 llama.cpp-cuda
 sesh-bin
 yay-bin
+yay-bin-debug
