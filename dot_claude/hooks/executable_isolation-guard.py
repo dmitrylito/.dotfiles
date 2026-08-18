@@ -11,6 +11,10 @@ this session's git repo, and if any do: `notify` injects a note advising EnterWo
 
 Fails open on every error — a broken guard must never block editing.
 
+A repo containing .claude/no-isolation-guard is exempt, for repos that genuinely cannot work
+from a worktree copy — the chezmoi source is one, since `chezmoi apply` only reads the real
+source directory. Do not add it merely to silence the guard.
+
 Preconditions: `claude` on PATH; git repo (no repo, no guard). Set ISOLATION_GUARD=0 to
 turn it off for a session.
 """
@@ -55,6 +59,10 @@ def in_linked_worktree(cwd):
         return False
     resolve = lambda p: os.path.realpath(p if os.path.isabs(p) else os.path.join(cwd, p))
     return resolve(own) != resolve(shared)
+
+
+def repo_opts_out(repo):
+    return os.path.exists(os.path.join(repo, ".claude", "no-isolation-guard"))
 
 
 def peers(repo, my_session_id):
@@ -103,7 +111,7 @@ def main():
     if in_linked_worktree(cwd) or in_linked_worktree(os.getcwd()):
         allow()
     repo = toplevel(cwd)
-    if not repo:
+    if not repo or repo_opts_out(repo):
         allow()
     names = peers(repo, payload.get("session_id"))
     if not names:
