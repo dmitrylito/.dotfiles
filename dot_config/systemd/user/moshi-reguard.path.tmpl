@@ -1,0 +1,16 @@
+# moshi-reguard.path — fire moshi-reguard.service whenever something rewrites an agent
+# hook config. The `moshi-hook` self-update re-runs its installer a minute or so after the
+# daemon restarts, which repoints Claude's and Codex's hooks at the raw binary and drops
+# the guard wrappers; until this unit existed the wiring stayed broken until the next
+# unrelated `chezmoi apply`.
+
+[Unit]
+Description=Watch the agent hook configs that Moshi's installer rewrites
+Documentation=https://github.com/dmitrylito/dotfiles/pull/4
+
+[Path]
+PathChanged={{ .chezmoi.homeDir }}/.claude/settings.json
+PathChanged={{ .chezmoi.homeDir }}/.codex/hooks.json
+
+[Install]
+WantedBy=paths.target
