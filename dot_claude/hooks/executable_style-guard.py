@@ -2,44 +2,48 @@
 """style-guard.py — enforces the output contract in style-rules.md on every response.
 
 Wired from ~/.claude/settings.json (hook JSON arrives on stdin):
-    style-guard.py inject      UserPromptSubmit -> re-injects style-rules.md every turn
-    style-guard.py check       Stop             -> pattern checks + judge, blocks on failure
-    style-guard.py check-fast  SubagentStop     -> pattern checks only, no judge call
+    style-guard.py inject      UserPromptSubmit -> short reminder of the contract
+    style-guard.py check       Stop             -> all checks, blocks on failure
+    style-guard.py check-fast  SubagentStop     -> word/preamble patterns only
 
 A blocked Stop is fed back to Claude as an instruction, so it must rewrite before it can
 finish. Both the discarded response and the rewrite stay on screen — the terminal cannot
-retract streamed text — so blocking is kept rare: deterministic pattern checks (free), then
-an optional Haiku judge for padding and invented jargon, which regex cannot see. The judge
-only warns (JUDGE_ENFORCES): it cannot see enough context to rule on fabrication, and the
-contract now also sits in the system prompt via the Terse output style, so prevention there
-is worth more than a rewrite here.
+retract streamed text — so blocking is kept rare, and every check here is deterministic.
+
+There used to be a Haiku judge on this path. It cost ~10s on EVERY response and could only
+warn, and its whole recorded catch was two things now checked directly and more accurately:
+closing_recap() measures the padding it flagged, and ungrounded_paths() resolves asserted
+paths against the filesystem and the transcript rather than guessing from a truncated
+excerpt. Do not reintroduce an LLM here — a Stop hook is on the critical path of every turn.
 
 Env:
     STYLE_GUARD=0        disable everything
-    STYLE_GUARD_JUDGE=0  keep the pattern checks, skip the ~5s judge call
-    STYLE_GUARD_CHILD=1  set on the judge subprocess; makes this hook a no-op so the
-                         nested `claude -p` cannot recurse into itself
+    STYLE_GUARD_GROUNDING=0  keep the word checks, skip path verification
 
-Requires python3 and the `claude` CLI on PATH. No third-party deps.
+`inject` deliberately does NOT re-send style-rules.md: the Terse output style already
+includes that same file, so the full text is in the system prompt and sending it again each
+turn paid for the same tokens twice. What ships per turn is REMINDER — the failure modes the
+verdict log actually shows — while `check` still judges against the full file.
+
+Every checked response appends one line to $XDG_STATE_HOME/claude-style-guard/verdicts.jsonl
+(outcome: clean / blocked / over-cap / ungrounded). The style-tuner skill mines that log to
+propose contract edits; without it the only record is whatever leaked into a transcript.
+
+Pure stdlib, no subprocesses, no network. Runs in ~20ms.
 """
 
 import json
 import os
 import re
-import subprocess
 import sys
 import time
 from pathlib import Path
 
 RULES_FILE = Path(__file__).resolve().with_name("style-rules.md")
-JUDGE_MODEL = "claude-haiku-4-5-20251001"
-JUDGE_MIN_CHARS = 400
-JUDGE_TIMEOUT = 60
 MAX_BLOCKS_PER_TURN = 1
-# The contract also lives in the Terse output style, i.e. in the system prompt, so the judge
-# is an observer here rather than a gate: its verdicts warn. Only the deterministic pattern
-# checks block, because those name one wrong word and the rewrite is cheap and obvious.
-JUDGE_ENFORCES = False
+VERDICT_LOG = Path(
+    os.environ.get("XDG_STATE_HOME") or Path.home() / ".local" / "state"
+) / "claude-style-guard" / "verdicts.jsonl"
 
 BANNED = [
     (r"\bleverag(e|es|ed|ing)\b", "leverage -> use"),
@@ -55,7 +59,8 @@ BANNED = [
     (r"\b(robust|seamless|seamlessly|streamlin(e|es|ed|ing))\b", "marketing adjective"),
     (r"\b(comprehensive|myriad|plethora|vast array)\b", "inflated quantifier"),
     (r"\b(key )?(takeaway|insight)s?\b", "takeaway / insight section"),
-    (r"\b(in summary|to summarize|in conclusion|overall,)\b", "closing summary"),
+    (r"\b(in summary|to summarize|in conclusion|overall,|in short|to sum up|"
+     r"all in all|the upshot|net.net|bottom line)\b", "closing summary"),
     (r"\b(moreover|furthermore)\b", "moreover / furthermore"),
     (r"\ba testament to\b", "a testament to"),
     (r"\b(game.?chang\w+|cutting.?edge|state.of.the.art)\b", "hype phrase"),
@@ -81,48 +86,15 @@ PREAMBLE = re.compile(
     re.I,
 )
 
-EMOJI = re.compile(
-    "[\U0001f300-\U0001faff\U00002700-\U000027bf\U0001f1e6-\U0001f1ff☀-⛿]"
-)
 
-JUDGE_PROMPT = """You are a strict style auditor. You are NOT a helper and you do not answer \
-the content of the response. Judge one assistant response against the contract below.
-
-Fail it ONLY for a clear, specific violation of one of these three:
-B. INVENTED TERMINOLOGY - it coins a name, Capitalizes a Concept, or brands an idea with a \
-label ("the X pattern", "the Y layer") that does not already exist in the context or the \
-user's own words.
-C. INFLATED LANGUAGE - pompous or vague wording where a plain word exists, or teaching and \
-explaining that was not asked for.
-D. PADDING - preamble, restating the question, or a closing summary repeating the opening.
-
-A. FABRICATION is a WARNING, never a failure. The grounding context below is truncated, so \
-you cannot tell a path the assistant read from one it invented - judging it costs a rewrite \
-of a response that was probably correct. If a path, flag, version, or line number looks \
-specific and unsupported, report it as WARN.
-
-Be conservative. Code, quoted output, and text in backticks are exempt from C.
-
-Reply with exactly one line:
-PASS
-or
-FAIL: <one short sentence naming the rule letter and the exact offending words>
-or
-WARN: <one short sentence naming the claim that looks unverified>
-
-=== CONTRACT ===
-{rules}
-
-=== GROUNDING CONTEXT (tool output and prior turn, truncated) ===
-{context}
-
-=== RESPONSE UNDER AUDIT ===
-{response}
-"""
+REMINDER = """Output contract (full text is in your system prompt; these are the parts that
+actually get missed): answer first and only once — no preamble, no closing recap; prefer
+short bullets over paragraphs; state only what you ran or read, and say "unverified" when you
+did not; plain words, no banned filler; report changes as `file:line`; keep every caveat."""
 
 
 def disabled():
-    return os.environ.get("STYLE_GUARD") == "0" or os.environ.get("STYLE_GUARD_CHILD") == "1"
+    return os.environ.get("STYLE_GUARD") == "0"
 
 
 def read_payload():
@@ -146,6 +118,7 @@ def prose_only(text):
     text = re.sub(r"```.*?```", " ", text, flags=re.S)
     text = re.sub(r"~~~.*?~~~", " ", text, flags=re.S)
     text = re.sub(r"`[^`\n]*`", " ", text)
+    text = re.sub(r"^(?: {4}|\t)\S.*$", " ", text, flags=re.M)
     text = re.sub(r"https?://\S+", " ", text)
     return text
 
@@ -160,22 +133,117 @@ def pattern_violations(message):
     first_line = next((ln for ln in prose.splitlines() if ln.strip()), "")
     if PREAMBLE.match(first_line):
         found.append('preamble: response opens with "{}"'.format(first_line[:60].strip()))
-    hit = EMOJI.search(prose)
-    if hit:
-        found.append("emoji: {}".format(hit.group(0)))
     if len(prose.strip()) < 1200 and re.search(r"^#{1,6} ", prose, re.M):
         found.append("markdown heading in a short answer")
     return found
 
 
-def turn_context(payload, limit=6000):
+STOPWORDS = frozenset("""
+that this with from have here there they them then than what when which will your yours
+into over under about after before been being does done else more most much some such
+only also just like need needs same both each other others where while would could should
+""".split())
+
+# A path with a real extension, or a file:line reference. Anchored loosely on purpose: a
+# false positive costs one warning line, a miss costs an unverified claim to the user.
+PATH_RE = re.compile(r"(?:[~.]{0,2}/)?[\w.-]+(?:/[\w.-]+)+\.\w{1,6}(?::\d+)?|/[\w.-]+(?:/[\w.-]+)+")
+HEDGED = re.compile(
+    r"\b(creat\w+|add\w*|new|writ\w+|would|should|could|will|propos\w+|suggest\w+|"
+    r"if you|e\.g\.|for example|placeholder|rename|move|delete)\b", re.I
+)
+
+
+def narrative(text):
+    """Prose with fenced code removed but backticks kept — recap and grounding checks both
+    need the cited paths that prose_only() throws away."""
+    text = re.sub(r"```.*?```", " ", text, flags=re.S)
+    return re.sub(r"~~~.*?~~~", " ", text, flags=re.S)
+
+
+def content_words(text):
+    return {
+        w for w in re.findall(r"[a-z][a-z-]{3,}", text.lower()) if w not in STOPWORDS
+    }
+
+
+def closing_recap(text):
+    """Every judge FAIL on record was a closing paragraph restating the opening. That is a
+    measurable property: high word overlap with the first paragraph and no new specifics."""
+    paras = [p.strip() for p in re.split(r"\n\s*\n", narrative(text)) if p.strip()]
+    if len(paras) < 3:
+        return None
+    last = paras[-1]
+    # The background-job protocol requires these closing lines; they are not padding.
+    if re.match(r"^(result|needs input|failed)\s*:", last, re.I):
+        return None
+    if re.match(r"^\s*(?:[-*+>|]|\d+[.)])\s", last) or "\n" in last.strip() and last.lstrip().startswith("-"):
+        return None
+    if re.search(r"`|\d", last):
+        return None
+    first, tail = content_words(paras[0]), content_words(last)
+    if not 5 <= len(tail) <= 60:
+        return None
+    overlap = len(first & tail) / len(tail)
+    if overlap >= 0.55:
+        return "closing paragraph restates the opening ({}% word overlap, no new specifics)".format(
+            int(overlap * 100)
+        )
+    return None
+
+
+def ungrounded_paths(text, payload):
+    """Verify asserted paths instead of guessing at them: a path is grounded if it exists on
+    disk or appears in this session's transcript. Warn only — a path can legitimately name a
+    file the response is proposing to create."""
+    if os.environ.get("STYLE_GUARD_GROUNDING") == "0":
+        return []
+    body = narrative(text)
+    transcript = raw_transcript(payload)
+    suspect = []
+    for line in body.splitlines():
+        if HEDGED.search(line):
+            continue
+        for hit in PATH_RE.findall(line):
+            token = hit.strip(".,;:)]}'\"")
+            if len(token) < 6 or token in transcript:
+                continue
+            path, _, lineno = token.partition(":")
+            real = os.path.expanduser(path)
+            if not os.path.isabs(real):
+                real = os.path.join(payload.get("cwd") or os.getcwd(), real)
+            if not os.path.exists(real):
+                suspect.append(token + " (no such path, not in transcript)")
+            elif lineno.isdigit():
+                try:
+                    with open(real, encoding="utf-8", errors="replace") as fh:
+                        count = sum(1 for _ in fh)
+                except OSError:
+                    continue
+                if int(lineno) > count:
+                    suspect.append("{} (file has {} lines)".format(token, count))
+            if len(suspect) >= 3:
+                return suspect
+    return suspect
+
+
+def raw_transcript(payload, limit=400000):
+    path = payload.get("transcript_path")
+    if not path:
+        return ""
+    try:
+        return Path(path).read_text(encoding="utf-8", errors="replace")[-limit:]
+    except OSError:
+        return ""
+
+
+def turn_context(payload, limit=16000):
     """Best-effort grounding text from the transcript tail. Format is not guaranteed, so
     every failure here degrades to an empty context rather than blocking the turn."""
     path = payload.get("transcript_path")
     if not path:
         return ""
     try:
-        lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()[-200:]
+        lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()[-400:]
     except OSError:
         return ""
     chunks = []
@@ -211,47 +279,13 @@ def harvest_strings(node, depth=0):
     return []
 
 
-def judge(message, payload, rules):
-    if os.environ.get("STYLE_GUARD_JUDGE") == "0":
-        return None
-    if len(prose_only(message).strip()) < JUDGE_MIN_CHARS:
-        return None
-    prompt = JUDGE_PROMPT.format(
-        rules=rules, context=turn_context(payload) or "(none available)", response=message
-    )
-    env = dict(os.environ, STYLE_GUARD_CHILD="1")
-    try:
-        result = subprocess.run(
-            [
-                "claude", "-p",
-                "--model", JUDGE_MODEL,
-                "--no-session-persistence",
-                "--disallowed-tools", "*",
-            ],
-            input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=JUDGE_TIMEOUT,
-            env=env,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    if result.returncode != 0:
-        return None
-    verdict = result.stdout.strip().splitlines()
-    verdict = verdict[-1].strip() if verdict else ""
-    if verdict.upper().startswith(("FAIL", "WARN")):
-        return verdict
-    return None
-
-
 def turn_key(payload):
     ident = payload.get("prompt_id") or payload.get("session_id") or "unknown"
     return re.sub(r"[^A-Za-z0-9_.-]", "_", str(ident))[:120]
 
 
 def block_count(payload):
-    """Cap rewrites per turn so a judge that keeps disagreeing cannot trap the session."""
+    """Cap rewrites per turn so a check that keeps firing cannot trap the session."""
     base = Path(os.environ.get("XDG_RUNTIME_DIR") or "/tmp") / "claude-style-guard"
     try:
         base.mkdir(parents=True, exist_ok=True)
@@ -262,6 +296,24 @@ def block_count(payload):
         return seen
     except (OSError, ValueError):
         return 0
+
+
+def log_verdict(payload, outcome, detail=""):
+    """Append one line per checked response. This file is the only durable record of what
+    the contract actually catches — the style-tuner skill mines it. Never fatal."""
+    try:
+        VERDICT_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with VERDICT_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({
+                "at": int(time.time()),
+                "session": payload.get("session_id"),
+                "cwd": payload.get("cwd"),
+                "event": payload.get("hook_event_name"),
+                "outcome": outcome,
+                "detail": detail[:400],
+            }) + "\n")
+    except (OSError, ValueError, TypeError):
+        pass
 
 
 def warn(message):
@@ -287,22 +339,20 @@ def block(reason, event):
 
 
 def do_inject():
-    rules = read_rules()
-    if rules:
-        print(
-            json.dumps(
-                {
-                    "hookSpecificOutput": {
-                        "hookEventName": "UserPromptSubmit",
-                        "additionalContext": rules,
-                    }
+    print(
+        json.dumps(
+            {
+                "hookSpecificOutput": {
+                    "hookEventName": "UserPromptSubmit",
+                    "additionalContext": REMINDER,
                 }
-            )
+            }
         )
+    )
     sys.exit(0)
 
 
-def do_check(use_judge):
+def do_check(deep):
     payload = read_payload()
     if payload.get("stop_hook_active"):
         sys.exit(0)
@@ -314,16 +364,22 @@ def do_check(use_judge):
         sys.exit(0)
 
     problems = pattern_violations(message)
-    if not problems and use_judge:
-        verdict = judge(message, payload, rules)
-        if verdict and (not JUDGE_ENFORCES or verdict.upper().startswith("WARN")):
-            warn(verdict)
-        if verdict:
-            problems = [verdict]
+    if deep:
+        recap = closing_recap(message)
+        if recap:
+            problems.append("padding: " + recap)
+        if not problems:
+            loose = ungrounded_paths(message, payload)
+            if loose:
+                log_verdict(payload, "ungrounded", "; ".join(loose))
+                warn("unverified path(s): " + "; ".join(loose))
     if not problems:
+        log_verdict(payload, "clean")
         sys.exit(0)
     if block_count(payload) >= MAX_BLOCKS_PER_TURN:
+        log_verdict(payload, "over-cap", "; ".join(problems))
         sys.exit(0)
+    log_verdict(payload, "blocked", "; ".join(problems))
 
     event = payload.get("hook_event_name") or "Stop"
     block(
@@ -346,7 +402,7 @@ def main():
     if mode == "inject":
         do_inject()
     elif mode in ("check", "check-fast"):
-        do_check(use_judge=mode == "check")
+        do_check(deep=mode == "check")
     sys.exit(0)
 
 
