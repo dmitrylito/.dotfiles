@@ -44,12 +44,13 @@ MOSHI_COMMAND = "'" + HOME + "/.local/bin/moshi-hook-claude-guard' claude-hook"
 MOSHI_BINARIES = ("moshi-hook", "moshi-hook-claude-guard", "moshi")
 
 STYLE_GUARD = "python3 '" + HOME + "/.claude/hooks/style-guard.py' "
-# event -> (mode, timeout). Stop runs the Haiku judge, so it needs room; SubagentStop uses
-# the pattern-only mode because judging every subagent report is not worth the tokens.
+# event -> (mode, timeout). NOTHING here may block: a Stop rewrite left the discarded
+# response, the instruction and the rewrite all in the transcript, re-sent every later turn.
+# Stop is `observe`, which records to the verdict log and writes no output. SubagentStop is
+# gone. The contract is enforced preventatively by the Terse output style instead.
 STYLE_HOOKS = {
     "UserPromptSubmit": ("inject", 15),
-    "Stop": ("check", 90),
-    "SubagentStop": ("check-fast", 20),
+    "Stop": ("observe", 15),
 }
 
 ISOLATION_GUARD = "python3 '" + HOME + "/.claude/hooks/isolation-guard.py' "
@@ -235,6 +236,9 @@ def enforce_style_hooks(hooks):
     """The style guard is not opt-in: any drifted or deleted copy is replaced by the
     canonical group, so editing settings.json cannot switch enforcement off. Disable it
     for one session with STYLE_GUARD=0 in the environment instead."""
+    for event, groups in list(hooks.items()):
+        if event not in STYLE_HOOKS and isinstance(groups, list):
+            groups[:] = [g for g in groups if not is_style_group(g)]
     for event, (mode, timeout) in STYLE_HOOKS.items():
         groups = hooks.get(event)
         if not isinstance(groups, list):

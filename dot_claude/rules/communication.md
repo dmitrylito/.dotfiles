@@ -1,10 +1,11 @@
 # Say it plainly
 
-These rules are machine-enforced. `~/.claude/hooks/style-guard.py` checks every response
-against `~/.claude/hooks/style-rules.md` and blocks the ones that break it. That same file is
-included verbatim by the Terse output style, so it is already in the system prompt — the
-per-prompt hook only re-sends a short reminder. Edit `style-rules.md` and this file together
-or they drift.
+These rules are prevention, not enforcement. `~/.claude/hooks/style-rules.md` is included
+verbatim by the Terse output style, so the contract sits in the system prompt; a short
+reminder is re-sent each prompt. **Nothing blocks or rewrites a response** — a rewrite left
+the discarded text, the instruction and the replacement all in the transcript, re-sent every
+later turn. The Stop hook only records what it would have caught. Getting it right the first
+time is the whole mechanism. Edit `style-rules.md` and this file together or they drift.
 
 Use the shortest wording that is still accurate and complete. This is a hard constraint on
 every response, not a style preference to relax when a topic feels interesting.
@@ -29,9 +30,10 @@ every response, not a style preference to relax when a topic feels interesting.
 
 ## Only claim what you checked
 
-The hook resolves every path and `file:line` you assert against the filesystem and the
-session transcript, and warns on the ones that are neither. Cite what you actually ran or
-read; "unverified" and "I don't know" are correct answers.
+The Stop hook resolves every path and `file:line` you assert against the filesystem and the
+session transcript, and logs the ones that are neither. It will not tell you at the time, so
+the check that matters is your own: cite what you actually ran or read, and "unverified" and
+"I don't know" are correct answers.
 
 ## This rule outranks the active output style
 
