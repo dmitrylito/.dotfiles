@@ -371,6 +371,7 @@ o.bind("SUPER + ALT + A", "Move window to AI", hl.dsp.window.move({ workspace = 
 local function spotify_toggle()
   if #hl.get_windows({ class = "spotify" }) == 0 then
     hl.exec_cmd(o.launch("spotify"))
+    return
   end
   hl.dispatch(hl.dsp.workspace.toggle_special("spotify"))
 end
