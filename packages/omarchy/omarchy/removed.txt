@@ -1,3 +1,4 @@
 dell-xps-touchpad-haptics
+egl-wayland
 lsp-plugins-lv2
 qmk-hid
