@@ -23,7 +23,9 @@ require("default.hypr.toggles")
 -- Float Chromium extension windows and keep PiP floating + pinned.
 o.window({ class = "^(chromium)$", title = "^(Picture-in-Picture)$" }, { float = true, pin = true })
 o.window({ class = "^(chromium)$", title = "^(Extension:.*)$" }, { float = true })
-o.window({ class = "^(spotify)$" }, { workspace = "special:spotify silent" })
+-- Not silent: a cold launch has to reveal the workspace itself, since the binding
+-- cannot toggle it before the window maps. Nothing autostarts spotify.
+o.window({ class = "^(spotify)$" }, { workspace = "special:spotify" })
 o.window({ class = "^(cs2)$" }, { fullscreen = true, immediate = true, workspace = "1 silent" })
 o.window({ class = "^(gamescope)$" }, { workspace = "1 silent" })
 
