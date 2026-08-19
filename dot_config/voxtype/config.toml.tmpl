@@ -158,22 +158,22 @@ model = "parakeet-unified-en-0.6b"
 on_demand_loading = false
 streaming = true
 # Encoder frame = 80 ms (subsampling_factor = 8) -> keep values as multiples of 0.08.
-# Floor latency ~= chunk + right + one forward pass = 0.16 + 1.04 = ~1.2 s.
+# Floor latency ~= chunk + right + one forward pass = 0.64 + 1.52 = ~2.2 s.
 # CHUNK is the latency-only knob: it's how much new audio is swallowed per inference
 # step, NOT the model's context. Every output frame still sees the full left+right
 # window regardless of chunk, so shrinking it lowers latency with ZERO accuracy or
 # punctuation cost -- it just runs more forward passes, each paid on CPU: MIGraphX offloads only decoder_joint, never the encoder.
 # RIGHT context is pure lookahead: raising it adds that much wait before a word can be
 # emitted, 1:1. It buys accuracy + punctuation and costs latency -- never both. 1.04 s =
-# 13 frames, called the practical ceiling for this model (unverified; audio_signal has
+# 19 frames, past the 13-frame figure previously called the practical ceiling for this model (unverified; audio_signal has
 # dynamic axes, so higher likely runs, just slower with diminishing accuracy return).
 # LEFT context costs compute per pass, NOT waiting: encoder.onnx takes only audio_signal +
 # length and exposes no cache tensors, so each pass re-encodes the whole left+chunk+right
-# window from scratch. Redundant work scales as window/chunk (~57x here) -- if the GPU ever
+# window from scratch. Redundant work scales as window/chunk (~16x here) -- if the GPU ever
 # falls behind, raise chunk first, since that divides the pass count.
-streaming_chunk_secs = 0.16
+streaming_chunk_secs = 0.64
 streaming_left_context_secs = 8.0
-streaming_right_context_secs = 1.04
+streaming_right_context_secs = 1.52
 
 [osd]
 # gtk4 frontend is Linux-only; macOS draws its overlay with AppKit instead.
