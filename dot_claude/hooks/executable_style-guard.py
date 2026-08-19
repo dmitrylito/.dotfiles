@@ -10,7 +10,9 @@ A blocked Stop is fed back to Claude as an instruction, so it must rewrite befor
 finish. Both the discarded response and the rewrite stay on screen — the terminal cannot
 retract streamed text — so blocking is kept rare: deterministic pattern checks (free), then
 an optional Haiku judge for padding and invented jargon, which regex cannot see. The judge
-cannot see enough context to rule on fabrication, so that verdict warns instead of blocking.
+only warns (JUDGE_ENFORCES): it cannot see enough context to rule on fabrication, and the
+contract now also sits in the system prompt via the Terse output style, so prevention there
+is worth more than a rewrite here.
 
 Env:
     STYLE_GUARD=0        disable everything
@@ -34,6 +36,10 @@ JUDGE_MODEL = "claude-haiku-4-5-20251001"
 JUDGE_MIN_CHARS = 400
 JUDGE_TIMEOUT = 60
 MAX_BLOCKS_PER_TURN = 1
+# The contract also lives in the Terse output style, i.e. in the system prompt, so the judge
+# is an observer here rather than a gate: its verdicts warn. Only the deterministic pattern
+# checks block, because those name one wrong word and the rewrite is cheap and obvious.
+JUDGE_ENFORCES = False
 
 BANNED = [
     (r"\bleverag(e|es|ed|ing)\b", "leverage -> use"),
@@ -310,7 +316,7 @@ def do_check(use_judge):
     problems = pattern_violations(message)
     if not problems and use_judge:
         verdict = judge(message, payload, rules)
-        if verdict and verdict.upper().startswith("WARN"):
+        if verdict and (not JUDGE_ENFORCES or verdict.upper().startswith("WARN")):
             warn(verdict)
         if verdict:
             problems = [verdict]
