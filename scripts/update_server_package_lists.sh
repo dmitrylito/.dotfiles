@@ -34,6 +34,11 @@ echo "Gathering current system state..."
 # packages, so they'd otherwise leak into the native list on regeneration.
 ZFS_EXCLUDE='^(zfs-linux(-lts)?|zfs-utils|zfs-dkms)$'
 
+# makepkg emits a companion -debug package for every AUR build; yay installs it
+# as an explicit foreign package, but it exists in no AUR repo, so listing it
+# makes the playbook's `yay -S` abort the whole run with "No AUR package found".
+DEBUG_EXCLUDE='\-debug$'
+
 {
     echo "# Explicitly installed native packages (auto-generated, do not edit by hand)"
     echo "# Regenerate with: scripts/update_server_package_lists.sh"
@@ -43,7 +48,7 @@ ZFS_EXCLUDE='^(zfs-linux(-lts)?|zfs-utils|zfs-dkms)$'
 {
     echo "# Explicitly installed AUR/foreign packages (auto-generated, do not edit by hand)"
     echo "# Regenerate with: scripts/update_server_package_lists.sh"
-    pacman -Qemq | grep -vE "$ZFS_EXCLUDE" | sort
+    pacman -Qemq | grep -vE "$ZFS_EXCLUDE" | grep -vE "$DEBUG_EXCLUDE" | sort
 } > "$AUR_LIST"
 
 echo "======================================"
