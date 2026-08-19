@@ -3,12 +3,20 @@
 
 Wired from ~/.claude/settings.json (hook JSON arrives on stdin):
     style-guard.py inject      UserPromptSubmit -> short reminder of the contract
-    style-guard.py check       Stop             -> all checks, blocks on failure
-    style-guard.py check-fast  SubagentStop     -> word/preamble patterns only
+    style-guard.py observe     Stop             -> records only, NEVER writes output
+    style-guard.py check       (unwired)        -> all checks, blocks on failure
+    style-guard.py check-fast  (unwired)        -> word/preamble patterns only
 
-A blocked Stop is fed back to Claude as an instruction, so it must rewrite before it can
-finish. Both the discarded response and the rewrite stay on screen — the terminal cannot
-retract streamed text — so blocking is kept rare, and every check here is deterministic.
+NOTHING ON THE STOP PATH BLOCKS ANY MORE, by Dmitry's decision on 2026-08-19. A block cost
+three transcript entries — the discarded response, the instruction, and the rewrite — all
+re-sent on every later turn, with autoCompact off, and no hook output field can delete a
+message once written. Warnings were no use to him either. So Stop runs `observe`: it records
+what the contract would have caught and writes nothing at all. Enforcement is now purely
+preventative, via the Terse output style, which carries style-rules.md in the system prompt.
+
+`check` and `check-fast` keep the blocking behaviour and are left unwired, for testing and in
+case he wants enforcement back. Re-enable by putting "Stop": ("check", 20) in STYLE_HOOKS in
+dot_claude/modify_settings.json.tmpl.
 
 There used to be a Haiku judge on this path. It cost ~10s on EVERY response and could only
 warn, and its whole recorded catch was two things now checked directly and more accurately:
@@ -41,6 +49,11 @@ from pathlib import Path
 
 RULES_FILE = Path(__file__).resolve().with_name("style-rules.md")
 MAX_BLOCKS_PER_TURN = 1
+# A block costs the discarded response, the instruction, and the rewrite — all three stay in
+# the transcript and are re-sent every later turn, and autoCompact is off. So only failures
+# that make the answer structurally worse are worth one; a single wrong word is a warning.
+STRUCTURAL = ("preamble:", "padding:", "markdown heading")
+WORDS_BEFORE_BLOCK = 3
 VERDICT_LOG = Path(
     os.environ.get("XDG_STATE_HOME") or Path.home() / ".local" / "state"
 ) / "claude-style-guard" / "verdicts.jsonl"
@@ -58,7 +71,9 @@ BANNED = [
     (r"\b(deep dive|dive into|diving into|let'?s dive)\b", "dive into"),
     (r"\b(robust|seamless|seamlessly|streamlin(e|es|ed|ing))\b", "marketing adjective"),
     (r"\b(comprehensive|myriad|plethora|vast array)\b", "inflated quantifier"),
-    (r"\b(key )?(takeaway|insight)s?\b", "takeaway / insight section"),
+    (r"(?m)^\s*(?:[#>*+\-]+\s*)?(?:\*\*)?(?:key )?(takeaway|insight)s?\b\s*[:—-]",
+     "takeaway / insight section"),
+    (r"\bkey takeaways?\b", "key takeaway"),
     (r"\b(in summary|to summarize|in conclusion|overall,|in short|to sum up|"
      r"all in all|the upshot|net.net|bottom line)\b", "closing summary"),
     (r"\b(moreover|furthermore)\b", "moreover / furthermore"),
@@ -352,7 +367,7 @@ def do_inject():
     sys.exit(0)
 
 
-def do_check(deep):
+def do_check(deep, enforce=True):
     payload = read_payload()
     if payload.get("stop_hook_active"):
         sys.exit(0)
@@ -372,10 +387,20 @@ def do_check(deep):
             loose = ungrounded_paths(message, payload)
             if loose:
                 log_verdict(payload, "ungrounded", "; ".join(loose))
-                warn("unverified path(s): " + "; ".join(loose))
+                if enforce:
+                    warn("unverified path(s): " + "; ".join(loose))
+                sys.exit(0)
     if not problems:
         log_verdict(payload, "clean")
         sys.exit(0)
+    if not enforce:
+        log_verdict(payload, "observed", "; ".join(problems))
+        sys.exit(0)
+
+    structural = [p for p in problems if p.startswith(STRUCTURAL)]
+    if not structural and len(problems) < WORDS_BEFORE_BLOCK:
+        log_verdict(payload, "warned", "; ".join(problems))
+        warn("contract slip, fix it in your next reply — " + "; ".join(problems))
     if block_count(payload) >= MAX_BLOCKS_PER_TURN:
         log_verdict(payload, "over-cap", "; ".join(problems))
         sys.exit(0)
@@ -401,6 +426,8 @@ def main():
         sys.exit(0)
     if mode == "inject":
         do_inject()
+    elif mode == "observe":
+        do_check(deep=True, enforce=False)
     elif mode in ("check", "check-fast"):
         do_check(deep=mode == "check")
     sys.exit(0)

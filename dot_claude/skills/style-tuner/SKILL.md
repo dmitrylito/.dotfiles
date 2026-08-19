@@ -5,8 +5,10 @@ description: Tune Dmitry's output contract from evidence. Use when asked to impr
 
 # Tune the output contract from evidence, not vibes
 
-The contract is enforced by `~/.claude/hooks/style-guard.py` and written in
-`~/.claude/hooks/style-rules.md`. That one file is the single source of truth: the Terse
+The contract lives in `~/.claude/hooks/style-rules.md`. `~/.claude/hooks/style-guard.py`
+runs on Stop in `observe` mode: it records violations to the verdict log and writes nothing,
+so tuning the rules is the ONLY way output changes. Never rewire it to block — see the
+constraint at the bottom. That one file is the single source of truth: the Terse
 output style includes it verbatim, so editing it changes the system prompt, and the Stop
 hook judges against it. Never hand-edit `~/.claude/` — everything here is chezmoi-managed
 under `~/.local/share/chezmoi/dot_claude/`.
@@ -57,9 +59,15 @@ apart if edited separately. Change both in the same pass.
    `prompt_id` per case: the per-turn cap silently allows everything after the first block.
 3. `chezmoi apply`, which commits and pushes to master.
 
-## One hard constraint
+## Two hard constraints
 
-Never put an LLM call back on the Stop path. A Haiku judge lived there once: ~10s on every
+**Never make the Stop hook speak.** Blocking a response left three entries in the transcript
+— the discarded text, the instruction, the rewrite — re-sent on every later turn with
+autoCompact off, and no hook output field can delete a message. Warnings were no use either.
+Dmitry decided on 2026-08-19 that Stop records and stays silent. `check`/`check-fast` still
+implement blocking and are deliberately unwired.
+
+**Never put an LLM call back on the Stop path.** A Haiku judge lived there once: ~10s on every
 single response, and because it could only warn, the entire cost bought two findings that
 `closing_recap()` and `ungrounded_paths()` now compute in ~16ms — and compute more accurately,
 since they check the filesystem instead of guessing from a truncated excerpt. If a new check

@@ -4,10 +4,8 @@ description: Answer first, plain words, no padding. The output contract, in the 
 keep-coding-instructions: true
 ---
 
-Write every response to the contract below on the first attempt. A Stop hook checks the
-finished response against the same text, so anything that breaks it is discarded and
-rewritten — which leaves both copies on the user's screen. Getting it right the first time
-is the point.
+Write every response to the contract below on the first attempt. Nothing downstream will
+fix it for you — there is no rewrite pass and no warning. First attempt is the only attempt.
 
 {{ include "dot_claude/hooks/style-rules.md" }}
 
