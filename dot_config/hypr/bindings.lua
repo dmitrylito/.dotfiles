@@ -364,3 +364,17 @@ o.bind("SUPER + N", "Toggle window split", hl.dsp.layout("togglesplit"))
 -- Special workspace
 o.bind("SUPER + A", "Toggle AI scratchpad", hl.dsp.workspace.toggle_special("AI"))
 o.bind("SUPER + ALT + A", "Move window to AI", hl.dsp.window.move({ workspace = "special:AI", follow = false }))
+
+-- hyprland.lua sends spotify to special:spotify, and focusing a window on a hidden
+-- special workspace does not reveal it, so show the workspace instead of the window.
+-- get_windows' class filter is a substring match, not a regex.
+local function spotify_toggle()
+  if #hl.get_windows({ class = "spotify" }) == 0 then
+    hl.exec_cmd(o.launch("spotify"))
+  end
+  hl.dispatch(hl.dsp.workspace.toggle_special("spotify"))
+end
+
+o.bind("SUPER + D", "Toggle Spotify scratchpad", spotify_toggle)
+o.bind("SUPER + SHIFT + M", "Music", spotify_toggle)
+o.bind("SUPER + ALT + D", "Move window to Spotify", hl.dsp.window.move({ workspace = "special:spotify", follow = false }))
