@@ -7,8 +7,10 @@ Wired from ~/.claude/settings.json (hook JSON arrives on stdin):
     style-guard.py check-fast  SubagentStop     -> pattern checks only, no judge call
 
 A blocked Stop is fed back to Claude as an instruction, so it must rewrite before it can
-finish. Two layers: deterministic pattern checks (free), then an optional Haiku judge for
-fabrication and invented jargon, which regex cannot see.
+finish. Both the discarded response and the rewrite stay on screen — the terminal cannot
+retract streamed text — so blocking is kept rare: deterministic pattern checks (free), then
+an optional Haiku judge for padding and invented jargon, which regex cannot see. The judge
+cannot see enough context to rule on fabrication, so that verdict warns instead of blocking.
 
 Env:
     STYLE_GUARD=0        disable everything
@@ -31,7 +33,7 @@ RULES_FILE = Path(__file__).resolve().with_name("style-rules.md")
 JUDGE_MODEL = "claude-haiku-4-5-20251001"
 JUDGE_MIN_CHARS = 400
 JUDGE_TIMEOUT = 60
-MAX_BLOCKS_PER_TURN = 2
+MAX_BLOCKS_PER_TURN = 1
 
 BANNED = [
     (r"\bleverag(e|es|ed|ing)\b", "leverage -> use"),
@@ -80,10 +82,7 @@ EMOJI = re.compile(
 JUDGE_PROMPT = """You are a strict style auditor. You are NOT a helper and you do not answer \
 the content of the response. Judge one assistant response against the contract below.
 
-Fail it ONLY for a clear, specific violation of one of these four:
-A. FABRICATION - it states a file path, flag, function, API, command, error string, version, \
-number, or behaviour as fact when nothing in the grounding context supports it, and it does \
-not mark the claim as unverified or a guess.
+Fail it ONLY for a clear, specific violation of one of these three:
 B. INVENTED TERMINOLOGY - it coins a name, Capitalizes a Concept, or brands an idea with a \
 label ("the X pattern", "the Y layer") that does not already exist in the context or the \
 user's own words.
@@ -91,14 +90,19 @@ C. INFLATED LANGUAGE - pompous or vague wording where a plain word exists, or te
 explaining that was not asked for.
 D. PADDING - preamble, restating the question, or a closing summary repeating the opening.
 
-Be conservative. Absence of evidence in the grounding context is NOT proof of fabrication \
-when the context is truncated - only fail A when the claim is both specific and clearly \
-unsupported. Code, quoted output, and text in backticks are exempt from C.
+A. FABRICATION is a WARNING, never a failure. The grounding context below is truncated, so \
+you cannot tell a path the assistant read from one it invented - judging it costs a rewrite \
+of a response that was probably correct. If a path, flag, version, or line number looks \
+specific and unsupported, report it as WARN.
+
+Be conservative. Code, quoted output, and text in backticks are exempt from C.
 
 Reply with exactly one line:
 PASS
 or
 FAIL: <one short sentence naming the rule letter and the exact offending words>
+or
+WARN: <one short sentence naming the claim that looks unverified>
 
 === CONTRACT ===
 {rules}
@@ -230,7 +234,7 @@ def judge(message, payload, rules):
         return None
     verdict = result.stdout.strip().splitlines()
     verdict = verdict[-1].strip() if verdict else ""
-    if verdict.upper().startswith("FAIL"):
+    if verdict.upper().startswith(("FAIL", "WARN")):
         return verdict
     return None
 
@@ -252,6 +256,13 @@ def block_count(payload):
         return seen
     except (OSError, ValueError):
         return 0
+
+
+def warn(message):
+    """Surface a suspected-fabrication note without forcing a rewrite: one visible line
+    beats a second full render of the same answer."""
+    print(json.dumps({"systemMessage": "style guard: " + message}))
+    sys.exit(0)
 
 
 def block(reason, event):
@@ -299,6 +310,8 @@ def do_check(use_judge):
     problems = pattern_violations(message)
     if not problems and use_judge:
         verdict = judge(message, payload, rules)
+        if verdict and verdict.upper().startswith("WARN"):
+            warn(verdict)
         if verdict:
             problems = [verdict]
     if not problems:
@@ -308,7 +321,8 @@ def do_check(use_judge):
 
     event = payload.get("hook_event_name") or "Stop"
     block(
-        "STYLE GUARD BLOCKED THIS RESPONSE. It violates the output contract:\n"
+        "\n──────── STYLE GUARD: DISCARD THE RESPONSE ABOVE ────────\n"
+        "It violates the output contract:\n"
         + "\n".join("  - " + p for p in problems)
         + "\n\nRewrite the response now, fixing exactly these violations. Do not apologise, "
         "do not argue, do not mention the style guard, do not explain the rewrite — just "
