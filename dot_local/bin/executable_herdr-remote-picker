@@ -1,31 +1,85 @@
 #!/usr/bin/env bash
+# Super+B SSH target picker for herdr.
+# Lists ~/.ssh/config aliases + known_hosts names, minus anything matched by
+# ~/.config/herdr/remote-picker-ignore (one glob pattern per line, # comments).
+# In the picker: ctrl-x hides the highlighted host, ctrl-e edits the hidden list.
+# Usage: herdr-remote-picker [--list | --hide HOST]
 
 set -u
 
 config_file="$HOME/.ssh/config"
 known_hosts_file="$HOME/.ssh/known_hosts"
+ignore_file="${XDG_CONFIG_HOME:-$HOME/.config}/herdr/remote-picker-ignore"
+self="$0"
+[ -f "$self" ] || self="$HOME/.local/bin/herdr-remote-picker"
+case $self in /*) ;; *) self="$(cd -- "${self%/*}" 2>/dev/null && pwd)/${self##*/}" ;; esac
 
-hosts=$({
-  # Keep the existing target available even before it has been added to SSH
-  # config, then discover aliases and previously contacted hostnames locally.
-  printf '%s\n' dlco
-  awk '$1 == "Host" { for (i = 2; i <= NF; i++) if ($i !~ /[*?!]/) print $i }' "$config_file" 2>/dev/null
-  cut -d ' ' -f 1 "$known_hosts_file" 2>/dev/null \
-    | tr ',' '\n' \
-    | sed -E 's/^\[[^]]+\]:[0-9]+$/ /; /^[|]/d; /^[[:space:]]*$/d'
-} | sort -u)
+filter_ignored() {
+  local -a patterns=()
+  local line
+  if [ -r "$ignore_file" ]; then
+    while IFS= read -r line; do
+      line="${line%%#*}"
+      line="${line//[[:space:]]/}"
+      [ -n "$line" ] && patterns+=("$line")
+    done <"$ignore_file"
+  fi
+
+  local host pattern
+  while IFS= read -r host; do
+    for pattern in ${patterns+"${patterns[@]}"}; do
+      # shellcheck disable=SC2053 # unquoted RHS is the glob match we want
+      [[ $host == $pattern ]] && continue 2
+    done
+    printf '%s\n' "$host"
+  done
+}
+
+list_hosts() {
+  {
+    # Keep the existing target available even before it has been added to SSH
+    # config, then discover aliases and previously contacted hostnames locally.
+    printf '%s\n' dlco
+    awk '$1 == "Host" { for (i = 2; i <= NF; i++) if ($i !~ /[*?!]/) print $i }' "$config_file" 2>/dev/null
+    cut -d ' ' -f 1 "$known_hosts_file" 2>/dev/null \
+      | tr ',' '\n' \
+      | sed -E 's/^\[[^]]+\]:[0-9]+$/ /; /^[|]/d; /^[[:space:]]*$/d'
+  } | sort -u | filter_ignored
+}
+
+hide_host() {
+  local host="${1-}"
+  [ -n "$host" ] || return 0
+  mkdir -p "${ignore_file%/*}"
+  grep -qxF -- "$host" "$ignore_file" 2>/dev/null || printf '%s\n' "$host" >>"$ignore_file"
+}
+
+case "${1-}" in
+  --list)
+    list_hosts
+    exit 0
+    ;;
+  --hide)
+    hide_host "${2-}"
+    exit 0
+    ;;
+esac
 
 if ! command -v fzf >/dev/null 2>&1; then
   printf 'fzf is required for the SSH picker\n' >&2
   exit 1
 fi
 
-selection=$(printf '%s\n' "$hosts" | fzf \
+mkdir -p "${ignore_file%/*}"
+
+selection=$(list_hosts | fzf \
   --height=40% \
   --layout=reverse \
   --border \
   --prompt='SSH target > ' \
-  --header='Choose a machine, or type any SSH target' \
+  --header='enter connect · ctrl-x hide host · ctrl-e edit hidden list · or type any SSH target' \
+  --bind "ctrl-x:execute-silent('$self' --hide {})+reload('$self' --list)" \
+  --bind "ctrl-e:execute(\${EDITOR:-nvim} '$ignore_file')+reload('$self' --list)" \
   --print-query \
   --exit-0)
 
