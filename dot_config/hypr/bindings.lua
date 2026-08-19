@@ -44,7 +44,6 @@ o.bind("SUPER + SHIFT + F", "File manager", { launch = "nautilus --new-window" }
 o.bind("SUPER + ALT + SHIFT + F", "File manager (cwd)", { launch = 'nautilus --new-window "$(omarchy-cmd-terminal-cwd)"' })
 o.bind("SUPER + SHIFT + B", "Browser", "omarchy-launch-browser")
 o.bind("SUPER + ALT + SHIFT + B", "Browser (private)", "omarchy-launch-browser --private")
-o.bind("SUPER + SHIFT + M", "Music", "omarchy-launch-or-focus spotify")
 o.bind("SUPER + SHIFT + N", "Editor", "omarchy-launch-editor")
 o.bind("SUPER + SHIFT + D", "Discord", 'omarchy-launch-or-focus ^discord$ "uwsm-app -- discordx.desktop"')
 
