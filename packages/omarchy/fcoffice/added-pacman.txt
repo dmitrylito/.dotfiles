@@ -30,6 +30,7 @@ nvtop
 nwg-displays
 omazed
 openai-codex-bin
+openai-codex-desktop
 openrgb
 pavucontrol
 pesign
