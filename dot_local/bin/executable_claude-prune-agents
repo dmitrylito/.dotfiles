@@ -37,7 +37,13 @@ def finished_sessions():
     )
     if out.returncode != 0:
         sys.exit(f"claude agents --json --all failed: {out.stderr.strip()}")
-    return [s for s in json.loads(out.stdout) if s.get("kind") == "background"]
+    try:
+        sessions = json.loads(out.stdout)
+    except ValueError:
+        # A `claude` wrapper earlier on PATH can print its own chatter to stdout
+        # ahead of the JSON, so fail with the text instead of a bare traceback.
+        sys.exit(f"claude agents --json --all returned non-JSON: {out.stdout[:200]!r}")
+    return [s for s in sessions if s.get("kind") == "background"]
 
 
 def pinned_ids():
