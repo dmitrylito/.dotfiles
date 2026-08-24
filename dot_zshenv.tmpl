@@ -45,6 +45,13 @@ export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
 # HYPRLAND_CONFIG must NOT be exported globally: Omarchy v4's Hyprland treats it
 # as an explicit config override and skips the hyprland.lua provider entirely.
 # hyprmon gets it per-command via an alias in .zshrc.
+# Hide the Granite Ridge iGPU (gfx1036, 0000:0f:00.0) from ROCm so HIP device 0 is
+# always the 9070 XT (gfx1201) and no app can pick the raster iGPU as a compute
+# device. Index 0 is PCI-enumeration order (03:00.0 < 0f:00.0); if the slots ever
+# change, re-check `rocminfo | grep gfx`. Mirrored in .config/environment.d for
+# systemd user services, which never read this file.
+export ROCR_VISIBLE_DEVICES=0
+export HIP_VISIBLE_DEVICES=0
 {{- end }}
 
 typeset -U path
