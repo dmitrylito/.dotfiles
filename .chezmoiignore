@@ -30,6 +30,8 @@ scripts/
 
 {{ if ne (.profile | lower) "omarchy" }}
 .config/hypr/
+# Masks this box's iGPU from ROCm — hardware-specific to omarchy.
+.config/environment.d/
 .config/systemd/user/dotoold.service
 # herdr is desktop-only; MOSHI_HERDR_PATH must not point at a missing binary elsewhere.
 .config/systemd/user/moshi-hook.service.d/20-herdr-path.conf
