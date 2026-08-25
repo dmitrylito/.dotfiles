@@ -67,15 +67,14 @@ path=(
   $path
 )
 
-# Auth for GitHub MCP clients. Prefer the machine-local .env token, then fall
-# back to the gh keyring so no token lands in this pushed file.
-if [[ -z "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" ]]; then
-  if [[ -n "${GITHUB_MCP_PAT:-}" ]]; then
-    export GITHUB_PERSONAL_ACCESS_TOKEN="$GITHUB_MCP_PAT"
-  elif command -v gh >/dev/null 2>&1; then
-    export GITHUB_PERSONAL_ACCESS_TOKEN="$(gh auth token 2>/dev/null)"
-  fi
+# Auth for GitHub MCP clients. Prefer the gh keyring because machine-local
+# tokens can expire without the managed shell configuration changing.
+if command -v gh >/dev/null 2>&1 && _github_token="$(gh auth token 2>/dev/null)"; then
+  export GITHUB_PERSONAL_ACCESS_TOKEN="$_github_token"
+elif [[ -z "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" && -n "${GITHUB_MCP_PAT:-}" ]]; then
+  export GITHUB_PERSONAL_ACCESS_TOKEN="$GITHUB_MCP_PAT"
 fi
+unset _github_token
 
 if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
