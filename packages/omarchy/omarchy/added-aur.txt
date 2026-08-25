@@ -1,4 +1,5 @@
 android-studio
+claude-desktop
 coolercontrol-bin
 discordupdater
 etcher-bin
