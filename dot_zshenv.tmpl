@@ -69,11 +69,21 @@ path=(
 
 # Auth for GitHub MCP clients. Prefer the gh keyring because machine-local
 # tokens can expire without the managed shell configuration changing.
-if command -v gh >/dev/null 2>&1 && _github_token="$(gh auth token 2>/dev/null)"; then
-  export GITHUB_PERSONAL_ACCESS_TOKEN="$_github_token"
-elif [[ -z "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" && -n "${GITHUB_MCP_PAT:-}" ]]; then
-  export GITHUB_PERSONAL_ACCESS_TOKEN="$GITHUB_MCP_PAT"
+_github_token=""
+if command -v gh >/dev/null 2>&1; then
+  _github_token="$(gh auth token 2>/dev/null)"
 fi
+if [[ -z "$_github_token" && -n "${GITHUB_MCP_PAT:-}" ]]; then
+  _github_token="$GITHUB_MCP_PAT"
+fi
+if [[ -z "$_github_token" && "$OSTYPE" == darwin* ]] && command -v git >/dev/null 2>&1; then
+  _github_token="$(printf 'protocol=https\nhost=github.com\n\n' \
+    | git credential-osxkeychain get 2>/dev/null \
+    | sed -n 's/^password=//p' | head -1)"
+fi
+# Exporting an empty value expands the MCP Authorization header to a bare
+# "Bearer " and the server answers 400, so leave it unset instead.
+[[ -n "$_github_token" ]] && export GITHUB_PERSONAL_ACCESS_TOKEN="$_github_token"
 unset _github_token
 
 if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
