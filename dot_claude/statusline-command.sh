@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Claude Code status line: "<cwd> | 5h: N% | 7d: N%" on the left, model/effort/context
+# right-aligned. Reads the status JSON on stdin (see `claude` statusLine settings).
 input=$(cat)
 
 model=$(echo "$input" | jq -r '.model.display_name // empty')
@@ -8,6 +10,7 @@ effort=$(echo "$input" | jq -r '.effort.level // empty')
 [ -n "$effort" ] && model="$model · $effort"
 ctx_used=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
 [ -n "$ctx_used" ] && model="$model ($(printf '%.0f' "$ctx_used")%)"
+
 five=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
 five_reset=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
 week=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
@@ -28,29 +31,32 @@ fmt_reset() {
   [ -n "$out" ] && printf '%s' "${out# }"
 }
 
-left=""
-[ -n "$cwd" ] && left="$cwd"
+join() {
+  local acc=""
+  for part in "$@"; do
+    [ -z "$part" ] && continue
+    [ -n "$acc" ] && acc="$acc | $part" || acc="$part"
+  done
+  printf '%s' "$acc"
+}
+
+five_short="" five_full=""
 if [ -n "$five" ]; then
-  five_part="5h: $(printf '%.0f' "$five")%"
+  five_short="5h: $(printf '%.0f' "$five")%"
   reset_str=$(fmt_reset "$five_reset" +%-l:%M%p)
-  [ -n "$reset_str" ] && five_part="$five_part (resets $reset_str)"
-  [ -n "$left" ] && left="$left | $five_part" || left="$five_part"
+  [ -n "$reset_str" ] && five_full="$five_short (resets $reset_str)" || five_full="$five_short"
 fi
+week_short="" week_full=""
 if [ -n "$week" ]; then
-  week_part="7d: $(printf '%.0f' "$week")%"
+  week_short="7d: $(printf '%.0f' "$week")%"
   reset_str=$(fmt_reset "$week_reset" '+%a %-l:%M%p')
-  [ -n "$reset_str" ] && week_part="$week_part (resets $reset_str)"
-  [ -n "$left" ] && left="$left | $week_part" || left="$week_part"
+  [ -n "$reset_str" ] && week_full="$week_short (resets $reset_str)" || week_full="$week_short"
 fi
 
-[ -z "$left" ] && [ -z "$model" ] && exit 0
+[ -z "$model" ] && [ -z "$cwd$five_short$week_short" ] && exit 0
 
-# Right-align the model string using terminal width.
-# Priority: COLUMNS env var, then the live tmux pane width, then 80.
-# An overestimated width makes the padded line wrap inside the pane, which
-# forces Claude Code to reflow the status area on every refresh (visible as
-# constant flicker in split panes) — so prefer measured values and a small
-# fallback over a large guess.
+# Terminal width: COLUMNS is set live by Claude Code; tmux pane width is the fallback
+# when it isn't.
 width="${COLUMNS:-}"
 if [ -z "$width" ] && [ -n "$TMUX" ]; then
   # -t TMUX_PANE: without it tmux reports the client's active pane, which can
@@ -58,17 +64,33 @@ if [ -z "$width" ] && [ -n "$TMUX" ]; then
   width=$(tmux display-message -p ${TMUX_PANE:+-t "$TMUX_PANE"} '#{pane_width}' 2>/dev/null)
 fi
 width="${width:-80}"
-margin=3
-width=$(( width - margin ))
+# The status box is narrower than the terminal (border + padding). Padding out to the
+# full width makes the line word-wrap inside the box, and the wrapped tail — the model,
+# effort and context — is not displayed. Reserve enough columns that it never wraps.
+margin="${CLAUDE_STATUSLINE_MARGIN:-6}"
+usable=$(( width - margin ))
+[ "$usable" -lt 20 ] && usable=20
+
+# Give up detail on the left before ever losing the model block on the right.
+left=""
+for candidate in \
+  "$(join "$cwd" "$five_full" "$week_full")" \
+  "$(join "$cwd" "$five_short" "$week_short")" \
+  "$cwd" \
+  ""
+do
+  if [ -z "$candidate" ] || [ $(( ${#candidate} + 1 + ${#model} )) -le "$usable" ]; then
+    left="$candidate"
+    break
+  fi
+done
 
 if [ -n "$model" ] && [ -n "$left" ]; then
-  left_len=${#left}
-  model_len=${#model}
-  pad=$(( width - left_len - model_len ))
+  pad=$(( usable - ${#left} - ${#model} ))
   [ "$pad" -lt 1 ] && pad=1
   printf '%s%*s%s' "$left" "$pad" "" "$model"
 elif [ -n "$model" ]; then
-  printf '%s' "$model"
+  printf '%s' "${model:0:$usable}"
 else
-  printf '%s' "$left"
+  printf '%s' "${left:0:$usable}"
 fi
