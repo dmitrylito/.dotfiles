@@ -64,6 +64,23 @@ ISOLATION_HOOKS = (
 BASELINE = {
     "agentPushNotifEnabled": True,
     "autoCompactEnabled": False,
+    # Seeds the auto-mode classifier on a fresh box. A DEFAULT, not enforced: fill_defaults
+    # recurses into dicts and skips subkeys the live file already has, so an established
+    # machine keeps whatever /auto-mode-setup last wrote. Changing these rules means editing
+    # BOTH this block and the live ~/.claude/settings.json.
+    "autoMode": {
+        "allow": [
+            "$defaults",
+            "Bash(chezmoi *) \u2014 chezmoi edit/apply/add is the routine dotfiles workflow on this host per CLAUDE.md; the auto-commit-and-push to the private dotfiles repo is intended, not a leak",
+            "Bash(make deploy:*), bash docker/deploy-build.sh, and docker compose build/up \u2014 Dmitry's own deploy path for his own services; explicitly authorized",
+            "Read-only inspection of this host: docker/podman ps|logs|inspect, zfs list|get|status, systemctl status, journalctl",
+            "gcloud storage read operations against fleetchaser-production-sql \u2014 this is the nightly import-db refresh pulling prod into local dev, and is routine",
+            "Reading any file under /home/dmitrylito with cat/head/sed/grep/strings, including binaries and log files, and shell introspection such as echo of environment variables",
+            "Writing scratch and intermediate files under $CLAUDE_JOB_DIR/tmp, /tmp, and the session tool-results directory, including via shell redirection and heredocs",
+            "Running python3/node inline via heredoc or -c to parse, filter, or reformat local files",
+        ],
+        "soft_deny": ["$defaults"],
+    },
     "awaySummaryEnabled": False,
     "editorMode": "vim",
     "effortLevel": "high",
