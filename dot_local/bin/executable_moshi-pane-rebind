@@ -2,10 +2,11 @@
 # moshi-pane-rebind — keep Moshi's pane->conversation bindings pointing at the job each
 # tmux or herdr pane is actually displaying.
 #
-# Usage: moshi-pane-rebind [--dry-run] [--verbose]
-#        Run periodically (moshi-pane-rebind.timer). Safe to run any time; it only edits
-#        the tmux*/herdr* and transcriptPath fields of records under
-#        ~/.local/state/moshi/claude-sessions/ and never deletes a record.
+# Usage: moshi-pane-rebind [--dry-run] [--verbose] [--codex-only]
+#        Run periodically (moshi-pane-rebind.timer); --codex-only is the per-event fast path
+#        called from moshi-codex-hook. Safe to run any time; it only edits the tmux*/herdr*
+#        and transcriptPath fields of records under ~/.local/state/moshi/claude-sessions/
+#        and ~/.local/state/moshi/codex-sessions/, and never deletes a record.
 #
 # Why: Moshi assumes one pane == one agent session. Viewing a background job in a
 # pane breaks that — the job owns the conversation but is tty-less, while the terminal
@@ -20,6 +21,15 @@
 #
 # Panes whose bound session has no transcript, and which match no job, have the stale
 # claim removed so they stop hijacking the pane.
+#
+# Codex has the same symptom from a different cause: `codex app-server` is one long-lived
+# daemon that spawns every hook, so all hooks inherit the HERDR_PANE_ID of whichever pane
+# happened to launch it. moshi-hook trusts that env, so every Codex session in every pane is
+# recorded in that one pane — usually a pane that no longer exists — and the app shows the
+# wrong conversation. The Codex hook payload carries `cwd`, and herdr reports which panes are
+# running Codex and their cwd, so the pane is recovered by matching the two; an ambiguous or
+# unmatched claim is stripped rather than guessed. Session cwd comes from the rollout file
+# under ~/.codex/sessions, whose name embeds the session id.
 #
 # Records whose transcriptPath no longer exists are repointed at ~/.claude/projects/*/<id>.jsonl.
 # Claude Code files a transcript under a directory derived from the session's cwd, so entering
@@ -37,6 +47,8 @@ import sys
 
 STATE = os.path.expanduser(os.environ.get("MOSHI_STATE_DIR", "~/.local/state/moshi"))
 RECORDS = os.path.join(STATE, "claude-sessions")
+CODEX_RECORDS = os.path.join(STATE, "codex-sessions")
+CODEX_SESSIONS = os.path.expanduser("~/.codex/sessions")
 JOBS = os.path.expanduser("~/.claude/jobs")
 PROJECTS = os.path.expanduser("~/.claude/projects")
 TMUX = next((p for p in ("/usr/bin/tmux", "/usr/sbin/tmux", "/opt/homebrew/bin/tmux")
@@ -49,6 +61,8 @@ HERDR = next((p for p in (os.environ.get("MOSHI_HERDR_PATH", ""),
               if p and os.path.exists(p)), "herdr")
 TMUX_FIELDS = ("tmuxSession", "tmuxWindow", "tmuxPane", "tmuxSocket", "terminalKind")
 HERDR_FIELDS = ("herdrPane", "herdrWorkspaceId", "herdrTabId", "terminalKind")
+CODEX_FIELDS = ("herdrPane", "herdrWorkspaceId", "herdrTabId", "herdrWorkspace", "herdrTab",
+                "terminalKind")
 # Claude Code draws the job name in a horizontal rule: ─── name ──
 DIVIDER = re.compile(r"─+\s(.+?)\s─+\s*$")
 # herdr reports the pane title with Claude Code's status glyph still on it: "◑ my job"
@@ -57,6 +71,8 @@ GLYPH = re.compile(r"^[^\w(\[]+")
 args = argparse.ArgumentParser()
 args.add_argument("--dry-run", action="store_true")
 args.add_argument("--verbose", action="store_true")
+args.add_argument("--codex-only", action="store_true",
+                  help="run only the Codex pass (no tmux calls; safe to call from a hook)")
 opts = args.parse_args()
 changes = []
 
@@ -101,17 +117,21 @@ def panes():
     return out
 
 
-def herdr_panes():
-    """[(pane_id, workspace_id, tab_id, title)]"""
+def herdr_pane_rows():
     try:
         listed = subprocess.run([HERDR, "pane", "list"],
                                 capture_output=True, text=True, timeout=10)
         rows = json.loads(listed.stdout)["result"]["panes"]
     except Exception:
         return []
+    return [row for row in rows if row.get("pane_id")]
+
+
+def herdr_panes():
+    """[(pane_id, workspace_id, tab_id, title)]"""
     return [(row.get("pane_id"), row.get("workspace_id"), row.get("tab_id"),
              (row.get("terminal_title_stripped") or "").strip())
-            for row in rows if row.get("pane_id")]
+            for row in herdr_pane_rows()]
 
 
 def jobs_by_name():
@@ -159,6 +179,113 @@ def find_transcript(sid):
     # A session that moved twice leaves a stub behind in the directory it came from.
     return max(hits, key=os.path.getmtime) if hits else None
 
+
+def codex_session_cwd(sid):
+    # The rollout file name embeds the session id, and its first line is the session_meta
+    # record carrying the cwd the session was started in.
+    hits = glob.glob(os.path.join(CODEX_SESSIONS, "**", "rollout-*" + sid + ".jsonl"),
+                     recursive=True)
+    for path in sorted(hits, key=os.path.getmtime, reverse=True):
+        try:
+            with open(path) as fh:
+                meta = json.loads(fh.readline())
+        except Exception:
+            continue
+        cwd = (meta.get("payload") or {}).get("cwd")
+        if cwd:
+            return cwd
+    return None
+
+
+def codex_activity(record):
+    # File mtime is useless here: this script rewrites records, so it must rank them by the
+    # session timestamps moshi-hook wrote instead.
+    stamps = [record.get(k) for k in
+              ("lastStopTime", "firstPromptPushedAt", "sessionStartTime")]
+    return max((v for v in stamps if isinstance(v, (int, float))), default=0)
+
+
+def codex_records():
+    out = []
+    for path in glob.glob(os.path.join(CODEX_RECORDS, "*.json")):
+        try:
+            with open(path) as fh:
+                record = json.load(fh)
+        except Exception:
+            continue
+        out.append((path, record))
+    # Live sessions first, then most recently active.
+    out.sort(key=lambda pr: (not pr[1].get("sessionEndedAt"), codex_activity(pr[1])),
+             reverse=True)
+    return out
+
+
+def codex_pass():
+    if not os.path.isdir(CODEX_RECORDS):
+        return
+    panes = [row for row in herdr_pane_rows() if row.get("agent") == "codex"]
+    records = codex_records()
+    live = {row["pane_id"] for row in panes}
+    owner = {}
+
+    if panes:
+        cwds = {}
+        for path, record in records:
+            sid = os.path.basename(path)[:-5]
+            cwds[sid] = codex_session_cwd(sid)
+        for row in sorted(panes, key=lambda r: r["pane_id"]):
+            pane_cwds = {row.get("cwd"), row.get("foreground_cwd")} - {None}
+            # Newest first, and a session the daemon has not ended beats one it has.
+            ranked = [(path, record) for path, record in records
+                      if cwds.get(os.path.basename(path)[:-5]) in pane_cwds]
+            pick = next((pr for pr in ranked
+                         if os.path.basename(pr[0])[:-5] not in owner.values()), None)
+            if not pick:
+                continue
+            path, record = pick
+            sid = os.path.basename(path)[:-5]
+            owner[row["pane_id"]] = sid
+            desired = dict(terminalKind="herdr", herdrPane=row["pane_id"],
+                           herdrWorkspaceId=row.get("workspace_id"),
+                           herdrTabId=row.get("tab_id"))
+            if {k: record.get(k) for k in desired} != desired:
+                for key in CODEX_FIELDS:
+                    record.pop(key, None)
+                record.update(desired)
+                save(path, record)
+                changes.append(f"bound codex {row['pane_id']} -> {sid[:8]}")
+
+    # A claim on a pane that is not a live Codex pane, or on one another session owns, is
+    # the inherited app-server env talking. Drop it rather than let it answer for the pane.
+    for path, record in records:
+        sid = os.path.basename(path)[:-5]
+        pane = record.get("herdrPane")
+        if pane and not (pane in live and owner.get(pane) == sid):
+            for key in CODEX_FIELDS:
+                record.pop(key, None)
+            save(path, record)
+            changes.append(f"cleared codex claim on {pane} by {sid[:8]}")
+        # Claims left over from before herdr replaced tmux: the socket is gone, so the pane
+        # id is meaningless, and several records claim the same one.
+        sock, tmux_pane = record.get("tmuxSocket"), record.get("tmuxPane")
+        if tmux_pane and sock and not os.path.exists(sock):
+            for key in TMUX_FIELDS:
+                record.pop(key, None)
+            save(path, record)
+            changes.append(f"cleared dead tmux claim on {tmux_pane} by {sid[:8]}")
+
+
+def emit():
+    for line in changes:
+        log(line)
+    if opts.dry_run and changes:
+        print("\n".join(changes))
+
+
+codex_pass()
+if opts.codex_only:
+    emit()
+    sys.exit(0)
 
 if not os.path.isdir(RECORDS):
     sys.exit(0)
@@ -249,7 +376,4 @@ for pane_key, fields in (("tmuxPane", TMUX_FIELDS), ("herdrPane", HERDR_FIELDS))
             save(path, record)
             changes.append(f"cleared competing claim on {pane} by {sid[:8]}")
 
-for line in changes:
-    log(line)
-if opts.dry_run and changes:
-    print("\n".join(changes))
+emit()
