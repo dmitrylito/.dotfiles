@@ -42,8 +42,10 @@ import glob
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
+import time
 
 STATE = os.path.expanduser(os.environ.get("MOSHI_STATE_DIR", "~/.local/state/moshi"))
 RECORDS = os.path.join(STATE, "claude-sessions")
@@ -63,6 +65,8 @@ TMUX_FIELDS = ("tmuxSession", "tmuxWindow", "tmuxPane", "tmuxSocket", "terminalK
 HERDR_FIELDS = ("herdrPane", "herdrWorkspaceId", "herdrTabId", "terminalKind")
 CODEX_FIELDS = ("herdrPane", "herdrWorkspaceId", "herdrTabId", "herdrWorkspace", "herdrTab",
                 "terminalKind")
+HERDR_SOCKET = os.environ.get("HERDR_SOCKET_PATH") or os.path.expanduser(
+    "~/.config/herdr/herdr.sock")
 # Claude Code draws the job name in a horizontal rule: ─── name ──
 DIVIDER = re.compile(r"─+\s(.+?)\s─+\s*$")
 # herdr reports the pane title with Claude Code's status glyph still on it: "◑ my job"
@@ -197,6 +201,37 @@ def codex_session_cwd(sid):
     return None
 
 
+def report_agent_session(pane, sid):
+    """Tell herdr which Codex conversation a pane holds.
+
+    The Moshi gateway reads a pane's session identity from herdr's agent_session, not from
+    its own records, so a Codex pane without one is served with no sessionId and the app
+    falls back to the wrong conversation. herdr's own Codex integration cannot fill this in:
+    it reads HERDR_PANE_ID, which every Codex hook inherits from the app-server daemon.
+    """
+    if opts.dry_run:
+        return True
+    request = {
+        "id": f"moshi-pane-rebind:{time.time_ns()}",
+        "method": "pane.report_agent_session",
+        "params": {"pane_id": pane, "source": "herdr:codex", "agent": "codex",
+                   "seq": time.time_ns(), "agent_session_id": sid},
+    }
+    try:
+        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client.settimeout(0.5)
+        client.connect(HERDR_SOCKET)
+        client.sendall((json.dumps(request) + "\n").encode())
+        try:
+            client.recv(4096)
+        except Exception:
+            pass
+        client.close()
+    except Exception:
+        return False
+    return True
+
+
 def codex_activity(record):
     # File mtime is useless here: this script rewrites records, so it must rank them by the
     # session timestamps moshi-hook wrote instead.
@@ -254,6 +289,9 @@ def codex_pass():
                 record.update(desired)
                 save(path, record)
                 changes.append(f"bound codex {row['pane_id']} -> {sid[:8]}")
+            known = (row.get("agent_session") or {}).get("value")
+            if known != sid and report_agent_session(row["pane_id"], sid):
+                changes.append(f"reported codex session {sid[:8]} for {row['pane_id']}")
 
     # A claim on a pane that is not a live Codex pane, or on one another session owns, is
     # the inherited app-server env talking. Drop it rather than let it answer for the pane.
