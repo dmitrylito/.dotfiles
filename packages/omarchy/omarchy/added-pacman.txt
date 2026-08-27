@@ -14,7 +14,6 @@ gimp
 git-delta
 github-cli
 go
-libayatana-indicator
 libqalculate
 mosh
 nvtop
