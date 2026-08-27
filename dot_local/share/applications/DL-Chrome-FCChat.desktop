@@ -1,9 +1,9 @@
 [Desktop Entry]
 Version=1.0
-Name=Chromium (Chat)
+Name=Chromium (FC-Chat)
 GenericName=Web Browser
 Comment=Access the Internet
-Exec=/usr/bin/chromium --profile-directory="Profile 3" %U
+Exec=/usr/bin/chromium --profile-directory="Profile 4" %U
 StartupNotify=true
 Terminal=false
 Icon=chromium
