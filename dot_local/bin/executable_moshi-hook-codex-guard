@@ -1,8 +1,13 @@
 #!/bin/bash
-# moshi-codex-hook — wrapper for the Moshi Codex hooks.
+# moshi-hook-codex-guard — wrapper for the Moshi Codex hooks.
 #
 # Usage: called from ~/.codex/hooks.json in place of `moshi-hook codex-hook`; the stdin
 #        payload is forwarded verbatim and moshi-hook's stdout and exit code are preserved.
+#
+# The filename MUST contain "moshi-hook": `moshi-hook status` (and the daemon's startup
+# check) decides the wiring is intact by looking for that substring in each hook command,
+# so a name like moshi-codex-hook is reported as "stale", which tells you to run
+# `moshi-hook install --target codex` — the command that overwrites this wrapper.
 #
 # Why the rebind call: `codex app-server` is one long-lived daemon that spawns every hook,
 # so every hook inherits the HERDR_PANE_ID of whichever pane happened to start the daemon.
