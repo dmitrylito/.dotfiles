@@ -36,7 +36,7 @@ MOSHI_HOOK="{{ .chezmoi.homeDir }}/.local/bin/moshi-hook"
 GUARD="{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard"
 SETTINGS="{{ .chezmoi.homeDir }}/.claude/settings.json"
 CODEX_HOOKS="{{ .chezmoi.homeDir }}/.codex/hooks.json"
-CODEX_GUARD="{{ .chezmoi.homeDir }}/.local/bin/moshi-codex-hook"
+CODEX_GUARD="{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-codex-guard"
 UNIT="{{ .chezmoi.homeDir }}/.config/systemd/user/moshi-hook.service"
 
 command -v systemctl >/dev/null 2>&1 || exit 0
@@ -126,7 +126,7 @@ if [ -n "$installed_now" ] && [ -f "$CODEX_HOOKS" ] && [ -x "$CODEX_GUARD" ] &&
 import json, os, sys
 path, moshi_hook = sys.argv[1], sys.argv[2]
 command = moshi_hook
-names = ("moshi-codex-hook", "moshi-hook", "moshi")
+names = ("moshi-hook-codex-guard", "moshi-codex-hook", "moshi-hook", "moshi")
 events = ("PermissionRequest", "SessionStart", "Stop", "UserPromptSubmit")
 try:
     with open(path) as fh:

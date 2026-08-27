@@ -5,8 +5,10 @@ import json
 import sys
 
 HOME = "{{ .chezmoi.homeDir }}"
-MOSHI_COMMAND = HOME + "/.local/bin/moshi-codex-hook"
-MOSHI_BINARIES = ("moshi-codex-hook", "moshi-hook", "moshi")
+# Quotes and the trailing `codex-hook` are load-bearing: this is the exact shape
+# `moshi-hook status` matches, and anything else is reported as stale wiring.
+MOSHI_COMMAND = "'" + HOME + "/.local/bin/moshi-hook-codex-guard' codex-hook"
+MOSHI_BINARIES = ("moshi-hook-codex-guard", "moshi-codex-hook", "moshi-hook", "moshi")
 EVENTS = ("PermissionRequest", "SessionStart", "Stop", "UserPromptSubmit")
 
 

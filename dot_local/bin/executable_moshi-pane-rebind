@@ -4,7 +4,7 @@
 #
 # Usage: moshi-pane-rebind [--dry-run] [--verbose] [--codex-only]
 #        Run periodically (moshi-pane-rebind.timer); --codex-only is the per-event fast path
-#        called from moshi-codex-hook. Safe to run any time; it only edits the tmux*/herdr*
+#        called from moshi-hook-codex-guard. Safe to run any time; it only edits the tmux*/herdr*
 #        and transcriptPath fields of records under ~/.local/state/moshi/claude-sessions/
 #        and ~/.local/state/moshi/codex-sessions/, and never deletes a record.
 #
