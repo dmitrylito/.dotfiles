@@ -1,9 +1,9 @@
 [Desktop Entry]
 Version=1.0
-Name=Chromium (Tasks)
+Name=Chromium (FC-Tasks)
 GenericName=Web Browser
 Comment=Access the Internet
-Exec=/usr/bin/chromium --profile-directory="Profile 2" %U
+Exec=/usr/bin/chromium --profile-directory="Profile 3" %U
 StartupNotify=true
 Terminal=false
 Icon=chromium

@@ -117,9 +117,9 @@ set_width() {
 # chrome-<host>__<path>-Profile_N), anchored so ^chromium$ never matches an app window.
 GMAIL_CLASS='^chrome-mail\.google\.com__mail_u_0_-Profile_1$'
 LINEAR_CLASS='^chrome-linear\.app__fleetchaser_agent-Profile_1$'
-CHAT_CLASS='^chrome-console\.fleetchaser\.com__chats-Profile_3$'
+CHAT_CLASS='^chrome-console\.fleetchaser\.com__chats-Profile_4$'
 DIALPAD_CLASS='^chrome-dialpad\.com__app_-Profile_1$'
-TASKS_CLASS='^chrome-console\.fleetchaser\.com__tasks_-Profile_2$'
+TASKS_CLASS='^chrome-console\.fleetchaser\.com__tasks-Profile_3$'
 BROWSER_CLASS='^chromium$'
 SPOTIFY_CLASS='^spotify$'
 
@@ -134,14 +134,14 @@ launch 'Linear' "$LINEAR_CLASS" 3 \
   "$WEBAPP" 'https://linear.app/fleetchaser/agent' --profile-directory='Profile 1'
 
 launch 'FC Chat' "$CHAT_CLASS" 4 \
-  "$WEBAPP" 'https://console.fleetchaser.com/chats' --profile-directory='Profile 3'
+  "$WEBAPP" 'https://console.fleetchaser.com/chats' --profile-directory='Profile 4'
 launch 'Dialpad' "$DIALPAD_CLASS" 4 \
   "$WEBAPP" 'https://dialpad.com/app/' --profile-directory='Profile 1'
 
 launch 'FC Tasks' "$TASKS_CLASS" 5 \
-  "$WEBAPP" 'https://console.fleetchaser.com/tasks/' --profile-directory='Profile 2'
+  "$WEBAPP" 'https://console.fleetchaser.com/tasks' --profile-directory='Profile 3'
 
-launch 'Spotify' "$SPOTIFY_CLASS" 'special:scratchpad' \
+launch 'Spotify' "$SPOTIFY_CLASS" 'special:spotify' \
   spotify
 
 BROWSER_ADDR="$(addr_of "$BROWSER_CLASS")"

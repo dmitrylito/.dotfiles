@@ -2,7 +2,7 @@
 Version=1.0
 Name=FC Tasks
 Comment=FC Tasks
-Exec=omarchy-launch-webapp "https://console.fleetchaser.com/tasks/" --profile-directory="Profile 2"
+Exec=omarchy-launch-webapp "https://console.fleetchaser.com/tasks" --profile-directory="Profile 3"
 Terminal=false
 Type=Application
 Icon=/home/dmitrylito/.local/share/applications/icons/FC Tasks.png
