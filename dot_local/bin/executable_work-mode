@@ -51,9 +51,9 @@ CHAT_PROFILE='FC Chat'
 TASKS_PROFILE='FC Tasks'
 
 # ws 1, permille of the three columns' shared content width; chromium takes the
-# remainder (437). Sized so the mail/chat column clears the 1024px desktop
+# remainder (464). Sized so the mail/chat column clears the 1024px desktop
 # breakpoint web apps target.
-DIALPAD_PERMILLE=292
+DIALPAD_PERMILLE=265
 RIGHT_COL_PERMILLE=271
 # ws 3
 TASKS_PERMILLE=500
