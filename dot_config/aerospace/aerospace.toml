@@ -249,7 +249,7 @@ run = 'layout floating'
 
 [[on-window-detected]]
 if.app-id = 'com.apple.systempreferences'             # System Settings / Preferences
-run = ['layout floating', 'move-node-to-workspace 9']
+run = 'move-node-to-workspace 9'
 
 [[on-window-detected]]
 if.app-id = 'com.apple.calculator' # Calculator
