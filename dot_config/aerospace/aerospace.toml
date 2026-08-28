@@ -80,17 +80,22 @@ exec-on-workspace-change = [
 [focus-follows-mouse]
 enabled = true
 
+# Patterns are tried in order, first match wins. The displays are named rather than
+# addressed as 'main'/'secondary' because both are 3440x1440 and 'main' follows
+# whichever one currently holds the macOS menu bar — rearranging displays in System
+# Settings silently swaps every workspace. The main/secondary/built-in entries stay
+# as the fallback for when the externals are unplugged.
 [workspace-to-monitor-force-assignment]
-1 = ['main', 'secondary']
-2 = ['main', 'secondary']
-3 = ['main', 'secondary']
-4 = ['main', 'secondary']
-5 = ['main', 'secondary']
-6 = ['secondary', 'built-in', 'main']
-7 = ['secondary', 'built-in', 'main']
-8 = ['secondary', 'built-in', 'main']
-9 = ['built-in', 'secondary', 'main']
-10 = ['built-in', 'secondary', 'main']
+1 = ['Odyssey', 'main', 'secondary']
+2 = ['Odyssey', 'main', 'secondary']
+3 = ['Odyssey', 'main', 'secondary']
+4 = ['Odyssey', 'main', 'secondary']
+5 = ['Odyssey', 'main', 'secondary']
+6 = ['LG ULTRAWIDE', 'secondary', 'built-in', 'main']
+7 = ['LG ULTRAWIDE', 'secondary', 'built-in', 'main']
+8 = ['LG ULTRAWIDE', 'secondary', 'built-in', 'main']
+9 = ['LG ULTRAWIDE', 'built-in', 'secondary', 'main']
+10 = ['LG ULTRAWIDE', 'built-in', 'secondary', 'main']
 
 # Possible values: (qwerty|dvorak|colemak)
 # See https://nikitabobko.github.io/AeroSpace/guide#key-mapping
@@ -134,10 +139,12 @@ cmd-ctrl-alt-slash = 'layout tiles horizontal vertical'
 cmd-ctrl-alt-comma = 'layout accordion horizontal vertical'
 
 # Focus Movement (Vim motions + Hyper)
-cmd-ctrl-alt-h = 'focus left'
-cmd-ctrl-alt-j = 'focus down'
-cmd-ctrl-alt-k = 'focus up'
-cmd-ctrl-alt-l = 'focus right'
+# Boundaries are set explicitly so hjkl walks straight off one ultrawide onto the
+# other instead of stopping at the workspace edge.
+cmd-ctrl-alt-h = 'focus --boundaries all-monitors-outer-frame --boundaries-action wrap-around-all-monitors left'
+cmd-ctrl-alt-j = 'focus --boundaries all-monitors-outer-frame --boundaries-action wrap-around-all-monitors down'
+cmd-ctrl-alt-k = 'focus --boundaries all-monitors-outer-frame --boundaries-action wrap-around-all-monitors up'
+cmd-ctrl-alt-l = 'focus --boundaries all-monitors-outer-frame --boundaries-action wrap-around-all-monitors right'
 
 # Window Movement (Vim motions + Shift + Hyper)
 cmd-ctrl-alt-shift-h = 'move left'
@@ -186,11 +193,38 @@ cmd-ctrl-alt-tab = 'workspace-back-and-forth'
 # Move Workspace to Next Monitor (Tab + Shift + Hyper)
 cmd-ctrl-alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
+# Monitor focus and window throw (brackets + Hyper). --focus-follows-window keeps
+# you with the window you just threw; without it focus stays behind on the old
+# monitor and the next hover steals it back.
+cmd-ctrl-alt-leftSquareBracket = 'focus-monitor --wrap-around prev'
+cmd-ctrl-alt-rightSquareBracket = 'focus-monitor --wrap-around next'
+cmd-ctrl-alt-shift-leftSquareBracket = 'move-node-to-monitor --wrap-around --focus-follows-window prev'
+cmd-ctrl-alt-shift-rightSquareBracket = 'move-node-to-monitor --wrap-around --focus-follows-window next'
+
+# Enter Summon Mode (s + Hyper), then a number to pull that workspace onto the
+# monitor you are already looking at instead of jumping your eyes to it.
+cmd-ctrl-alt-s = 'mode summon'
+
 # Fullscreen State (f + Hyper) — matches Hyprland's SUPER+F
 cmd-ctrl-alt-f = 'fullscreen'
 
 # Enter Service Mode (Shift + Semicolon + Hyper)
 cmd-ctrl-alt-shift-semicolon = 'mode service'
+
+# 'summon' binding mode declaration. summon-workspace takes a mandatory workspace
+# argument, so it cannot be bound bare — one mode is cheaper than ten new chords.
+[mode.summon.binding]
+esc = 'mode main'
+1 = ['summon-workspace 1', 'mode main']
+2 = ['summon-workspace 2', 'mode main']
+3 = ['summon-workspace 3', 'mode main']
+4 = ['summon-workspace 4', 'mode main']
+5 = ['summon-workspace 5', 'mode main']
+6 = ['summon-workspace 6', 'mode main']
+7 = ['summon-workspace 7', 'mode main']
+8 = ['summon-workspace 8', 'mode main']
+9 = ['summon-workspace 9', 'mode main']
+0 = ['summon-workspace 10', 'mode main']
 
 # 'service' binding mode declaration
 [mode.service.binding]
