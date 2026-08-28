@@ -48,7 +48,9 @@ for sid in 1 2 3 4 5 6 7 8 9 10; do
                                 icon.padding_right=7 \
                                 icon.color="$OVERLAY" \
                                 label.drawing=off \
-                                background.color="$SURFACE0" \
+                                background.color=0x00000000 \
+                                background.border_width=1 \
+                                background.border_color="$SURFACE1" \
                                 background.drawing=off \
                                 click_script="aerospace workspace $sid"
 done
@@ -57,6 +59,7 @@ done
 # pill running its own script and forking `aerospace` twenty times per switch.
 sketchybar --add item spaces_watcher left \
            --set spaces_watcher drawing=off \
+                                updates=on \
                                 script="$PLUGIN_DIR/aerospace.sh" \
            --subscribe spaces_watcher aerospace_workspace_change front_app_switched
 
@@ -87,3 +90,4 @@ sketchybar --add item clock right \
            --subscribe volume volume_change mouse.clicked mouse.exited
 
 sketchybar --update
+sketchybar --trigger aerospace_workspace_change
