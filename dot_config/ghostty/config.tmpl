@@ -48,6 +48,10 @@ font-style = Regular
 
 app-notifications = no-clipboard-copy
 
+# Answer OSC 52 read queries without prompting, so Neovim's OSC 52 paste
+# (used inside herdr/tmux/ssh) doesn't hang waiting for the terminal.
+clipboard-read = allow
+
 
 # Window
 confirm-close-surface = false
