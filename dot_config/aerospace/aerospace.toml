@@ -247,12 +247,12 @@ if.app-id = 'com.apple.finder'
 if.window-title-regex-substring = ' Info$|^Finder Settings$|^Connect to Server$'
 run = 'layout floating'
 
-# AeroSpace floats this window on its own at launch, and 'layout tiling' here does
-# not stick — the window is not resizable at detection time. Running
-# `aerospace layout tiling` on it by hand afterwards does stick.
+# AeroSpace floats this window at launch because it is not resizable yet, so
+# 'layout tiling' in this rule runs too early and is lost. retile.sh retries for
+# a few seconds and makes it stick.
 [[on-window-detected]]
 if.app-id = 'com.apple.systempreferences'             # System Settings / Preferences
-run = ['layout tiling', 'move-node-to-workspace 9']
+run = ['move-node-to-workspace 9', 'exec-and-forget $HOME/.config/aerospace/retile.sh com.apple.systempreferences']
 
 [[on-window-detected]]
 if.app-id = 'com.apple.calculator' # Calculator
