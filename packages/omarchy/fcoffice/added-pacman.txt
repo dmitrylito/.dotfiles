@@ -7,7 +7,6 @@ chezmoi
 cronie
 direnv
 dotnet-runtime-9.0
-easyeffects
 evtest
 flatpak
 fwupd
