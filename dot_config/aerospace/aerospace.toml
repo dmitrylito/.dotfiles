@@ -247,9 +247,12 @@ if.app-id = 'com.apple.finder'
 if.window-title-regex-substring = ' Info$|^Finder Settings$|^Connect to Server$'
 run = 'layout floating'
 
+# AeroSpace floats this window on its own at launch, and 'layout tiling' here does
+# not stick — the window is not resizable at detection time. Running
+# `aerospace layout tiling` on it by hand afterwards does stick.
 [[on-window-detected]]
 if.app-id = 'com.apple.systempreferences'             # System Settings / Preferences
-run = 'move-node-to-workspace 9'
+run = ['layout tiling', 'move-node-to-workspace 9']
 
 [[on-window-detected]]
 if.app-id = 'com.apple.calculator' # Calculator
