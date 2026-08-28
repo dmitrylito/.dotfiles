@@ -61,15 +61,7 @@ sketchybar --add item spaces_watcher left \
            --set spaces_watcher drawing=off \
                                 updates=on \
                                 script="$PLUGIN_DIR/aerospace.sh" \
-           --subscribe spaces_watcher aerospace_workspace_change front_app_switched
-
-sketchybar --add item front_app left \
-           --set front_app icon.drawing=off \
-                          label.color="$BLUE" \
-                          label.font="Hack Nerd Font:Bold:12.0" \
-                          padding_left=10 \
-                          script="$PLUGIN_DIR/front_app.sh" \
-           --subscribe front_app front_app_switched
+           --subscribe spaces_watcher aerospace_workspace_change
 
 ##### Right items #####
 # Added right-to-left: the first --add right ends up rightmost.
