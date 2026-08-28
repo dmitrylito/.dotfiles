@@ -1,15 +1,25 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# Repaints all ten workspace pills in one sketchybar call. Invoked by the
+# spaces_watcher item, not per-pill, so a workspace switch forks `aerospace`
+# twice rather than twenty times.
+# Empty and unfocused workspaces are hidden; the focused one is a filled pill.
 
-# $1 is the workspace number passed from sketchybarrc (e.g., "1", "2", ...)
-# $FOCUSED_WORKSPACE is passed from AeroSpace's event trigger
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/colors.sh"
 
-# If FOCUSED_WORKSPACE is not set (e.g., at sketchybar startup), fetch it directly from aerospace
-if [ -z "$FOCUSED_WORKSPACE" ]; then
-    FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)
-fi
+FOCUSED="${FOCUSED_WORKSPACE:-$(aerospace list-workspaces --focused)}"
+OCCUPIED="$(aerospace list-workspaces --monitor all --empty no)"
 
-if [ "$1" = "$FOCUSED_WORKSPACE" ]; then
-    sketchybar --set "$NAME" background.drawing=on
-else
-    sketchybar --set "$NAME" background.drawing=off
-fi
+args=()
+for sid in 1 2 3 4 5 6 7 8 9 10; do
+  if [ "$sid" = "$FOCUSED" ]; then
+    args+=(--set space."$sid" drawing=on background.drawing=on \
+           background.color="$BLUE" icon.color=0xff1e1e2e)
+  elif printf '%s\n' "$OCCUPIED" | grep -qx "$sid"; then
+    args+=(--set space."$sid" drawing=on background.drawing=on \
+           background.color="$SURFACE0" icon.color="$TEXT")
+  else
+    args+=(--set space."$sid" drawing=off)
+  fi
+done
+
+sketchybar "${args[@]}"

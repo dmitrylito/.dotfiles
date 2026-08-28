@@ -2,53 +2,88 @@
 # SketchyBar config. Workspace indicators are driven by AeroSpace's
 # exec-on-workspace-change hook, which triggers the custom
 # aerospace_workspace_change event (see ~/.config/aerospace/aerospace.toml).
+# Colors are Catppuccin Mocha, matching ~/.config/borders/bordersrc.
 
 PLUGIN_DIR="$CONFIG_DIR/plugins"
 
-sketchybar --bar position=top height=30 blur_radius=30 color=0x40000000 display=all
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/colors.sh"
 
-default=(
-  padding_left=5
-  padding_right=5
-  icon.font="Hack Nerd Font:Bold:14.0"
-  label.font="Hack Nerd Font:Bold:12.0"
-  icon.color=0xffcdd6f4
-  label.color=0xffcdd6f4
-  icon.padding_left=4
-  icon.padding_right=4
-  label.padding_left=4
-  label.padding_right=4
-)
-sketchybar --default "${default[@]}"
+# A floating bar: y_offset lifts it off the screen edge, margin insets it from the
+# sides, so corner_radius is actually visible. AeroSpace's gaps.outer.top must stay
+# >= height + y_offset or tiled windows sit under it.
+sketchybar --bar height=26 \
+                 position=top \
+                 y_offset=5 \
+                 margin=10 \
+                 corner_radius=10 \
+                 blur_radius=40 \
+                 color="$BASE" \
+                 padding_left=8 \
+                 padding_right=8 \
+                 display=all \
+                 sticky=on
+
+sketchybar --default updates=when_shown \
+                    padding_left=4 \
+                    padding_right=4 \
+                    icon.font="Hack Nerd Font:Bold:13.0" \
+                    label.font="Hack Nerd Font:Bold:11.0" \
+                    icon.color="$TEXT" \
+                    label.color="$TEXT" \
+                    icon.padding_left=8 \
+                    icon.padding_right=4 \
+                    label.padding_left=4 \
+                    label.padding_right=8 \
+                    background.height=19 \
+                    background.corner_radius=6 \
+                    background.drawing=off
 
 ##### Workspace indicators #####
 sketchybar --add event aerospace_workspace_change
 
 for sid in 1 2 3 4 5 6 7 8 9 10; do
-  space=(
-    icon="$sid"
-    icon.padding_left=7
-    icon.padding_right=7
-    background.color=0x4089b4fa
-    background.corner_radius=5
-    background.height=25
-    label.drawing=off
-    script="$PLUGIN_DIR/aerospace.sh $sid"
-    click_script="aerospace workspace $sid"
-  )
   sketchybar --add item space."$sid" left \
-             --subscribe space."$sid" aerospace_workspace_change \
-             --set space."$sid" "${space[@]}"
+             --set space."$sid" icon="$sid" \
+                                icon.padding_left=7 \
+                                icon.padding_right=7 \
+                                icon.color="$OVERLAY" \
+                                label.drawing=off \
+                                background.color="$SURFACE0" \
+                                background.drawing=off \
+                                click_script="aerospace workspace $sid"
 done
 
+# One subscriber repaints every pill in a single batched --set, rather than each
+# pill running its own script and forking `aerospace` twenty times per switch.
+sketchybar --add item spaces_watcher left \
+           --set spaces_watcher drawing=off \
+                                script="$PLUGIN_DIR/aerospace.sh" \
+           --subscribe spaces_watcher aerospace_workspace_change front_app_switched
+
+sketchybar --add item front_app left \
+           --set front_app icon.drawing=off \
+                          label.color="$BLUE" \
+                          label.font="Hack Nerd Font:Bold:12.0" \
+                          padding_left=10 \
+                          script="$PLUGIN_DIR/front_app.sh" \
+           --subscribe front_app front_app_switched
+
 ##### Right items #####
+# Added right-to-left: the first --add right ends up rightmost.
 sketchybar --add item clock right \
-           --set clock update_freq=30 icon= script="$PLUGIN_DIR/clock.sh" \
-           --add item volume right \
-           --set volume script="$PLUGIN_DIR/volume.sh" \
-           --subscribe volume volume_change \
+           --set clock update_freq=15 \
+                       icon="󰥔" \
+                       icon.color="$MAUVE" \
+                       background.color="$SURFACE0" \
+                       background.drawing=on \
+                       script="$PLUGIN_DIR/clock.sh" \
            --add item battery right \
-           --set battery update_freq=120 script="$PLUGIN_DIR/battery.sh" \
-           --subscribe battery system_woke power_source_change
+           --set battery update_freq=120 \
+                         script="$PLUGIN_DIR/battery.sh" \
+           --subscribe battery system_woke power_source_change \
+           --add item volume right \
+           --set volume label.drawing=off \
+                        script="$PLUGIN_DIR/volume.sh" \
+           --subscribe volume volume_change mouse.clicked mouse.exited
 
 sketchybar --update
