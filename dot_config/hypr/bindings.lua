@@ -45,7 +45,13 @@ o.bind("SUPER + ALT + SHIFT + F", "File manager (cwd)", { launch = 'nautilus --n
 o.bind("SUPER + SHIFT + B", "Browser", "omarchy-launch-browser")
 o.bind("SUPER + ALT + SHIFT + B", "Browser (private)", "omarchy-launch-browser --private")
 o.bind("SUPER + SHIFT + N", "Editor", "omarchy-launch-editor")
-o.bind("SUPER + SHIFT + D", "Discord", 'omarchy-launch-or-focus ^discord$ "uwsm-app -- discordx.desktop"')
+o.bind("SUPER + SHIFT + D", "Discord", 'omarchy-launch-or-focus ^discord$ "uwsm-app -- discord.desktop"')
+
+-- Push-to-mute Discord on the same V that games use as their in-game push-to-talk:
+-- non_consuming keeps V flowing to the game, dont_inhibit keeps it firing when a
+-- fullscreen game inhibits compositor shortcuts.
+o.bind("V", "Discord push-to-mute", "discord-ptm 1", { non_consuming = true, dont_inhibit = true })
+o.bind("V", "Discord push-to-mute (release)", "discord-ptm 0", { release = true, non_consuming = true, dont_inhibit = true })
 
 -- Web apps
 o.bind("SUPER + SHIFT + Y", "YouTube", 'omarchy-launch-webapp "https://youtube.com/" --profile-directory="Default"')
