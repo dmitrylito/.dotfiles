@@ -1,0 +1,48 @@
+#!/bin/bash
+# Push-to-mute for Discord under native Wayland, where Discord itself cannot see
+# global keys. Mutes ONLY Discord's PipeWire capture stream, so a game's own
+# push-to-talk on the same key keeps transmitting on the same mic.
+#
+# Usage: discord-ptm 1|0|toggle|status
+#   bound to V press/release in ~/.config/hypr/bindings.lua
+# Needs pactl (pipewire-pulse) + jq. No-op when Discord has no voice stream.
+
+set -uo pipefail
+
+readonly MATCH='discord'
+
+streams() {
+  pactl -f json list source-outputs | jq -c --arg m "$MATCH" '
+    .[]
+    | select(
+        ((.properties."application.name" // "") + " " +
+         (.properties."application.process.binary" // ""))
+        | ascii_downcase | test($m)
+      )
+    | {index, mute, app: (.properties."application.name" // "?")}'
+}
+
+case "${1:-status}" in
+  status)
+    found=$(streams)
+    if [[ -z $found ]]; then
+      echo "no Discord capture stream (not in a voice call?)"
+      exit 1
+    fi
+    echo "$found" | jq -r '"index=\(.index) muted=\(.mute) app=\(.app)"'
+    ;;
+  1 | 0)
+    echo "$(streams)" | jq -r '.index' | while read -r i; do
+      [[ -n $i ]] && pactl set-source-output-mute "$i" "$1"
+    done
+    ;;
+  toggle)
+    echo "$(streams)" | jq -r '"\(.index) \(.mute)"' | while read -r i m; do
+      [[ -n $i ]] && pactl set-source-output-mute "$i" "$([[ $m == true ]] && echo 0 || echo 1)"
+    done
+    ;;
+  *)
+    echo "usage: discord-ptm 1|0|toggle|status" >&2
+    exit 2
+    ;;
+esac
