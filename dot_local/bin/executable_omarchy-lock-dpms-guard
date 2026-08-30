@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -uo pipefail
+
+runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+omarchy_dir="${OMARCHY_PATH:-/usr/share/omarchy}"
+lock_probe="$omarchy_dir/bin/omarchy-hyprland-session-locked"
+
+find_event_socket() {
+  local configured_socket=""
+
+  if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+    configured_socket="$runtime_dir/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
+    [[ -S $configured_socket ]] && {
+      printf '%s\n' "$configured_socket"
+      return
+    }
+  fi
+
+  find "$runtime_dir/hypr" -mindepth 2 -maxdepth 2 -type s -name .socket2.sock \
+    -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR == 1 { print $2 }'
+}
+
+while true; do
+  event_socket="$(find_event_socket)"
+  if [[ ! -S $event_socket ]]; then
+    sleep 1
+    continue
+  fi
+
+  /usr/bin/socat -u "UNIX-CONNECT:$event_socket" - 2>/dev/null | while IFS= read -r event; do
+    case "$event" in
+    monitoradded\>\>*)
+      if [[ -x $lock_probe ]] && "$lock_probe"; then
+        /usr/bin/hyprctl dispatch 'hl.dsp.dpms({ action = "disable" })' >/dev/null 2>&1 || true
+      fi
+      ;;
+    esac
+  done
+
+  sleep 1
+done
