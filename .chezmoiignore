@@ -30,6 +30,8 @@ scripts/
 
 {{ if ne (.profile | lower) "omarchy" }}
 .config/hypr/
+# User-owned Omarchy shell services are only valid on Omarchy desktops.
+.config/omarchy/plugins/dmitrylito.lock/
 # Masks this box's iGPU from ROCm — hardware-specific to omarchy.
 .config/environment.d/
 .config/systemd/user/dotoold.service
