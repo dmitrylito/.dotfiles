@@ -6,6 +6,7 @@ cronie
 direnv
 dotnet-runtime-9.0
 easyeffects
+freerdp
 fwupd
 gamescope
 gemini-cli
@@ -21,6 +22,7 @@ nvtop
 nwg-displays
 omazed
 openai-codex-desktop
+openbsd-netcat
 openrgb
 pesign
 pre-commit
