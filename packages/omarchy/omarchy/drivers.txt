@@ -6,3 +6,4 @@ migraphx
 sof-firmware
 vulkan-radeon
 vulkan-tools
+xpadneo-dkms
