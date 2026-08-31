@@ -2,7 +2,7 @@
 Version=1.0
 Name=Dialpad
 Comment=Dialpad
-Exec=omarchy-launch-webapp "https://dialpad.com/app/" --profile-directory="Profile 1"
+Exec=/usr/bin/bash /home/dmitrylito/.local/bin/chromium-profile-launch "Work" webapp "https://dialpad.com/app/"
 Terminal=false
 Type=Application
 Icon=/home/dmitrylito/.local/share/applications/icons/Dialpad.png

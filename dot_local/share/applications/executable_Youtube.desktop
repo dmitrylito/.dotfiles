@@ -2,7 +2,7 @@
 Version=1.0
 Name=YouTube
 Comment=Youtube
-Exec=omarchy-launch-webapp "https://youtube.com" --profile-directory="Default"
+Exec=/usr/bin/bash /home/dmitrylito/.local/bin/chromium-profile-launch "Personal" webapp "https://youtube.com"
 Terminal=false
 Type=Application
 Icon=/home/dmitrylito/.local/share/applications/icons/Youtube.png

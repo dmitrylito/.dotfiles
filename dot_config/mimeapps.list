@@ -51,4 +51,3 @@ x-scheme-handler/claude=com.anthropic.Claude.desktop
 x-scheme-handler/codex=chatgpt.desktop
 
 [Added Associations]
-x-scheme-handler/claude=com.anthropic.Claude.desktop;

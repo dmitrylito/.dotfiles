@@ -42,6 +42,7 @@ scripts/
 .config/systemd/user/graphical-session.target.wants/
 .config/mimeapps.list
 .config/spotify-flags.conf
+.local/bin/chromium-profile-launch
 .local/share/applications/
 .XCompose
 {{ end }}

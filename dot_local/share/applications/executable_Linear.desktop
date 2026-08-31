@@ -2,7 +2,7 @@
 Version=1.0
 Name=Linear
 Comment=Linear
-Exec=omarchy-launch-webapp "https://linear.app/fleetchaser/agent" --profile-directory="Profile 1"
+Exec=/usr/bin/bash /home/dmitrylito/.local/bin/chromium-profile-launch "Work" webapp "https://linear.app/fleetchaser/agent"
 Terminal=false
 Type=Application
 Icon=/home/dmitrylito/.local/share/applications/icons/Linear.png

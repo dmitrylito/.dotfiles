@@ -3,7 +3,7 @@ Version=1.0
 Name=Chromium (Work)
 GenericName=Web Browser
 Comment=Access the Internet
-Exec=/usr/bin/chromium --profile-directory="Profile 1"
+Exec=/usr/bin/bash /home/dmitrylito/.local/bin/chromium-profile-launch "Work" browser
 StartupNotify=true
 Terminal=false
 Icon=chromium

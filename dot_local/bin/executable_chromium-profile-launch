@@ -1,0 +1,63 @@
+#!/bin/bash
+
+set -euo pipefail
+
+usage() {
+  echo "usage: chromium-profile-launch <profile name or email> browser [args...]" >&2
+  echo "       chromium-profile-launch <profile name or email> webapp <url> [args...]" >&2
+  echo "       chromium-profile-launch <profile name or email> resolve" >&2
+  exit 2
+}
+
+[[ $# -ge 2 ]] || usage
+
+profile="$1"
+mode="$2"
+shift 2
+
+state="${CHROMIUM_USER_DATA_DIR:-$HOME/.config/chromium}/Local State"
+[[ -r "$state" ]] || {
+  echo "chromium-profile-launch: cannot read $state" >&2
+  exit 1
+}
+
+mapfile -t matches < <(
+  jq -r --arg profile "$profile" '
+    .profile.info_cache
+    | to_entries[]
+    | select(.value.name == $profile or .value.user_name == $profile)
+    | .key
+  ' "$state"
+)
+
+case ${#matches[@]} in
+  0)
+    echo "chromium-profile-launch: no Chromium profile named '$profile'" >&2
+    exit 1
+    ;;
+  1)
+    profile_dir="${matches[0]}"
+    ;;
+  *)
+    echo "chromium-profile-launch: profile '$profile' is ambiguous (${matches[*]})" >&2
+    exit 1
+    ;;
+esac
+
+case "$mode" in
+  resolve)
+    printf '%s\n' "$profile_dir"
+    ;;
+  browser)
+    exec /usr/bin/chromium --profile-directory="$profile_dir" "$@"
+    ;;
+  webapp)
+    [[ $# -ge 1 ]] || usage
+    url="$1"
+    shift
+    exec omarchy-launch-webapp "$url" --profile-directory="$profile_dir" "$@"
+    ;;
+  *)
+    usage
+    ;;
+esac

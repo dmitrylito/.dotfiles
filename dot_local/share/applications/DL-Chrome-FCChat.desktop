@@ -3,7 +3,7 @@ Version=1.0
 Name=Chromium (FC-Chat)
 GenericName=Web Browser
 Comment=Access the Internet
-Exec=/usr/bin/chromium --profile-directory="Profile 4" %U
+Exec=/usr/bin/bash /home/dmitrylito/.local/bin/chromium-profile-launch "FC Chat" browser %U
 StartupNotify=true
 Terminal=false
 Icon=chromium
