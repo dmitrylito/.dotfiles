@@ -6,6 +6,7 @@ playbook.yml
 ansible.cfg
 packages/
 scripts/
+system/
 
 # WM / editor state that is machine-specific or generated
 .config/hypr/shaders/
