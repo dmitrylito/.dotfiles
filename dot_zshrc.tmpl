@@ -117,6 +117,36 @@ source_if_exists "$HOME/Projects/fc-cli/zsh_completion.sh"
 bindkey '^[[A' fzf-history-widget
 bindkey '^[OA' fzf-history-widget
 
+# At an interactive prompt, treat Ctrl-C as an editing key and clear only the
+# current input. Set the tty mode before ZLE starts so completion widgets save
+# and restore that mode; restore SIGINT immediately before commands execute.
+_ctrl_c_clear_input() {
+  BUFFER=''
+  CURSOR=0
+  REGION_ACTIVE=0
+  zle redisplay
+}
+zle -N _ctrl_c_clear_input
+bindkey -M emacs '^C' _ctrl_c_clear_input
+bindkey -M viins '^C' _ctrl_c_clear_input
+bindkey -M vicmd '^C' _ctrl_c_clear_input
+
+_ctrl_c_set_interrupt() {
+  [[ -t 0 ]] || return 0
+  (( ${+commands[stty]} )) || return 0
+  command stty intr "$1" </dev/tty 2>/dev/null || true
+}
+_ctrl_c_before_prompt() {
+  _ctrl_c_set_interrupt '^-'
+}
+_ctrl_c_restore_interrupt() {
+  _ctrl_c_set_interrupt '^C'
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _ctrl_c_before_prompt
+add-zsh-hook preexec _ctrl_c_restore_interrupt
+add-zsh-hook zshexit _ctrl_c_restore_interrupt
+
 sesh-sessions() {
   {
     exec </dev/tty
