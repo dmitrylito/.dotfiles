@@ -35,8 +35,8 @@
 #     from the list HERE; a /plugin toggle is reverted on the next apply.
 #   - hooks are ENFORCED: every moshi hook command is forced back to the guard wrapper and
 #     any missing event/matcher is re-added. Without this, `moshi-hook service install`
-#     silently repoints the hooks at raw moshi-hook, which makes tty-less sessions bind to
-#     phantom tmux panes and the Moshi app show a blank chat. Hooks the user added
+#     silently repoints the hooks at raw moshi-hook, bypassing Herdr binding repair and
+#     making the Moshi app show the wrong conversation. Hooks the user added
 #     themselves are left alone.
 #
 # A live file that will not parse is replaced by BASELINE — it was already broken.

@@ -9,11 +9,9 @@ easyeffects
 freerdp
 fwupd
 gamescope
-gemini-cli
 ghostty
 gimp
 git-delta
-github-cli
 go
 lact
 libqalculate
@@ -41,4 +39,3 @@ wev
 wlr-randr
 xmlstarlet
 yazi
-zsh-autocomplete

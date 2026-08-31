@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # moshi-pane-rebind — keep Moshi's pane->conversation bindings pointing at the job each
-# tmux or herdr pane is actually displaying.
+# Herdr pane is actually displaying.
 #
 # Usage: moshi-pane-rebind [--dry-run] [--verbose] [--codex-only]
 #        Run periodically (moshi-pane-rebind.timer); --codex-only is the per-event fast path
-#        called from moshi-hook-codex-guard. Safe to run any time; it only edits the tmux*/herdr*
+#        called from moshi-hook-codex-guard. Safe to run any time; it only edits Herdr
 #        and transcriptPath fields of records under ~/.local/state/moshi/claude-sessions/
 #        and ~/.local/state/moshi/codex-sessions/, and never deletes a record.
 #
@@ -53,22 +53,17 @@ CODEX_RECORDS = os.path.join(STATE, "codex-sessions")
 CODEX_SESSIONS = os.path.expanduser("~/.codex/sessions")
 JOBS = os.path.expanduser("~/.claude/jobs")
 PROJECTS = os.path.expanduser("~/.claude/projects")
-TMUX = next((p for p in ("/usr/bin/tmux", "/usr/sbin/tmux", "/opt/homebrew/bin/tmux")
-             if os.path.exists(p)), "tmux")
 # The self-updating copy first: a herdr client only talks to a server of the same protocol,
 # and a distro package can sit a revision ahead of the server that is actually running.
 HERDR = next((p for p in (os.environ.get("MOSHI_HERDR_PATH", ""),
                           os.path.expanduser("~/.local/bin/herdr"),
                           "/usr/local/bin/herdr", "/usr/bin/herdr")
               if p and os.path.exists(p)), "herdr")
-TMUX_FIELDS = ("tmuxSession", "tmuxWindow", "tmuxPane", "tmuxSocket", "terminalKind")
 HERDR_FIELDS = ("herdrPane", "herdrWorkspaceId", "herdrTabId", "terminalKind")
 CODEX_FIELDS = ("herdrPane", "herdrWorkspaceId", "herdrTabId", "herdrWorkspace", "herdrTab",
                 "terminalKind")
 HERDR_SOCKET = os.environ.get("HERDR_SOCKET_PATH") or os.path.expanduser(
     "~/.config/herdr/herdr.sock")
-# Claude Code draws the job name in a horizontal rule: ─── name ──
-DIVIDER = re.compile(r"─+\s(.+?)\s─+\s*$")
 # herdr reports the pane title with Claude Code's status glyph still on it: "◑ my job"
 GLYPH = re.compile(r"^[^\w(\[]+")
 
@@ -76,7 +71,7 @@ args = argparse.ArgumentParser()
 args.add_argument("--dry-run", action="store_true")
 args.add_argument("--verbose", action="store_true")
 args.add_argument("--codex-only", action="store_true",
-                  help="run only the Codex pass (no tmux calls; safe to call from a hook)")
+                  help="run only the Codex pass; safe to call from a hook")
 opts = args.parse_args()
 changes = []
 
@@ -84,41 +79,6 @@ changes = []
 def log(msg):
     if opts.verbose:
         print(msg)
-
-
-def tmux_sockets():
-    return sorted(glob.glob("/tmp/tmux-%d/*" % os.getuid()))
-
-
-def panes():
-    """[(socket, pane_id, session, window, rendered_title)]"""
-    out = []
-    for sock in tmux_sockets():
-        try:
-            listed = subprocess.run(
-                [TMUX, "-S", sock, "list-panes", "-a", "-F",
-                 "#{pane_id}\t#{session_name}\t#{window_index}"],
-                capture_output=True, text=True, timeout=10)
-        except Exception:
-            continue
-        for line in listed.stdout.splitlines():
-            parts = line.split("\t")
-            if len(parts) != 3:
-                continue
-            pane, session, window = parts
-            try:
-                cap = subprocess.run([TMUX, "-S", sock, "capture-pane", "-p", "-t", pane],
-                                     capture_output=True, text=True, timeout=10).stdout
-            except Exception:
-                cap = ""
-            title = ""
-            for row in reversed(cap.splitlines()):
-                hit = DIVIDER.search(row.rstrip())
-                if hit:
-                    title = hit.group(1).strip()
-                    break
-            out.append((sock, pane, session, window, title))
-    return out
 
 
 def herdr_pane_rows():
@@ -303,14 +263,6 @@ def codex_pass():
                 record.pop(key, None)
             save(path, record)
             changes.append(f"cleared codex claim on {pane} by {sid[:8]}")
-        # Claims left over from before herdr replaced tmux: the socket is gone, so the pane
-        # id is meaningless, and several records claim the same one.
-        sock, tmux_pane = record.get("tmuxSocket"), record.get("tmuxPane")
-        if tmux_pane and sock and not os.path.exists(sock):
-            for key in TMUX_FIELDS:
-                record.pop(key, None)
-            save(path, record)
-            changes.append(f"cleared dead tmux claim on {tmux_pane} by {sid[:8]}")
 
 
 def emit():
@@ -351,10 +303,6 @@ def bind(pane, title, desired, fields):
     bound[pane] = sid
 
 
-for sock, pane, session, window, title in panes():
-    bind(pane, title, dict(terminalKind="tmux", tmuxSession=session, tmuxWindow=window,
-                           tmuxPane=pane, tmuxSocket=sock), TMUX_FIELDS)
-
 for pane, workspace, tab, title in herdr_panes():
     bind(pane, title, dict(terminalKind="herdr", herdrPane=pane,
                            herdrWorkspaceId=workspace, herdrTabId=tab), HERDR_FIELDS)
@@ -383,7 +331,7 @@ for path in glob.glob(os.path.join(RECORDS, "*.json")):
 # Never strip the sole claimant of an unmatched pane just because it has no transcript —
 # that is what a foreground Claude looks like before its first prompt, and moshi-hook only
 # sets the pane at SessionStart, so clearing it would never be undone.
-for pane_key, fields in (("tmuxPane", TMUX_FIELDS), ("herdrPane", HERDR_FIELDS)):
+for pane_key, fields in (("herdrPane", HERDR_FIELDS),):
     claimants = {}
     for path in glob.glob(os.path.join(RECORDS, "*.json")):
         try:

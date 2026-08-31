@@ -22,9 +22,7 @@
 #
 # Re-runs when a unit changes:
 #   {{ include "dot_config/systemd/user/moshi-hook.service.d/10-restart-always.conf" | sha256sum }}
-{{- if eq (.profile | lower) "omarchy" }}
 #   {{ include "dot_config/systemd/user/moshi-hook.service.d/20-herdr-path.conf" | sha256sum }}
-{{- end }}
 #   {{ include "dot_config/systemd/user/moshi-pane-rebind.service.tmpl" | sha256sum }}
 #   {{ include "dot_config/systemd/user/moshi-pane-rebind.timer" | sha256sum }}
 #   {{ include "dot_config/systemd/user/moshi-reguard.path.tmpl" | sha256sum }}
@@ -83,7 +81,7 @@ if command -v loginctl >/dev/null 2>&1 &&
 fi
 
 # The Moshi installer writes Claude's hooks pointing at raw moshi-hook, which
-# makes tty-less sessions bind to guessed tmux panes. dot_claude/modify_settings.json
+# makes tty-less sessions retain an inherited Herdr pane. dot_claude/modify_settings.json
 # is the real fix, but it may already have run earlier in this same apply, so
 # repair the wiring here too when we just invoked the installer.
 if [ -n "$installed_now" ] && [ -f "$SETTINGS" ] && [ -x "$GUARD" ] &&

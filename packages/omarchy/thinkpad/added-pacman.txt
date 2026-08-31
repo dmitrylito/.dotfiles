@@ -10,11 +10,9 @@ evtest
 flatpak
 fwupd
 gamescope
-gemini-cli
 ghostty
 gimp
 git-delta
-github-cli
 go
 hyprlauncher
 hyprpolkitagent
@@ -36,7 +34,6 @@ rclone
 rust
 solaar
 steam
-stow
 swaync
 tailscale
 voxtype-bin
@@ -46,4 +43,3 @@ xmlstarlet
 yazi
 yq
 zed
-zsh-autocomplete

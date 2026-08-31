@@ -39,7 +39,6 @@ ghostscript
 ghostty-terminfo
 git
 git-delta
-github-cli
 go
 imagemagick
 intel-ucode
@@ -89,7 +88,6 @@ system-config-printer
 tailscale
 tectonic
 time
-tmux
 tpm2-tools
 tree-sitter
 udisks2

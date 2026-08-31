@@ -1,8 +1,0 @@
-tt.*
-.tests
-doc/tags
-kovich-debug
-.repro
-foo.*
-*.log
-data

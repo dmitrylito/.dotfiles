@@ -34,12 +34,11 @@ if [[ -f "$HOME/.env" ]]; then
   source "$HOME/.env"
 fi
 
-# Fullscreen (alt-screen) rendering so Claude Code stops full-viewport
-# redraws on every token, which flicker the cursor under tmux/Ghostty.
+# Fullscreen (alt-screen) rendering so Claude Code stops full-viewport redraws.
 export CLAUDE_CODE_NO_FLICKER=1
 # Labels this machine in the `remember` plugin's memory headers (server/omarchy/mac).
 export REMEMBER_BRANCH={{ .profile }}
-{{- if eq .profile "omarchy" }}
+{{- if and (eq (.profile | lower) "omarchy") (eq .chezmoi.hostname "fcoffice") }}
 # Hyprland/Wayland only — nothing else on any profile reads these.
 export YDOTOOL_SOCKET="$HOME/.ydotool_socket"
 # HYPRLAND_CONFIG must NOT be exported globally: Omarchy v4's Hyprland treats it
@@ -56,7 +55,6 @@ export HIP_VISIBLE_DEVICES=0
 
 typeset -U path
 path=(
-  $HOME/.tmuxifier/bin
   $HOME/.local/bin
   $HOME/go/bin
   $HOME/.cargo/bin

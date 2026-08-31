@@ -15,12 +15,15 @@ alias na="ce ~/.aliases"
 alias ne="ce ~/.zshenv"
 alias y="yazi"
 alias cdz="cd ~/.local/share/chezmoi/"
-alias cdpc="cd ~/Projects/cer-backend/"
-alias cdpfb="cd ~/Projects/backend/"
 alias cs="claude --model sonnet"
 alias co="claude --model opus"
-alias dvsc="docker-volume-snapshot create fleetchaser_db_volume $HOME/Projects/tmp/docker/fleetchaser_db_volume"
-alias dvsr="docker-volume-snapshot restore $HOME/Projects/tmp/docker/fleetchaser_db_volume fleetchaser_db_volume"
+
+{{- if .work }}
+alias cdpc="cd ~/Projects/cer-backend/"
+alias cdpfb="cd ~/Projects/fleetchaser/backend/"
+alias dvsc="docker-volume-snapshot create fleetchaser_db_volume $HOME/Projects/fleetchaser/tmp/docker/fleetchaser_db_volume"
+alias dvsr="docker-volume-snapshot restore $HOME/Projects/fleetchaser/tmp/docker/fleetchaser_db_volume fleetchaser_db_volume"
+{{- end }}
 
 if command -v brew >/dev/null; then
   alias buu="brew update && brew upgrade"

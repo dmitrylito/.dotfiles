@@ -12,7 +12,6 @@ felixkratz/formulae/borders
 felixkratz/formulae/sketchybar
 ffmpeg
 fzf
-gh
 ghostscript
 git
 git-delta
@@ -30,13 +29,11 @@ rclone
 resvg
 ripgrep
 ripgrep-all
-sesh
 sevenzip
 starship
 tectonic
 tesseract
 tesseract-lang
-tmux
 tree-sitter-cli
 uv
 wget

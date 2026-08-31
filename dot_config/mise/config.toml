@@ -1,0 +1,10 @@
+[tools]
+claude = "latest"
+codex = "latest"
+gh = "latest"
+"github:basecamp/hey-cli" = "latest"
+node = "26.2.0"
+"npm:@google/gemini-cli" = "latest"
+"npm:@xai-official/grok" = "latest"
+opencode = "latest"
+pi = "latest"

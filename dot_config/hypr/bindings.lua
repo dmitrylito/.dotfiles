@@ -35,7 +35,7 @@ for _, keys in ipairs(unbinds) do
 end
 
 -- Applications
-o.bind("SUPER + ALT + RETURN", "Tmux", { launch = 'xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)" tmux new' })
+o.bind("SUPER + ALT + RETURN", "Terminal", { launch = 'xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)"' })
 o.bind("SUPER + semicolon", "Terminal", { launch = 'xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)"' })
 -- server keybindings: with the default (local) the client owns prefix mode, so the
 -- server-side [[keys.command]] popups (prefix+g lazygit, prefix+u urls) never fire
@@ -368,6 +368,39 @@ o.bind("SUPER + M", "Show key bindings", "omarchy-menu-keybindings")
 o.bind("SUPER + N", "Toggle window split", hl.dsp.layout("togglesplit"))
 
 -- Special workspace
+-- Omarchy keeps one global geometry rule for the qconsole. On mixed-size
+-- monitors that rule can still contain the previous monitor's bottom gap when
+-- SUPER+S runs, so refit it synchronously against the monitor receiving the
+-- keypress before revealing the scratchpad.
+local function qconsole_refit()
+  local monitor = hl.get_active_monitor()
+  if not monitor or not monitor.scale or monitor.scale <= 0 then return end
+
+  local reserved = monitor.reserved
+  local usable = monitor.height / monitor.scale - reserved.top - reserved.bottom
+  local bottom = math.max(0, math.floor(usable * 0.5))
+
+  hl.workspace_rule({
+    workspace = "special:scratchpad",
+    gaps_in = 0,
+    gaps_out = { top = 0, right = 0, bottom = bottom, left = 0 },
+    no_border = true,
+    on_created_empty = "[workspace special:scratchpad silent] omarchy-agent",
+  })
+end
+
+local function qconsole_toggle()
+  qconsole_refit()
+  hl.dispatch(hl.dsp.workspace.toggle_special("scratchpad"))
+  -- Re-read once Hyprland has committed the workspace visibility change. This
+  -- closes the focus-event race that leaves mixed-scale setups using stale
+  -- geometry until the pointer moves to another monitor.
+  hl.timer(qconsole_refit, { timeout = 50, type = "oneshot" })
+end
+
+hl.unbind("SUPER + S") -- Omarchy default: Toggle scratchpad
+hl.bind("SUPER + S", qconsole_toggle, { description = "Toggle scratchpad (fit current monitor)" })
+
 o.bind("SUPER + A", "Toggle AI scratchpad", hl.dsp.workspace.toggle_special("AI"))
 o.bind("SUPER + ALT + A", "Move window to AI", hl.dsp.window.move({ workspace = "special:AI", follow = false }))
 

@@ -13,24 +13,16 @@
 # ~700ms of round trip even with nothing to fetch, and hangs unbounded when the
 # network is down, so nothing touching the network may sit in the shell's path.
 #
-# Deliberately runs `apply --exclude scripts` rather than `chezmoi update`:
-# run_onchange_executable_install-packages.sh shells out to `sudo ansible-playbook`,
-# and the pacman package-sync hook rewrites packages/ on every install — so scripts
-# re-trigger constantly and must never fire unattended from a shell prompt. Run a
-# bare `chezmoi apply` by hand when you actually want the package sync.
-#
-# Also pushes any local commits the source repo is ahead by — chezmoi's autoPush
-# only fires on commits chezmoi itself makes, so commits from editors, agents, or a
-# failed pacman-hook push would otherwise sit unpushed indefinitely. The push is
-# attempted on every path, including the dirty/pull-failed bails: sending already
-# committed work is safe regardless of the working tree's state.
+# Deliberately runs `apply --exclude scripts`: onchange scripts can install vendor
+# units or restart user services and should only run during an intentional full
+# apply. Package reconciliation is separate and is never invoked by Chezmoi.
+# This helper pulls and applies committed configuration but never commits or pushes.
 #
 # Bails out of the *apply* silently when: the source tree is dirty, the pull is not a
 # fast-forward, another run holds the lock, or the machine is offline. Outcome of every
 # run is written to $LOG (one line), which is what --status reads.
 #
-# Serialised against scripts/sync-package-lists.sh via the same lock file, so a
-# shell starting mid-pacman-transaction cannot corrupt the source repo's git state.
+# Serialised so simultaneous shell starts cannot race the repository or state file.
 
 set -uo pipefail
 
@@ -106,21 +98,6 @@ if [ "$FORCE" -eq 0 ] && [ -f "$STAMP" ] &&
     exit 0
 fi
 
-PUSH_NOTE=""
-
-push_local_commits() {
-    local src=$1 ahead
-    PUSH_NOTE=""
-    git -C "$src" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1 || return
-    ahead=$(git -C "$src" rev-list --count '@{u}..HEAD' 2>/dev/null) || return
-    [ "${ahead:-0}" -gt 0 ] || return
-    if git -C "$src" push --quiet >/dev/null 2>&1; then
-        PUSH_NOTE="; pushed $ahead"
-    else
-        PUSH_NOTE="; push failed ($ahead unpushed)"
-    fi
-}
-
 run() {
     # Let the shell finish sourcing its rc files before apply can rewrite them.
     sleep 3
@@ -131,14 +108,12 @@ run() {
     src=$(chezmoi source-path 2>/dev/null) || { log "skipped: no source path"; return; }
 
     if ! git -C "$src" diff --quiet HEAD 2>/dev/null; then
-        push_local_commits "$src"
-        log "skipped: source has uncommitted changes$PUSH_NOTE"
+        log "skipped: source has uncommitted changes"
         return
     fi
 
     if ! git -C "$src" pull --ff-only --quiet >/dev/null 2>&1; then
-        push_local_commits "$src"
-        log "skipped: pull failed (offline, or not a fast-forward)$PUSH_NOTE"
+        log "skipped: pull failed (offline, or not a fast-forward)"
         return
     fi
 
@@ -147,20 +122,19 @@ run() {
     # off the shell's critical path.
     $BG_TIMEOUT chezmoi apply --no-tty --exclude scripts >/dev/null 2>&1 </dev/null
     rc=$?
-    push_local_commits "$src"
 
     if [ "$rc" -eq 0 ]; then
-        log "ok: applied $(git -C "$src" rev-parse --short HEAD)$PUSH_NOTE"
+        log "ok: applied $(git -C "$src" rev-parse --short HEAD)"
     elif [ "$rc" -eq 124 ]; then
-        log "failed: apply timed out after ${TIMEOUT_BG}s$PUSH_NOTE"
+        log "failed: apply timed out after ${TIMEOUT_BG}s"
     else
-        log "failed: chezmoi apply returned $rc$PUSH_NOTE"
+        log "failed: chezmoi apply returned $rc"
     fi
 }
 
 # Detach stdio too, or the background child holds the caller's pipe open for its
 # whole run — `zsh -ic ... | foo` would block on it.
-# flock is Linux-only; on macOS just run unserialised (no pacman hook there to race).
+# flock is Linux-only; on macOS just run unserialised.
 if command -v flock >/dev/null 2>&1; then
     ( flock -n 9 || exit 0; run ) 9>"$LOCK" >/dev/null 2>&1 </dev/null &
 else

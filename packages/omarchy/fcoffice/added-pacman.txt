@@ -11,11 +11,9 @@ evtest
 flatpak
 fwupd
 gamescope
-gemini-cli
 ghostty
 gimp
 git-delta
-github-cli
 go
 hyprpolkitagent
 iotop
@@ -28,7 +26,6 @@ nano
 nvtop
 nwg-displays
 omazed
-openai-codex-bin
 openai-codex-desktop
 openrgb
 pavucontrol
@@ -39,7 +36,6 @@ rclone
 rust
 solaar
 steam
-stow
 strace
 stress-ng
 tailscale
@@ -53,4 +49,3 @@ wlr-randr
 xmlstarlet
 yazi
 yq
-zsh-autocomplete

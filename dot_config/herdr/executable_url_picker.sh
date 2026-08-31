@@ -14,8 +14,8 @@ if [[ -z $pane ]]; then
 	exit 1
 fi
 
-# recent-unwrapped rejoins rows herdr hard-wrapped at the pane width, so a
-# long URL comes back in one piece — same job as tmux capture-pane -J.
+# recent-unwrapped rejoins rows Herdr hard-wrapped at the pane width, so a
+# long URL comes back in one piece.
 urls=$(
 	herdr pane read "$pane" --source recent-unwrapped --lines 5000 |
 		grep -oE '(https?|ftp|file)://[^[:space:]"'\''`<>)]+' |

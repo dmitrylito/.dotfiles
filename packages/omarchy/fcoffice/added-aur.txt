@@ -9,7 +9,6 @@ gputest
 hyprmon-bin
 lazycron-bin
 noisetorch-bin
-sesh-bin
 ventoy-bin
 webcamoid
 zsa-keymapp-bin

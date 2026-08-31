@@ -55,15 +55,8 @@ fi
 
 [ -z "$model" ] && [ -z "$cwd$five_short$week_short" ] && exit 0
 
-# Terminal width: COLUMNS is set live by Claude Code; tmux pane width is the fallback
-# when it isn't.
-width="${COLUMNS:-}"
-if [ -z "$width" ] && [ -n "$TMUX" ]; then
-  # -t TMUX_PANE: without it tmux reports the client's active pane, which can
-  # be a different (wider) pane than the one Claude Code is running in.
-  width=$(tmux display-message -p ${TMUX_PANE:+-t "$TMUX_PANE"} '#{pane_width}' 2>/dev/null)
-fi
-width="${width:-80}"
+# Claude Code normally supplies COLUMNS; use 80 when the hook has no terminal.
+width="${COLUMNS:-80}"
 # The status box is narrower than the terminal (border + padding). Padding out to the
 # full width makes the line word-wrap inside the box, and the wrapped tail — the model,
 # effort and context — is not displayed. Reserve enough columns that it never wraps.

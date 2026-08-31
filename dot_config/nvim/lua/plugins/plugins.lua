@@ -1,32 +1,4 @@
 return {
-  -- Navigate seamlessly between Neovim and tmux panes
-  {
-    "alexghergh/nvim-tmux-navigation",
-    keys = {
-      {
-        "<C-h>",
-        "<Cmd>NvimTmuxNavigateLeft<cr>",
-        desc = "Navigate left",
-      },
-      {
-        "<C-j>",
-        "<Cmd>NvimTmuxNavigateDown<cr>",
-        desc = "Navigate down",
-      },
-      {
-        "<C-k>",
-        "<Cmd>NvimTmuxNavigateUp<cr>",
-        desc = "Navigate up",
-      },
-      {
-        "<C-l>",
-        "<Cmd>NvimTmuxNavigateRight<cr>",
-        desc = "Navigate right",
-      },
-    },
-    config = true,
-  },
-
   --Adds a line in nvim, makes it skiny
 
   {
@@ -96,11 +68,6 @@ return {
       cli = {
         win = {
           config = function(terminal) end,
-        },
-        mux = {
-          backend = "tmux",
-          enabled = true,
-          dump = 5000, -- Increase scrollback dump for better history
         },
         tools = {
           antigravity = {

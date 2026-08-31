@@ -15,7 +15,7 @@ gtk-toolbar-style = flat
 # Keyboard bindings
 keybind = shift+insert=paste_from_clipboard
 keybind = control+insert=copy_to_clipboard
-# Legacy encoding sends Alt+Shift+Enter the same as Alt+Enter; send CSI-u so tmux can match M-S-Enter.
+# Send CSI-u so Herdr can distinguish Alt+Shift+Enter from Alt+Enter.
 keybind = alt+shift+enter=csi:13;4u
 # Send Shift+Enter as CSI-u so TUIs can distinguish it from Enter.
 keybind = shift+enter=csi:13;2u
@@ -49,7 +49,7 @@ font-style = Regular
 app-notifications = no-clipboard-copy
 
 # Answer OSC 52 read queries without prompting, so Neovim's OSC 52 paste
-# (used inside herdr/tmux/ssh) doesn't hang waiting for the terminal.
+# (used inside Herdr/SSH) doesn't hang waiting for the terminal.
 clipboard-read = allow
 
 

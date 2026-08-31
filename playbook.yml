@@ -5,7 +5,7 @@
   gather_facts: false
 
   vars:
-    # `profile` arrives via --extra-vars from the run_onchange wrapper. Normalise
+    # `profile` arrives via --extra-vars from the explicit reconcile script. Normalise
     # once here rather than writing `profile | lower` at every use site.
     p: "{{ profile | lower }}"
     is_mac: "{{ (profile | lower) == 'mac' }}"
@@ -21,21 +21,13 @@
     # Upstream checkouts, all synced by the single task in SECTION 6.
     # `dest` is relative to the user's home; `only` restricts an entry to one
     # profile.
-    tmuxifier_rel: ".cache/tmuxifier-src"
     git_repos:
       - { repo: 'https://github.com/marlonrichert/zsh-autocomplete.git', dest: '.oh-my-zsh/custom/plugins/zsh-autocomplete' }
       - { repo: 'https://github.com/zsh-users/zsh-autosuggestions.git', dest: '.oh-my-zsh/custom/plugins/zsh-autosuggestions' }
       - { repo: 'https://github.com/MichaelAquilina/zsh-you-should-use.git', dest: '.oh-my-zsh/custom/plugins/you-should-use' }
       - { repo: 'https://github.com/zsh-users/zsh-syntax-highlighting.git', dest: '.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' }
-      # NOT under /tmp: /tmp is tmpfs, so a /tmp clone forced a full re-clone of
-      # tmuxifier after every reboot.
-      - { repo: 'https://github.com/jimeh/tmuxifier.git', dest: "{{ tmuxifier_rel }}" }
       # Omarchy shell plugin; shell.json (chezmoi-managed) references it by id.
       - { repo: 'https://github.com/omacom-io/omarchy-notification-center-plugin.git', dest: '.config/omarchy/plugins/omacom.notification-center', only: omarchy }
-
-    ai_clis:
-      - { name: claude, url: 'https://claude.ai/install.sh', runner: bash }
-      - { name: codex, url: 'https://chatgpt.com/codex/install.sh', runner: sh }
 
     # Base terminal essentials. Installed on ANY Linux system (Omarchy or
     # server); most already ship in Omarchy's base, so on omarchy this is a
@@ -43,7 +35,6 @@
     common_linux_packages:
       - git
       - zsh
-      - tmux
       - ripgrep
       - fzf
       - bat
@@ -62,22 +53,15 @@
     mac_third_party_casks:
       - peteonrails/voxtype/voxtype
 
-    # Paths to this machine's auto-generated lists. Per host, not per profile:
-    # every Omarchy box regenerates these from its own system, so one shared copy
-    # would have each machine overwrite the other's and the prune below would then
-    # uninstall whatever the last writer happened to lack. st.host comes from the
-    # probe and uses the same `hostname -s` the generator writes with.
+    # Paths to this machine's generated lists. Per host, not per profile: every
+    # Omarchy box has different hardware and optional software. st.host comes
+    # from the probe and uses the same `hostname -s` the generator writes with.
     omarchy_dir: "{{ chezmoi_source_dir }}/packages/omarchy/{{ st.host }}"
     pacman_file: "{{ omarchy_dir }}/added-pacman.txt"
     aur_file: "{{ omarchy_dir }}/added-aur.txt"
     # drivers.txt is auto-tracked for reference only — drivers are hardware-
     # specific and must be installed MANUALLY, so the playbook never installs it.
     removed_file: "{{ omarchy_dir }}/removed.txt"
-    reference_files:
-      - "{{ omarchy_dir }}/base.packages"
-      - "{{ omarchy_dir }}/other.packages"
-    drivers_file: "{{ omarchy_dir }}/drivers.txt"
-    untracked_regex_file: "{{ omarchy_dir }}/untracked.regex"
 
     # Paths to server-specific auto-generated lists
     # (regenerate with scripts/update_server_package_lists.sh on the server)
@@ -91,8 +75,6 @@
     archzfs_server: "https://github.com/archzfs/archzfs/releases/download/experimental"
 
     makeflags_line: 'MAKEFLAGS="-j$(nproc)"'
-    pacman_hook_path: /etc/pacman.d/hooks/zz-chezmoi-package-sync.hook
-    pacman_hook_exec: "/usr/bin/runuser -u {{ non_root_user }} -- {{ chezmoi_source_dir }}/scripts/sync-package-lists.sh"
 
   tasks:
     # =========================================================================
@@ -119,18 +101,9 @@
           host_lists="{{ chezmoi_source_dir }}/packages/omarchy/$host/added-pacman.txt"
 
           installed=
-          orphans=
-          explicit=
           if command -v pacman >/dev/null 2>&1; then
             installed=$(pacman -Qq | tr '\n' ' ')
-            orphans=$(pacman -Qdtq 2>/dev/null | tr '\n' ' ')
-            explicit=$(pacman -Qetq 2>/dev/null | tr '\n' ' ')
           fi
-
-          clis=
-          for c in claude codex; do
-            [ -x "$home/.local/bin/$c" ] && clis="$clis $c"
-          done
 
           # Quotes are stripped so this can be embedded in the JSON line below;
           # gates substring-match cask names against it. brew keeps this at
@@ -149,13 +122,8 @@
           printf '"host":"%s",' "$host"
           printf '"host_lists":%s,' "$(yn test -f "$host_lists")"
           printf '"installed":"%s",' "$installed"
-          printf '"orphans":"%s",' "$orphans"
-          printf '"explicit":"%s",' "$explicit"
-          printf '"clis":"%s",' "$clis"
           printf '"omz":%s,' "$(yn test -f "$home/.oh-my-zsh/oh-my-zsh.sh")"
           printf '"makeflags":%s,' "$(yn grep -qxF '{{ makeflags_line }}' /etc/makepkg.conf)"
-          printf '"pacman_hooks_dir":%s,' "$(yn test -d /etc/pacman.d/hooks)"
-          printf '"pacman_hook":%s,' "$(yn grep -qF '{{ pacman_hook_exec }}' {{ pacman_hook_path }})"
           printf '"brew_trust":"%s",' "$brew_trust"
           printf '"archzfs_key":%s' "$key_trusted"
           printf '}\n'
@@ -175,18 +143,12 @@
       when: is_linux
       vars:
         have: "{{ st.installed.split() }}"
-        # A machine that has never run the generator has no directory yet. Fall
-        # back to the baseline and remove NOTHING rather than treating "no list"
-        # as "nothing is declared", which would prune the whole system. The
-        # pacman hook creates the directory on its next transaction.
+        # A machine that has never run the generator has no host directory yet.
+        # Fall back to the common baseline; removals are always explicit below.
         listed: "{{ p == 'server' or (p == 'omarchy' and st.host_lists) }}"
         want_native: "{{ (common_linux_packages + ((lookup('file', server_pacman_file if p == 'server' else pacman_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if listed else [])) | unique }}"
         want_aur: "{{ (lookup('file', server_aur_file if p == 'server' else aur_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if listed else [] }}"
         unwanted: "{{ (lookup('file', removed_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if (p == 'omarchy' and listed) else [] }}"
-        omarchy_reference: "{{ ((lookup('file', reference_files[0]) + '\n' + lookup('file', reference_files[1])).splitlines()
-                                | reject('match', '^#') | reject('match', '^$') | list) if (p == 'omarchy' and listed) else [] }}"
-        omarchy_drivers: "{{ (lookup('file', drivers_file).splitlines() | reject('match', '^#') | reject('match', '^$') | list) if (p == 'omarchy' and listed) else [] }}"
-        untracked_pattern: "{{ (lookup('file', untracked_regex_file).splitlines() | reject('match', '^$') | join('|')) if (p == 'omarchy' and listed) else '$^' }}"
       ansible.builtin.set_fact:
         installed_packages: "{{ have }}"
         pacman_missing: "{{ want_native | difference(have) }}"
@@ -194,21 +156,6 @@
         aur_missing: "{{ want_aur | reject('equalto', 'yay-bin') | list | difference(have) }}"
         removed_present: "{{ unwanted | intersect(have) }}"
         yay_installed: "{{ 'yay' in have or 'yay-bin' in have }}"
-        # Explicitly installed, nothing depends on it, and it appears on none of
-        # the lists — i.e. it was installed on this machine and never declared.
-        # -Qet mirrors how the lists are generated, so a package held only as a
-        # dependency is never a candidate. Everything the generator excludes on
-        # purpose (drivers, this machine's kernel, the pre-installs) is protected
-        # via untracked.regex, or the prune would uninstall spotify and the GPU
-        # stack on first run.
-        prunable: "{{ (st.explicit | default('') | split
-                       | difference(want_native)
-                       | difference(want_aur)
-                       | difference(omarchy_reference)
-                       | difference(omarchy_drivers)
-                       | difference(['base', 'base-devel'])
-                       | reject('search', untracked_pattern) | list)
-                      if (p == 'omarchy' and listed) else [] }}"
 
     # =========================================================================
     # SECTION 1: BUILD CONFIGURATION (Omarchy & server profiles)
@@ -351,7 +298,7 @@
     # Note: base/other packages are NOT installed because those ship with the
     # OS. Drivers (drivers.txt) are also NOT installed here — they are
     # hardware-specific and must be installed manually. The list is still
-    # auto-tracked by scripts/sync-package-lists.sh for reference.
+    # generated by scripts/update_package_lists.sh for reference.
     #
     # update_cache lives on this task rather than one of its own, so mirrors are
     # contacted only when there is genuinely something to install.
@@ -373,10 +320,10 @@
             name: base-devel
             state: present
 
-        - name: Allow non-root user to run sudo without password temporarily
+        - name: Allow the AUR build user to invoke pacman temporarily
           ansible.builtin.copy:
             dest: /etc/sudoers.d/99-chezmoi-aur-temp
-            content: "{{ non_root_user }} ALL=(ALL) NOPASSWD: ALL\n"
+            content: "{{ non_root_user }} ALL=(root) NOPASSWD: /usr/bin/pacman *\n"
             mode: '0440'
             validate: '/usr/sbin/visudo -cf %s'
 
@@ -449,32 +396,6 @@
         state: absent
       when: removed_present | default([]) | length > 0
 
-    # Anything installed here but declared nowhere. This is what converges a
-    # second machine: a package dropped from added-*.txt on one box is removed
-    # from the others on their next run. Plain -R, not -Rs — the orphan pass
-    # below reclaims whatever this frees.
-    - name: Remove undeclared packages ({{ prunable | default([]) | join(', ') }})
-      community.general.pacman:
-        name: "{{ prunable }}"
-        state: absent
-      when: prunable | default([]) | length > 0
-
-    # Dependencies nothing requires any more. Installing packages never reclaims
-    # these, so without a sweep they accumulate for the life of the machine.
-    # Looped because removing an orphan orphans its own dependencies in turn.
-    - name: Remove orphaned dependencies ({{ st.orphans | default('') | trim }})
-      ansible.builtin.shell:
-        cmd: |
-          while :; do
-            orphans=$(pacman -Qdtq 2>/dev/null) || break
-            [ -n "$orphans" ] || break
-            pacman -Rns --noconfirm $orphans || break
-          done
-      when:
-        - is_linux
-        - st.orphans | default('') | trim | length > 0 or prunable | default([]) | length > 0
-      changed_when: true
-
     # =========================================================================
     # SECTION 5: OH MY ZSH (All Profiles)
     # =========================================================================
@@ -511,7 +432,7 @@
           become_user: "{{ non_root_user }}"
 
     # =========================================================================
-    # SECTION 6: UPSTREAM CHECKOUTS (zsh plugins + tmuxifier + shell plugins)
+    # SECTION 6: UPSTREAM CHECKOUTS (zsh and Omarchy shell plugins)
     # =========================================================================
     # One task, every repo, fetched CONCURRENTLY. These were five separate
     # `ansible.builtin.git` tasks with update:true, which cost ~1.2s of serial
@@ -525,7 +446,7 @@
     #
     # Prints one line per repo that actually moved, and refuses to discard local
     # modifications (matching ansible.builtin.git's force=false default).
-    - name: Sync upstream checkouts and Tmuxifier
+    - name: Sync upstream checkouts
       ansible.builtin.shell:
         cmd: |
           set -u
@@ -556,66 +477,8 @@
           {% endfor %}
           for pid in $pids; do wait "$pid" || rc=1; done
 
-          # tmuxifier ships as a checkout, so mirror it into place minus
-          # layouts/, which chezmoi owns. --itemize-changes prints one line per
-          # file actually touched, so an already-synced run stays silent and the
-          # task reports ok instead of changed.
-          rsync -a --checksum --itemize-changes --exclude=.git --exclude=layouts \
-            "$home/{{ tmuxifier_rel }}/" "$home/.tmuxifier/" || rc=1
-
           exit $rc
       register: upstream_sync
       changed_when: upstream_sync.stdout | trim | length > 0
       become: "{{ as_user }}"
       become_user: "{{ non_root_user }}"
-
-    # =========================================================================
-    # SECTION 7: AI CLI TOOLS
-    # =========================================================================
-    # One task for both CLIs: the per-tool `creates:` guard cost a full module
-    # invocation each just to stat a path the probe already checked.
-    - name: Bootstrap AI CLIs
-      ansible.builtin.shell:
-        cmd: "curl -fsSL {{ item.url }} | {{ item.runner }}"
-      loop: "{{ ai_clis }}"
-      become: "{{ as_user }}"
-      become_user: "{{ non_root_user }}"
-      when: item.name not in st.clis.split()
-
-    # =========================================================================
-    # SECTION 8: PACKAGE LIST AUTO-SYNC (Omarchy & server profiles)
-    # =========================================================================
-    # A pacman PostTransaction hook that regenerates this repo's package
-    # lists and commits them whenever packages are installed or removed
-    # manually — no more remembering to run scripts/update_*_package_lists.sh.
-    # The hook drops privileges back to the login user and delegates to
-    # scripts/sync-package-lists.sh in the chezmoi source dir.
-    - name: Install package-list auto-sync pacman hook
-      when: is_linux
-      block:
-        - name: Ensure the pacman hook directory exists
-          ansible.builtin.file:
-            path: /etc/pacman.d/hooks
-            state: directory
-            mode: '0755'
-          when: not st.pacman_hooks_dir
-
-        # zz- prefix so it sorts (and therefore runs) after other hooks.
-        # The probe greps for the Exec line, so a change to non_root_user or
-        # chezmoi_source_dir still rewrites the hook.
-        - name: Install the package-list sync hook
-          ansible.builtin.copy:
-            dest: "{{ pacman_hook_path }}"
-            mode: '0644'
-            content: |
-              [Trigger]
-              Operation = Install
-              Operation = Remove
-              Type = Package
-              Target = *
-
-              [Action]
-              Description = Syncing chezmoi package lists...
-              When = PostTransaction
-              Exec = {{ pacman_hook_exec }}
-          when: not st.pacman_hook

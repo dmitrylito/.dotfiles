@@ -1,9 +1,8 @@
 onboarding = false
-# Mirrors the Omarchy tmux config in config/tmux/tmux.conf
-# tmux session -> herdr workspace, tmux window -> herdr tab, tmux pane -> herdr pane
+# Herdr is the universal terminal workspace and multiplexer.
 
 [theme]
-# tmux ran on the terminal's own palette (bg=default, fg=default, ANSI blue accents)
+# Follow the terminal palette with blue accents.
 name = "terminal"
 
 [theme.custom]
@@ -12,7 +11,7 @@ name = "terminal"
 panel_bg = "black"
 
 [terminal]
-# Matches -c "#{pane_current_path}" on every split, window, and session
+# New panes and workspaces inherit the current working directory.
 new_cwd = "follow"
 
 [keys]
@@ -33,9 +32,8 @@ close_pane = ["prefix+x", "alt+esc"]
 zoom = "prefix+z"
 last_pane = "prefix+;"
 
-# Direct bindings: herdr sees these before the pane app does, so inside nvim
-# they move herdr panes (nvim-tmux-navigation is dead outside tmux anyway),
-# and ctrl+l no longer clears the shell (type `clear`).
+# Direct bindings: Herdr sees these before the pane app does, including inside
+# Neovim. Ctrl+L therefore navigates instead of clearing the shell.
 focus_pane_left = "ctrl+h"
 focus_pane_down = "ctrl+j"
 focus_pane_up = "ctrl+k"
@@ -43,7 +41,7 @@ focus_pane_right = "ctrl+l"
 
 resize_mode = ["prefix+ctrl+left", "prefix+ctrl+down", "prefix+ctrl+up", "prefix+ctrl+right"]
 
-# No tmux equivalent; herdr's default prefix+shift+p is taken by previous session
+# Herdr's default prefix+shift+p is taken by previous workspace.
 rename_pane = "prefix+shift+o"
 
 # Windows -> tabs
@@ -70,7 +68,7 @@ focus_agent = ["alt+shift+1..9", "ctrl+alt+1..9"]
 previous_agent = "alt+shift+k"
 next_agent = "alt+shift+j"
 
-# tmux prefix+g lazygit popup
+# Lazygit popup
 [[keys.command]]
 key = "prefix+g"
 type = "popup"
@@ -79,7 +77,7 @@ description = "lazygit"
 width = "90%"
 height = "90%"
 
-# tmux prefix+u URL picker popup
+# URL picker popup
 [[keys.command]]
 key = "prefix+u"
 type = "popup"
@@ -91,20 +89,20 @@ height = "60%"
 [ui]
 accent = "blue"
 
-# tmux drew single-line dividers between adjacent panes
+# Single-line dividers without extra gaps.
 pane_gaps = false
 pane_borders = true
 
-# tmux had no scrollbar column beside its panes
+# Keep the full pane width available to terminal applications.
 pane_scrollbars = false
 
-# kill-window and kill-session never asked
+# Closing tabs and workspaces does not require confirmation.
 confirm_close = false
 
-# automatic-rename gave windows a name without prompting
+# Let applications supply tab names without prompting at creation.
 prompt_new_tab_name = false
 
-# set -g mouse on
+# Mouse selection and pane interaction.
 mouse_capture = true
 
 # Written by herdr's settings UI; keep in sync here or apply stomps it

@@ -1,18 +1,12 @@
 # vim: set filetype=zsh:
 
-# Only auto-attach in a real interactive terminal; agent harnesses (Claude
-# Code sets CLAUDECODE) source this file without a TTY and muxers break them.
-# The HERDR_PANE_ID guard also stops herdr's own panes from re-attaching —
-# without it every new pane runs this block and grabs the tmux session.
+# Only auto-attach Herdr in a real interactive terminal. Agent harnesses source
+# this file without a TTY, and Herdr's own pane shells must not re-attach.
 # The server profile auto-attaches nothing: it is reached via `herdr --remote`,
 # which manages its own attach, and a plain ssh should get a plain shell.
 {{ if ne (.profile | lower) "server" -}}
-if [ -t 0 ] && [ -z "$CLAUDECODE" ] && [ -z "$HERDR_PANE_ID" ] && [ -z "$TMUX" ]; then
-  if command -v herdr >/dev/null 2>&1; then
-    herdr
-  elif command -v tmux >/dev/null 2>&1; then
-    tmux -u attach-session -d || tmux -u new-session
-  fi
+if [ -t 0 ] && [ -z "$CLAUDECODE" ] && [ -z "$HERDR_PANE_ID" ] && command -v herdr >/dev/null 2>&1; then
+  herdr
 fi
 {{- end }}
 
@@ -59,7 +53,6 @@ cache_zsh_completion() {
 cache_zsh_completion codex "$XDG_DATA_HOME/mise/installs/codex/latest/bin/codex" completion zsh
 cache_zsh_completion lazygit "$commands[lazygit]" completion zsh
 cache_zsh_completion herdr "$commands[herdr]" completion zsh
-cache_zsh_completion sesh "$commands[sesh]" completion zsh
 unfunction cache_zsh_completion
 
 plugins=(
@@ -68,7 +61,6 @@ plugins=(
   archlinux
   tailscale
   sudo
-  tmux
   docker
   docker-compose
   gpg-agent
@@ -84,7 +76,7 @@ plugins=(
 
 # --- zsh-autocomplete: debounce so it doesn't complete+redraw on every keystroke
 # (must be set BEFORE oh-my-zsh sources the plugin). Fixes lag/flood-crash under
-# tmux+Ghostty without disabling the plugin's history-search / tab behavior.
+# Herdr/Ghostty without disabling the plugin's history-search / tab behavior.
 zstyle ':autocomplete:*' delay 0.15
 zstyle ':autocomplete:*' min-input 2
 zstyle ':autocomplete:*' list-lines 8    # smaller live list = far less redraw
@@ -95,7 +87,7 @@ source "$ZSH/oh-my-zsh.sh"
 
 # Cap syntax-highlighting work: without this, zsh-syntax-highlighting re-parses
 # the whole buffer on every keystroke, so long lines / big pastes flood the
-# terminal with redraws and crash the window under tmux (zsh-syntax-highlighting #295).
+# terminal with redraws and crash the window (zsh-syntax-highlighting #295).
 ZSH_HIGHLIGHT_MAXLENGTH=512
 
 setopt AUTO_CD
@@ -147,26 +139,10 @@ add-zsh-hook precmd _ctrl_c_before_prompt
 add-zsh-hook preexec _ctrl_c_restore_interrupt
 add-zsh-hook zshexit _ctrl_c_restore_interrupt
 
-sesh-sessions() {
-  {
-    exec </dev/tty
-    exec <&1
-    local session
-    session=$(sesh list -t -c | fzf --height 40% --reverse --border-label ' sesh ' --border --prompt '⚡  ')
-    zle reset-prompt >/dev/null 2>&1 || true
-    [[ -z "$session" ]] && return
-    sesh connect $session
-  }
-}
-zle -N sesh-sessions
-bindkey -M vicmd '\es' sesh-sessions
-bindkey -M viins '\es' sesh-sessions
-
 # A dropped ssh/mosh never gets to hand the terminal back, so the pane keeps
 # whatever the remote turned on (mouse reporting, bracketed paste, alt screen,
 # raw tty) and any in-flight query reply lands on the next prompt as raw
-# escapes. Undo it whenever a remote-session command returns — the automatic
-# version of tmux's `prefix M`. Hooks, not an ssh() wrapper: Ghostty's shell
+# escapes. Undo it whenever a remote-session command returns. Hooks, not an ssh() wrapper: Ghostty's shell
 # integration already defines ssh() for ssh-env and must not be shadowed.
 autoload -Uz add-zsh-hook
 _remote_session_ran=0
@@ -200,20 +176,6 @@ _remote_session_precmd() {
 add-zsh-hook preexec _remote_session_preexec
 add-zsh-hook precmd _remote_session_precmd
 
-# moshi-hook binds a tmux pane to a Claude session at SessionStart only, so a session that
-# starts unbound (or claims a pane it does not occupy) stays wrong until something repairs it.
-# The rebind timer covers that, but not for ~20s; one detached run closes the startup gap.
-# preexec, not precmd: while claude holds the pane the shell renders no prompt and runs no
-# hooks, so the sleep has to outlive the launch rather than wait for the next prompt.
-_moshi_rebind_preexec() {
-  local -a words=(${(z)1})
-  [[ $words[1] == claude && -n $TMUX_PANE ]] || return
-  (( $+commands[moshi-pane-rebind] )) || return
-  ( sleep 3; moshi-pane-rebind >/dev/null 2>&1 ) &!
-}
-
-add-zsh-hook preexec _moshi_rebind_preexec
-
 source_if_exists "$HOME/.aliases"
 # iTerm2 only ships this on macOS; the guard makes it a no-op everywhere else.
 source_if_exists "$HOME/.iterm2_shell_integration.zsh"
@@ -230,7 +192,6 @@ if [[ -o interactive ]]; then
     builtin cd "$@" 2>/dev/null || __zoxide_z "$@"
   }
   eval "$(mise activate zsh)"
-  eval "$(tmuxifier init -)"
   eval "$(direnv hook zsh)"
 fi
 {{ if eq (.profile | lower) "omarchy" -}}
@@ -273,7 +234,7 @@ hyprctl() {
 {{- end }}
 
 
-# Pull + apply + push dotfiles in the background so no machine drifts behind master.
+# Pull and apply committed dotfiles in the background so machines do not drift behind master.
 # Throttled and script-excluded; see ~/.local/bin/chezmoi-autoupdate for why.
 if [[ -o interactive ]] && [[ -x "$HOME/.local/bin/chezmoi-autoupdate" ]]; then
   # Local-only apply, synchronous: no network, so an already-pulled change lands on

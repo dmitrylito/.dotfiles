@@ -1,138 +1,53 @@
-# Synced package inventory
+# Package inventory
 
-Grouped view of everything the Ansible playbook actually installs per profile, so
-duplication and dead weight are visible at a glance.
+Package deployment is intentionally decoupled from `chezmoi apply`. Run
+`scripts/reconcile-packages.sh` explicitly after reviewing the current profile's
+lists. On Linux, use `--check` first when package state has changed substantially.
 
-Scope: `omarchy/added-{pacman,aur}.txt`, `server/{pacman,aur}.txt`, `mac/{brew,casks,taps}.txt`.
-`omarchy/base.packages` + `other.packages` are Omarchy's *shipped* reference lists (the
-diff baseline, never installed by the playbook) and `omarchy/drivers.txt` is reference-only
-— none of the three are covered here.
+## Ownership
 
-Columns: **O** = omarchy, **S** = server, **M** = mac. `·` = absent, `—` = N/A on that platform.
+- `omarchy/<hostname>/added-pacman.txt`: native packages intentionally added on
+  that host.
+- `omarchy/<hostname>/added-aur.txt`: AUR packages intentionally added there.
+- `omarchy/<hostname>/removed.txt`: the only automatic removal list.
+- `omarchy/<hostname>/{base,other}.packages`: snapshots of Omarchy-owned
+  packages; reference only.
+- `omarchy/<hostname>/drivers.txt`: hardware-specific reference; never
+  installed automatically.
+- `server/{pacman,aur}.txt`: desired headless Arch package set.
+- `mac/{brew,casks,taps}.txt`: desired Homebrew set.
 
-## Shell
+The old `untracked.regex` files were only safety rails for automatic pruning.
+They are gone because undeclared packages and orphan dependencies are no longer
+removed automatically.
 
-`zsh` on all three. `starship` on server + mac (omarchy: base.packages). `direnv` and
-`sesh`/`sesh-bin` on all three.
+## Regeneration
 
-The four zsh plugins (`zsh-autocomplete`, `zsh-autosuggestions`, `zsh-syntax-highlighting`,
-`you-should-use`) are **not** packages on any profile — the playbook clones them as oh-my-zsh
-custom plugins, which is what `.zshrc`'s `plugins=()` loads. Don't re-add the distro packages.
+- Run `scripts/update_package_lists.sh` on an Omarchy host.
+- Run `scripts/update_server_package_lists.sh` on the server.
+- Review the diff before committing; generation is not package policy.
+- Do not hand-edit Omarchy base/other snapshots.
 
-## Editor & code intelligence
+The previous pacman hook, auto-commit/push script, and package onchange runner
+were removed. Package transactions no longer mutate the dotfiles repository.
 
-| tool | O | S | M | note |
-|---|---|---|---|---|
-| bob | ✓ | ✓ | ✓ | the neovim version manager — owns `nvim` on every profile |
-| tree-sitter(-cli) | — | ✓ | ✓ | omarchy: base.packages (`tree-sitter-cli`) |
-| luarocks | — | ✓ | ✓ | omarchy: base.packages |
-| ast-grep | ✓ | ✓ | ✓ | |
-| ripgrep / ripgrep-all | — | ✓ | ✓ | omarchy: base.packages |
-| pre-commit | ✓ | · | ✓ | |
+## Deliberate exclusions
 
-Distro `neovim` must stay off every list — bob owns `nvim` and a packaged copy just gets
-shadowed in `PATH`.
+- tmux and sesh are retired. Omarchy still ships tmux in its base snapshot, so
+  `removed.txt` overrides it on each known host.
+- Herdr is the supported multiplexer; its package/vendor installer owns it.
+- `claude`, `codex`, GitHub CLI, Hey, Grok, Pi, Node, and Gemini-style npm tools
+  belong to the managed mise configuration, not duplicate distro packages.
+- `zsh-autocomplete` and the other shell plugins are cloned by `playbook.yml`;
+  do not add duplicate distro packages.
+- distro Neovim stays off the desired lists because Bob owns `nvim`.
+- `stow` is obsolete; Chezmoi owns dotfiles.
+- GPU stacks remain in `drivers.txt` because they are host-specific and large.
 
-## Files, viewers, navigation
+## Reconciliation guarantees
 
-`yazi`, `bat`, `eza`, `fd`, `zoxide`, `fzf` — all three profiles (omarchy mostly via base.packages).
-Server adds `ncdu`, `pv`, `lsof`, `rsync`. Yazi previewer deps on mac/server: `ghostscript`,
-`imagemagick`, `poppler`, `resvg`, `sevenzip`, `ffmpeg`.
-
-## Git & VCS
-
-`git`, `git-delta`, `lazygit` everywhere. `chezmoi` everywhere. `gh` (mac) / `github-cli`
-(omarchy base). `stow` is gone from every profile — chezmoi replaced it.
-
-## Terminal
-
-`tmux` everywhere (+ tmuxifier cloned by the playbook). `ghostty` on omarchy;
-`ghostty-terminfo` on server; `ghostty` cask on mac. `mosh` on omarchy/server/mac.
-
-## AI CLIs
-
-| tool | O | S | M | note |
-|---|---|---|---|---|
-| claude CLI (`~/.local/bin`) | playbook | playbook | playbook | installed by the playbook's AI-CLI section |
-| codex CLI (`~/.local/bin`) | playbook | playbook | playbook | same |
-| `claude` (AUR) | ✓ | · | · | the **desktop app**, not the CLI — intentional, keep |
-| ollama / ollama-cuda | · | ✓ | · | |
-| llama.cpp-cuda (AUR) | · | ✓ | · | |
-
-The CLIs come from vendor install scripts, so `openai-codex-bin` and `gemini-cli` packages
-must stay off the lists — they shadow `~/.local/bin` copies. `gemini` comes from mise/npm.
-
-## Runtimes & build
-
-| tool | O | S | M | note |
-|---|---|---|---|---|
-| mise | — | ✓ | ✓ | omarchy: base.packages. Owns node/python/bun/pnpm |
-| uv | · | ✓ (`python-uv`) | ✓ | omarchy uses the astral installer copy in `~/.local/bin` |
-| go | ✓ | ✓ | ✓ | |
-| cmake | ✓ | — | ✓ | server: `base-devel` |
-| jdk17-openjdk | ✓ | · | · | only JDK, default java (Android Studio / Gradle) |
-| gcc / base-devel | — | ✓ | — | |
-| pigz | ✓ | ✓ | · | |
-
-No `node` package on any profile — mise owns it.
-
-## Cloud, remote, sync
-
-`ansible`, `tailscale`, `rclone` (omarchy + mac), `google-cloud-cli` + `-gsutil` (omarchy) /
-`gcloud-cli` cask (mac), `wayvnc` (omarchy), `openssh` + `samba` + `nfs-utils` (server),
-`wget` (all).
-
-## Containers & infra
-
-Server: `docker`, `docker-buildx`, `docker-compose`, `podman-compose`, `firewalld`,
-`cockpit*` (+ `cockpit-sensors` AUR), `packagekit`, `networkmanager`.
-Omarchy gets docker from base.packages. Mac: `lazydocker` only — no container runtime.
-
-## Hardware, firmware, peripherals (omarchy)
-
-`dmidecode`, `efibootmgr`, `fwupd`, `i2c-tools`, `tpm2-tools`, `sbctl`, `pesign`,
-`nvtop`, `openrgb`, `solaar`, `coolercontrol-bin`, `zsa-keymapp-bin`, `stress-ng`, `gputest`.
-Server equivalents: `smartmontools`, `ethtool`, `lsof`, `pcp`, `udisks2`, `quota-tools`.
-
-## Wayland / desktop tooling (omarchy only)
-
-`swaync`, `nwg-displays`, `wlr-randr`, `hyprmon-bin`, `omazed`, `wev`, `wtype`, `dotool`,
-`voxtype-bin`, `kdeconnect`, `easyeffects`, `noisetorch-bin`, `gamescope`.
-
-## Media & imaging
-
-`tesseract` + `tesseract-data-eng` (omarchy) / `tesseract` + `tesseract-lang` (mac),
-`webcamoid` (omarchy), `gimp` (omarchy), `ffmpeg`/`imagemagick` (server + mac),
-`tectonic` (server + mac).
-
-## GUI apps
-
-Omarchy: `telegram-desktop`, `slack-desktop`, `android-studio`, `steam`, `discordupdater`,
-`etcher-bin`, `ventoy-bin`, `gogcli`.
-Mac casks are deliberately limited to things the dotfiles configure — `aerospace`, `ghostty`,
-the nerd fonts — plus `gcloud-cli`. Chat/media apps are installed by hand on mac, not synced.
-
-## GPU compute stacks are drivers, not packages
-
-CUDA (`cuda`, `cudnn`) and ROCm (`migraphx`, `rocm-*`, `hip*`, `miopen-hip`, `comgr`, `hsa-*`)
-are matched by `DRIVER_REGEX` in `scripts/update_package_lists.sh`, so on omarchy they land in
-`drivers.txt` — tracked for reference, never installed by the playbook. They're multi-GB and
-only valid for the GPU vendor a given machine actually has, so syncing them is wrong.
-
-The server script (`update_server_package_lists.sh`) has no driver filter by design: its
-`ollama-cuda` / `llama.cpp-cuda` / `nvidia-open-lts` entries are wanted there.
-
-## Server-only data stack
-
-`python-pandas`, `python-pip`, `gdal`, `geos`, `libvips`, `lua`, `zram-generator`,
-`cups`/`cups-filters`, `linux`/`linux-lts` kernels, `nvidia-open-lts`,
-`nvidia-container-toolkit`, `yay-bin`.
-
-## Known rough edges
-
-- `taps.txt` carries `barutsrb/tap`, whose only formula is `omniwm` — nothing in
-  `brew.txt`/`casks.txt` references it.
-- `DRIVER_REGEX`'s pre-existing unanchored `t2` token also matches `libgit2`, `libxfont2`,
-  and `webkit2gtk-4.1`. Harmless today because none of them are explicitly installed, but it
-  would misfile them as drivers if any ever were.
-- Mac has no container runtime.
+The playbook installs missing declared packages and removes only explicit
+`removed.txt` entries. It does not infer deletion from absence, does not remove
+orphans, and does not install `drivers.txt`. During an AUR build, its temporary
+sudoers entry permits only `/usr/bin/pacman *` and is removed in an `always`
+block.
