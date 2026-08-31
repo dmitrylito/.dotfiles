@@ -1,4 +1,3 @@
-cups-pk-helper
 dell-xps-touchpad-haptics
 dell-xps13-sidecar-amps
 lsp-plugins-lv2
