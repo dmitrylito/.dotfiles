@@ -47,7 +47,7 @@
           "id": "omarchy.network"
         },
         {
-          "id": "omarchy.audio"
+          "id": "dmitrylito.audio"
         },
         {
           "id": "omarchy.power"
@@ -61,7 +61,7 @@
       ]
     },
     "position": "top",
-    "transparent": true
+    "transparent": false
   },
   "idle": {
     "lock": 300,

@@ -60,11 +60,13 @@ max_duration_secs = 300
 
 # Pause MPRIS media players during recording
 pause_media = false
+duck_media = false
+duck_media_volume_percent = 70
 
 [audio.feedback]
-enabled = true
+enabled = false
 theme = "default"
-# 0.0-1.0, not percent; `voxtype configure` ignores this field (always shows 70%) -- edit here, not in the TUI.
+# 0.0-1.0, not percent.
 volume = 0.20
 
 [output]
@@ -96,9 +98,9 @@ pre_type_delay_ms = 0
 # to avoid Wayland device-churn and focus jitter under streaming mode.
 driver_order = ["dotool", "clipboard"]
 
-# No delay before typing starts; the persistent dotoold daemon keeps one uinput
-# device alive, so there is no per-output device-settle race to guard against.
-pre_type_delay_ms = 0
+# Keep the current small buffer before typing begins. The persistent dotoold
+# daemon avoids device churn; 25 ms still gives the focused client time to settle.
+pre_type_delay_ms = 25
 {{- end }}
 
 [output.notification]
@@ -188,4 +190,6 @@ opacity = 0.95
 waveform_window_secs = 3.0
 peak_decay_db_per_sec = 6.0
 waveform_gain = 10.0
+style = "default"
+layout = "compact"
 {{- end }}

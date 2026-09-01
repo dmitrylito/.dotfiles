@@ -1,0 +1,58 @@
+#!/bin/bash
+
+set -euo pipefail
+
+action=${1:-status}
+source_name=$(pactl get-default-source)
+mapfile -t source_ids < <(pactl list short sources | awk -v name="$source_name" '$2 == name { print $1 }')
+
+sink_on=0
+if ! pactl get-sink-mute @DEFAULT_SINK@ | grep -q 'yes'; then sink_on=1; fi
+
+source_on=0
+for source_id in "${source_ids[@]}"; do
+  if ! pactl get-source-mute "$source_id" | grep -q 'yes'; then
+    source_on=1
+  fi
+done
+
+audio_on=$((sink_on || source_on))
+
+print_state() {
+  echo "$audio_on $sink_on $source_on"
+}
+
+case "$action" in
+  status)
+    print_state
+    ;;
+  toggle)
+    target_mute=$audio_on
+    pactl set-sink-mute @DEFAULT_SINK@ "$target_mute"
+    for source_id in "${source_ids[@]}"; do
+      pactl set-source-mute "$source_id" "$target_mute"
+    done
+    sink_on=$((1 - target_mute))
+    source_on=$sink_on
+    audio_on=$sink_on
+    print_state
+    ;;
+  sink-toggle)
+    pactl set-sink-mute @DEFAULT_SINK@ "$sink_on"
+    sink_on=$((1 - sink_on))
+    audio_on=$((sink_on || source_on))
+    print_state
+    ;;
+  source-toggle)
+    for source_id in "${source_ids[@]}"; do
+      pactl set-source-mute "$source_id" "$source_on"
+    done
+    source_on=$((1 - source_on))
+    audio_on=$((sink_on || source_on))
+    print_state
+    ;;
+  *)
+    echo "Usage: audio-master-control <status|toggle|sink-toggle|source-toggle>" >&2
+    exit 2
+    ;;
+esac
