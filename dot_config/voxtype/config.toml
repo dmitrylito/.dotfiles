@@ -1,6 +1,5 @@
 # Voxtype Configuration
 #
-# Location: ~/.config/voxtype/config.toml
 # All settings can be overridden via CLI flags
 #
 # Values are tuned for this box's GPU and for Wayland's uinput typing path (dotool).
@@ -20,7 +19,6 @@ key = "HOME"
 mode = "toggle"
 
 [audio]
-# Audio input device ("default" uses system default)
 # List devices with: pactl list sources short
 device = "default"
 
@@ -47,11 +45,8 @@ volume = 0.20
 [output]
 # Primary output mode: "type" or "clipboard"
 mode = "type"
-
-# Fall back to clipboard if typing fails
 fallback_to_clipboard = true
 
-# Delay between typed characters in milliseconds
 # 0 = fastest possible, increase if characters are dropped
 type_delay_ms = 0
 auto_submit = false
@@ -71,13 +66,8 @@ driver_order = ["dotool", "clipboard"]
 pre_type_delay_ms = 25
 
 [output.notification]
-# Show notification when recording starts (hotkey pressed)
 on_recording_start = false
-
-# Show notification when recording stops (transcription beginning)
 on_recording_stop = false
-
-# Show notification with transcribed text after transcription completes
 on_transcription = false
 show_engine_icon = false
 
