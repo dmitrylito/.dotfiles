@@ -25,11 +25,11 @@ docs/
 
 {{ if and (ne $profile "omarchy") (ne $profile "mac") }}
 .config/ghostty/
-.config/voxtype/
 {{ end }}
 
 {{ if ne $profile "omarchy" }}
 .config/hypr/
+.config/voxtype/
 .config/omarchy/
 # Keeps hotplugged displays blank while the Omarchy session is locked.
 .local/bin/omarchy-lock-dpms-guard
@@ -83,9 +83,6 @@ Projects/fleetchaser/
 .config/aerospace/
 .config/sketchybar/
 .config/borders/
-# macOS voxtype ignores XDG_CONFIG_HOME and only reads this path, so mac
-# symlinks it at .config/voxtype/ rather than keeping a second copy.
-Library/
 {{ end }}
 
 {{ if eq $profile "mac" }}

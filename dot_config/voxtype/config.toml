@@ -1,38 +1,16 @@
-{{- $mac := eq (.profile | lower) "mac" -}}
 # Voxtype Configuration
 #
 # Location: ~/.config/voxtype/config.toml
 # All settings can be overridden via CLI flags
 #
-# Shared between the omarchy and mac profiles. The omarchy values are tuned for
-# that box's GPU and for Wayland's uinput typing path (dotool); neither applies
-# on macOS, which types through the accessibility API and has no XDG_RUNTIME_DIR.
-{{ if $mac -}}
-# Parakeet is EXPERIMENTAL on macOS and ships no downloaded model, so mac stays
-# on whisper. To switch after fetching one: voxtype setup model
-engine = "whisper"
+# Values are tuned for this box's GPU and for Wayland's uinput typing path (dotool).
+engine = "parakeet"
 
-# No XDG_RUNTIME_DIR on macOS, so "auto" has nowhere to resolve to. The FN
-# hotkey drives recording directly, so no external state consumer needs it.
-state_file = "disabled"
-
-[hotkey]
-# macOS has no compositor keybinding, so voxtype owns the hotkey itself.
-# Cmd+Z mirrors the SUPER+Z dictation binding in hypr/bindings.conf (same
-# physical keys). It shadows Undo, which voxtype's CGEvent tap swallows while
-# the daemon runs — pick another key here if that bites.
-enabled = true
-key = "Z"
-modifiers = ["cmd"]
-mode = "toggle"
-{{- else -}}
 # State file for external integrations (Waybar, polybar, etc.)
 # Use "auto" for default location ($XDG_RUNTIME_DIR/voxtype/state),
 # a custom path, or "disabled" to turn off. The daemon writes state
 # ("idle", "recording", "transcribing") to this file whenever it changes.
 # Required for `voxtype record toggle` and `voxtype status` commands.
-engine = "parakeet"
-
 state_file = "auto"
 
 [hotkey]
@@ -40,9 +18,6 @@ state_file = "auto"
 enabled = false
 key = "HOME"
 mode = "toggle"
-# key = "HOME"
-# mode = "toggle"
-{{- end }}
 
 [audio]
 # Audio input device ("default" uses system default)
@@ -81,14 +56,7 @@ fallback_to_clipboard = true
 type_delay_ms = 0
 auto_submit = false
 shift_enter_newlines = false
-{{ if $mac }}
-# driver_order is deliberately unset: every named driver (wtype, eitype, dotool,
-# ydotool, xclip) is a Linux tool, so macOS falls through to its own
-# accessibility-API typing path.
 
-# No uinput device to settle on macOS, so nothing to guard against here.
-pre_type_delay_ms = 0
-{{- else }}
 # Compositor integration hooks (modifier key fix)
 # pre_recording_command = "hyprctl dispatch submap voxtype_recording"
 # pre_output_command = "hyprctl dispatch submap voxtype_suppress"
@@ -101,7 +69,6 @@ driver_order = ["dotool", "clipboard"]
 # Keep the current small buffer before typing begins. The persistent dotoold
 # daemon avoids device churn; 25 ms still gives the focused client time to settle.
 pre_type_delay_ms = 25
-{{- end }}
 
 [output.notification]
 # Show notification when recording starts (hotkey pressed)
@@ -134,16 +101,9 @@ backend = "auto"
 threshold = 0.5
 
 [status]
-icon_theme = {{ if $mac }}"default"{{ else }}"omarchy"{{ end }}
+icon_theme = "omarchy"
 
 [whisper]
-{{- if $mac }}
-model = "base.en"
-language = "en"
-translate = false
-mode = "local"
-on_demand_loading = false
-{{- else }}
 gpu_isolation = false
 on_demand_loading = false
 flash_attention = true
@@ -178,7 +138,6 @@ streaming_left_context_secs = 8.0
 streaming_right_context_secs = 2.0
 
 [osd]
-# gtk4 frontend is Linux-only; macOS draws its overlay with AppKit instead.
 enabled = false
 frontend = "gtk4"
 position = "bottom-center"
@@ -192,4 +151,3 @@ peak_decay_db_per_sec = 6.0
 waveform_gain = 10.0
 style = "default"
 layout = "compact"
-{{- end }}
