@@ -1,6 +1,10 @@
 -- Clipboard for Herdr and SSH sessions whose yanks may need to reach another
--- machine. Paste prefers Wayland locally and falls back to an OSC 52 query.
+-- machine. Paste prefers Wayland locally, then this session's own yanks; an
+-- OSC 52 read query blocks up to 10s when the terminal never answers, so it is
+-- opt-in via vim.g.remote_clipboard_osc52_paste = true.
 local M = {}
+
+local last_yank = {}
 
 local function proc_lines(pid, file)
   local ok, lines = pcall(vim.fn.readfile, "/proc/" .. pid .. "/" .. file)
@@ -52,7 +56,9 @@ function M.setup()
   local function copy(register)
     local emit = osc52.copy(register)
 
-    return function(lines)
+    return function(lines, regtype)
+      last_yank[register] = { lines, regtype or "v" }
+
       if has_wayland then
         local cmd = { "wl-copy", "--sensitive", "--type", "text/plain" }
         if register == "*" then
@@ -68,18 +74,30 @@ function M.setup()
   end
 
   local function paste(register)
-    if not has_wayland then
-      return osc52.paste(register)
+    if has_wayland then
+      return function()
+        local cmd = { "wl-paste", "--no-newline" }
+        if register == "*" then
+          cmd[#cmd + 1] = "--primary"
+        end
+
+        local lines = vim.fn.systemlist(cmd, "", 1)
+        return vim.v.shell_error == 0 and lines or {}
+      end
     end
 
+    local query = osc52.paste(register)
+
     return function()
-      local cmd = { "wl-paste", "--no-newline" }
-      if register == "*" then
-        cmd[#cmd + 1] = "--primary"
+      if last_yank[register] then
+        return last_yank[register]
       end
 
-      local lines = vim.fn.systemlist(cmd, "", 1)
-      return vim.v.shell_error == 0 and lines or {}
+      if vim.g.remote_clipboard_osc52_paste == true then
+        return query()
+      end
+
+      return { vim.fn.split(vim.fn.getreg(""), "\n"), vim.fn.getregtype("") }
     end
   end
 
