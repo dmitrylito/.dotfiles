@@ -1,12 +1,15 @@
 #!/bin/bash
 #
-# work-mode — restore the "work" window layout on Hyprland.
+# work-mode — open the "work" apps without disturbing the current layout.
 #
-#   ws 1 : Dialpad | work browser (chromium, "Work" profile) | FC Gmail over FC Chat
-#   ws 3 : FC Tasks | Linear
+#   ws 1 : work browser (chromium, "Work" profile)
+#   ws 3 : Dialpad | FC Gmail over FC Chat
+#   ws 5 : Linear | FC Tasks
 #   scratchpad : Spotify
 #
-# Idempotent: apps already open are left untouched.
+# Idempotent: apps already open are left exactly where they are. Missing apps
+# are opened on their assigned workspace, but no existing window is reordered
+# or resized.
 #
 # Device-agnostic by construction — nothing machine-specific is hardcoded:
 #   * Chromium numbers profile DIRECTORIES in creation order, so "Profile 3" is a
@@ -14,8 +17,6 @@
 #     name (or account email) in Local State and the directory falls out of that.
 #   * The WM_CLASS of an Omarchy web app is derived from the URL plus that resolved
 #     directory (chrome-<host>__<path>-<Profile_Dir>), so URL and class cannot drift.
-#   * Splits are permille of the columns' own measured span, not pixel constants,
-#     so they hold on any monitor.
 # Still device-dependent: which monitor each workspace lives on — that is
 # workspaces.lua (nwg-displays output, per-device and chezmoi-ignored).
 #
@@ -26,19 +27,6 @@
 #     runtime but never removed, so it is no worse than useless here.
 #   * `hyprctl dispatch` arguments are now a Lua expression:
 #     `hyprctl dispatch 'hl.dsp.window.move({ workspace = "4" })'`.
-#   * `hl.dsp.window.resize` takes { x, y, relative?, window? } — OMIT
-#     `relative` for an absolute pixel size. There is no `exact` key.
-#   * Directions are single letters ("l"/"r"/"u"/"d"), and there is no
-#     `hl.dsp.layoutmsg`, so dwindle preselect is unavailable — column order is
-#     corrected with swaps after the fact rather than chosen at map time.
-#
-# THE RESIZE FOOTGUN: an absolute resize applies to the window's OWN parent split,
-# and the delta arrives MIRRORED when the window is that split's right child.
-# Whether a given column is a left or right child depends on the dwindle tree,
-# which differs between a cold start and a hand-rearranged session, so
-# set_col_width measures the result and re-issues the mirrored request instead of
-# assuming a shape. Widths are applied in two passes because setting one split
-# rescales the columns on the other side of it proportionally.
 
 set -uo pipefail
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
@@ -49,14 +37,6 @@ CHROMIUM_STATE="${CHROMIUM_USER_DATA_DIR:-$HOME/.config/chromium}/Local State"
 WORK_PROFILE='Work'
 CHAT_PROFILE='FC Chat'
 TASKS_PROFILE='FC Tasks'
-
-# ws 1, permille of the three columns' shared content width; chromium takes the
-# remainder (464). Sized so the mail/chat column clears the 1024px desktop
-# breakpoint web apps target.
-DIALPAD_PERMILLE=265
-RIGHT_COL_PERMILLE=271
-# ws 3
-TASKS_PERMILLE=500
 
 # Recover the Hyprland instance signature when launched from a bare .desktop env.
 if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
@@ -105,13 +85,6 @@ addr_of() {
     | jq -r --arg c "$1" 'first(.[] | select(.class | test($c)) | .address) // empty'
 }
 
-# geom <address> -> "x y width height"
-geom() {
-  hyprctl clients -j \
-    | jq -r --arg a "$1" 'first(.[] | select(.address == $a)
-                          | "\(.at[0]) \(.at[1]) \(.size[0]) \(.size[1])") // empty'
-}
-
 # Poll up to 15s for a window matching the class regex to map.
 wait_for() {
   local addr="" i
@@ -142,63 +115,12 @@ launch() {
   sleep 0.4
 }
 
-# webapp <label> <workspace> <profile> <url> — prints the class regex it used.
+# webapp <label> <workspace> <profile> <url>
 webapp() {
   local label="$1" ws="$2" profile="$3" url="$4" dir re
   dir="$(profile_dir "$profile")" || { log "WARN  skipping $label"; return 1; }
   re="$(anchored_re "$(webapp_class "$url" "$dir")")"
   launch "$label" "$re" "$ws" "$WEBAPP" "$url" --profile-directory="$dir"
-  printf '%s\n' "$re"
-}
-
-# Put the given column addresses in left-to-right order, using real positions
-# rather than launch order: a window moved to a workspace is appended to the
-# tiling order, which silently permutes the columns.
-order_columns() {
-  local -a want=("$@")
-  local n=${#want[@]} i j xa xb
-  for ((i = 0; i < n; i++)); do
-    for ((j = 0; j < n - 1 - i; j++)); do
-      xa="$(geom "${want[j]}" | cut -d' ' -f1)"
-      xb="$(geom "${want[j + 1]}" | cut -d' ' -f1)"
-      [[ -n "$xa" && -n "$xb" ]] || return 0
-      ((xa <= xb)) && continue
-      log "fix   column order"
-      dispatch "hl.dsp.focus({ window = \"address:${want[j]}\" })" || return 1
-      dispatch "hl.dsp.window.swap({ direction = \"l\" })" || return 1
-      sleep 0.4
-    done
-  done
-}
-
-# set_col_width <address> <target px> — see THE RESIZE FOOTGUN above.
-set_col_width() {
-  local addr="$1" target="$2" cur h after
-  read -r _ _ cur h <<<"$(geom "$addr")"
-  [[ -n "${h:-}" ]] || return 1
-  ((cur == target)) && return 0
-
-  dispatch "hl.dsp.window.resize({ x = $target, y = $h, window = \"address:$addr\" })" || return 1
-  sleep 0.3
-  after="$(geom "$addr" | cut -d' ' -f3)"
-  [[ -n "$after" ]] || return 1
-  ((after == target)) && return 0
-
-  dispatch "hl.dsp.window.resize({ x = $((2 * after - target)), y = $h, window = \"address:$addr\" })"
-  sleep 0.3
-}
-
-# content_width <leftmost addr> <rightmost addr> <neighbour-of-leftmost addr>
-# -> span shared by the columns with the inter-column gaps taken out, so a
-# permille of it is a real window width on any monitor.
-content_width() {
-  local lx ly lw lh rx ry rw rh nx cols=$4 gap
-  read -r lx ly lw lh <<<"$(geom "$1")"
-  read -r rx ry rw rh <<<"$(geom "$2")"
-  nx="$(geom "$3" | cut -d' ' -f1)"
-  [[ -n "${rw:-}" && -n "$nx" ]] || return 1
-  gap=$((nx - lx - lw))
-  printf '%s\n' $((rx + rw - lx - (cols - 1) * gap))
 }
 
 BROWSER_CLASS='^chromium$'
@@ -206,51 +128,21 @@ SPOTIFY_CLASS='^spotify$'
 
 FOCUS_ADDR="$(hyprctl activewindow -j 2>/dev/null | jq -r '.address // empty')"
 
-DIALPAD_CLASS="$(webapp 'Dialpad' 1 "$WORK_PROFILE" 'https://dialpad.com/app/')"
+webapp 'Dialpad' 3 "$WORK_PROFILE" 'https://dialpad.com/app/'
 
 if work_dir="$(profile_dir "$WORK_PROFILE")"; then
   launch 'Work browser' "$BROWSER_CLASS" 1 \
     chromium --profile-directory="$work_dir"
 fi
 
-GMAIL_CLASS="$(webapp 'FC Gmail' 1 "$WORK_PROFILE" 'https://mail.google.com/mail/u/0/#inbox')"
-CHAT_CLASS="$(webapp 'FC Chat' 1 "$CHAT_PROFILE" 'https://console.fleetchaser.com/chats')"
+webapp 'FC Gmail' 3 "$WORK_PROFILE" 'https://mail.google.com/mail/u/0/#inbox'
+webapp 'FC Chat' 3 "$CHAT_PROFILE" 'https://console.fleetchaser.com/chats'
 
-TASKS_CLASS="$(webapp 'FC Tasks' 3 "$TASKS_PROFILE" 'https://console.fleetchaser.com/tasks')"
-LINEAR_CLASS="$(webapp 'Linear' 3 "$WORK_PROFILE" 'https://linear.app/fleetchaser/agent')"
+webapp 'FC Tasks' 5 "$TASKS_PROFILE" 'https://console.fleetchaser.com/tasks'
+webapp 'Linear' 5 "$WORK_PROFILE" 'https://linear.app/fleetchaser/agent'
 
 launch 'Spotify' "$SPOTIFY_CLASS" 'special:spotify' \
   spotify
-
-DIALPAD_ADDR="${DIALPAD_CLASS:+$(addr_of "$DIALPAD_CLASS")}"
-BROWSER_ADDR="$(addr_of "$BROWSER_CLASS")"
-GMAIL_ADDR="${GMAIL_CLASS:+$(addr_of "$GMAIL_CLASS")}"
-CHAT_ADDR="${CHAT_CLASS:+$(addr_of "$CHAT_CLASS")}"
-TASKS_ADDR="${TASKS_CLASS:+$(addr_of "$TASKS_CLASS")}"
-LINEAR_ADDR="${LINEAR_CLASS:+$(addr_of "$LINEAR_CLASS")}"
-
-if [[ -n "$DIALPAD_ADDR" && -n "$BROWSER_ADDR" && -n "$GMAIL_ADDR" ]]; then
-  order_columns "$DIALPAD_ADDR" "$BROWSER_ADDR" "$GMAIL_ADDR"
-  if content="$(content_width "$DIALPAD_ADDR" "$GMAIL_ADDR" "$BROWSER_ADDR" 3)"; then
-    for _ in 1 2; do
-      set_col_width "$GMAIL_ADDR" $((content * RIGHT_COL_PERMILLE / 1000))
-      set_col_width "$DIALPAD_ADDR" $((content * DIALPAD_PERMILLE / 1000))
-    done
-  fi
-fi
-
-if [[ -n "$GMAIL_ADDR" && -n "$CHAT_ADDR" ]]; then
-  if [[ "$(geom "$GMAIL_ADDR" | cut -d' ' -f1)" != "$(geom "$CHAT_ADDR" | cut -d' ' -f1)" ]]; then
-    log "WARN  FC Chat is not stacked under FC Gmail — drag it there once by hand"
-  fi
-fi
-
-if [[ -n "$TASKS_ADDR" && -n "$LINEAR_ADDR" ]]; then
-  order_columns "$TASKS_ADDR" "$LINEAR_ADDR"
-  if content="$(content_width "$TASKS_ADDR" "$LINEAR_ADDR" "$LINEAR_ADDR" 2)"; then
-    set_col_width "$TASKS_ADDR" $((content * TASKS_PERMILLE / 1000))
-  fi
-fi
 
 [[ -n "$FOCUS_ADDR" ]] && dispatch "hl.dsp.focus({ window = \"address:$FOCUS_ADDR\" })"
 

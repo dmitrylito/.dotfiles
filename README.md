@@ -68,6 +68,8 @@ See `packages/README.md` for list ownership and regeneration rules.
 - `dot_config/nvim/`: LazyVim configuration, including the Sidekick `agy`
   adapter and one canonical remote clipboard implementation.
 - `dot_config/hypr/` and `dot_config/omarchy/`: Omarchy-only desktop behavior.
+  The Hyprland entrypoint is derived from Omarchy's installed default by a
+  `modify_` script; chezmoi owns only the post-default `hypr.chezmoi` module.
 - `dot_config/aerospace/`, `dot_config/sketchybar/`, `dot_config/borders/`:
   macOS-only desktop behavior.
 - `dot_claude/`, `dot_codex/`, `dot_config/opencode/`: agent settings, hooks,

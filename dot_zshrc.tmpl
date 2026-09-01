@@ -55,6 +55,20 @@ cache_zsh_completion lazygit "$commands[lazygit]" completion zsh
 cache_zsh_completion herdr "$commands[herdr]" completion zsh
 unfunction cache_zsh_completion
 
+# --- zsh-autocomplete: debounce so it doesn't complete+redraw on every keystroke
+# (must be set BEFORE the plugin is sourced). Fixes lag/flood-crash under
+# Herdr/Ghostty without disabling the plugin's history-search / tab behavior.
+zstyle ':autocomplete:*' delay 0.15
+zstyle ':autocomplete:*' min-input 2
+zstyle ':autocomplete:*' list-lines 8    # smaller live list = far less redraw
+# Must be a whole number: the zpty worker reads it into a `local -i`.
+zstyle ':autocomplete:*' timeout 5
+
+# zsh-autocomplete must initialize before Oh My Zsh runs compinit/compdef.
+# Loading it through the plugins array is too late and leaves its helper
+# functions absent from the completion dump.
+source "$ZSH_CUSTOM/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
+
 plugins=(
   git
   github
@@ -66,22 +80,12 @@ plugins=(
   gpg-agent
   gcloud
   uv
-  zsh-autocomplete
-  # fzf must come after zsh-autocomplete so fzf's key bindings win
+  # fzf must load after zsh-autocomplete so fzf's key bindings win
   fzf
   zsh-autosuggestions
   you-should-use
   zsh-syntax-highlighting
 )
-
-# --- zsh-autocomplete: debounce so it doesn't complete+redraw on every keystroke
-# (must be set BEFORE oh-my-zsh sources the plugin). Fixes lag/flood-crash under
-# Herdr/Ghostty without disabling the plugin's history-search / tab behavior.
-zstyle ':autocomplete:*' delay 0.15
-zstyle ':autocomplete:*' min-input 2
-zstyle ':autocomplete:*' list-lines 8    # smaller live list = far less redraw
-# Must be a whole number: the zpty worker reads it into a `local -i`.
-zstyle ':autocomplete:*' timeout 5
 
 source "$ZSH/oh-my-zsh.sh"
 

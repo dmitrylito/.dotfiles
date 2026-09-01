@@ -26,7 +26,7 @@ detach = "prefix+d"
 copy_mode = "prefix+["
 
 # Panes
-split_horizontal = ["prefix+h", "alt+enter"]
+split_horizontal = ["prefix+h", "alt+enter", "prefix+minus"]
 split_vertical = ["prefix+v", "alt+shift+enter"]
 close_pane = ["prefix+x", "alt+esc"]
 zoom = "prefix+z"
@@ -35,9 +35,9 @@ last_pane = "prefix+;"
 # Direct bindings: Herdr sees these before the pane app does, including inside
 # Neovim. Ctrl+L therefore navigates instead of clearing the shell.
 focus_pane_left = "ctrl+h"
-focus_pane_down = "ctrl+j"
+focus_pane_down = ["ctrl+j", "prefix+j"]
 focus_pane_up = "ctrl+k"
-focus_pane_right = "ctrl+l"
+focus_pane_right = ["ctrl+l", "prefix+l"]
 
 resize_mode = ["prefix+ctrl+left", "prefix+ctrl+down", "prefix+ctrl+up", "prefix+ctrl+right"]
 
@@ -46,8 +46,8 @@ rename_pane = "prefix+shift+o"
 
 # Windows -> tabs
 new_tab = "prefix+c"
-rename_tab = "prefix+r"
-close_tab = "prefix+k"
+rename_tab = ["prefix+r", "prefix+shift+t"]
+close_tab = ["prefix+k", "prefix+shift+x"]
 switch_tab = ["prefix+1..9", "alt+1..9"]
 previous_tab = ["prefix+p", "alt+h"]
 next_tab = ["prefix+n", "alt+right", "alt+l"]
@@ -58,8 +58,8 @@ goto = "prefix+a"
 
 # Sessions -> workspaces
 new_workspace = "prefix+shift+c"
-rename_workspace = "prefix+shift+r"
-close_workspace = "prefix+shift+k"
+rename_workspace = ["prefix+shift+r", "prefix+shift+w"]
+close_workspace = ["prefix+shift+k", "prefix+shift+d"]
 previous_workspace = ["prefix+shift+p", "alt+k"]
 next_workspace = ["prefix+shift+n", "alt+down", "alt+j"]
 

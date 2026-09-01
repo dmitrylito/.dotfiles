@@ -39,6 +39,11 @@ After moving/renaming source files, verify with `chezmoi execute-template` (temp
 
 When adding a new top-level tooling file or directory, add it to `.chezmoiignore` or it will land in `$HOME`.
 
+Hyprland's `hyprland.lua` is a special ownership boundary: `dot_config/hypr/modify_hyprland.lua`
+reads Omarchy's currently installed entrypoint and injects `require("hypr.chezmoi")` after
+the standard toggles. Keep custom post-default behavior in `dot_config/hypr/chezmoi.lua`;
+do not copy Omarchy's entrypoint back into the repository.
+
 ## Package management architecture
 
 Package reconciliation is explicit and independent of Chezmoi deployment:
