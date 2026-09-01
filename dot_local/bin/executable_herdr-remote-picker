@@ -91,4 +91,13 @@ if [ -z "$target" ]; then
 fi
 
 [ -n "$target" ] || exit 0
+
+# Herdr's panes run on the SSH host, so Git reads that host's global config.
+# Enforce the shared pull policy before attaching without copying identity,
+# credentials, aliases, or other host-specific settings from this desktop.
+if ! ssh -o ConnectTimeout=8 "$target" \
+  'git config --global pull.rebase true && git config --global pull.autostash true'; then
+  printf 'warning: could not configure rebasing pulls on %s; attaching anyway\n' "$target" >&2
+fi
+
 exec herdr --remote "$target" --remote-keybindings server

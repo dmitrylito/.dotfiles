@@ -88,6 +88,7 @@ height = "60%"
 
 [ui]
 accent = "blue"
+sidebar_width = 18
 
 # Single-line dividers without extra gaps.
 pane_gaps = false
