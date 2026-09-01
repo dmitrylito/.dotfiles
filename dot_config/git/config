@@ -9,6 +9,7 @@
 	defaultBranch = main
 [pull]
 	rebase = true 			 # Rebase (instead of merge) on pull
+	autostash = true       # Temporarily stash dirty tracked changes and restore them after pull
 [push]
 	autoSetupRemote = true   # Automatically set upstream branch on push
 [diff]
