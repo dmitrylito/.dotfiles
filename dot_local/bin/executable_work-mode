@@ -1,15 +1,15 @@
 #!/bin/bash
 #
-# work-mode — open the "work" apps without disturbing the current layout.
+# work-mode — open the "work" apps and place newly opened Dialpad predictably.
 #
 #   ws 1 : work browser (chromium, "Work" profile)
-#   ws 3 : Dialpad | FC Gmail over FC Chat
-#   ws 5 : Linear | FC Tasks
+#   ws 2 : Dialpad | FC Gmail over FC Chat
+#   ws 3 : Linear | FC Tasks
 #   scratchpad : Spotify
 #
-# Idempotent: apps already open are left exactly where they are. Missing apps
-# are opened on their assigned workspace, but no existing window is reordered
-# or resized.
+# Idempotent when every app is open. Missing apps are opened on their assigned
+# workspace. If Dialpad was missing, only that newly opened window is promoted
+# to the layout root so the workspace returns to its intended column structure.
 #
 # Device-agnostic by construction — nothing machine-specific is hardcoded:
 #   * Chromium numbers profile DIRECTORIES in creation order, so "Profile 3" is a
@@ -101,6 +101,8 @@ launch() {
   local label="$1" class_re="$2" ws="$3"; shift 3
   local addr
 
+  LAUNCHED_ADDR=""
+
   addr="$(addr_of "$class_re")"
   if [[ -n "$addr" ]]; then
     log "skip  $label (already open)"
@@ -112,6 +114,7 @@ launch() {
 
   addr="$(wait_for "$class_re")" || { log "WARN  $label window never appeared"; return 1; }
   dispatch "hl.dsp.window.move({ workspace = \"$ws\", follow = false, window = \"address:$addr\" })"
+  LAUNCHED_ADDR="$addr"
   sleep 0.4
 }
 
@@ -127,19 +130,29 @@ BROWSER_CLASS='^chromium$'
 SPOTIFY_CLASS='^spotify$'
 
 FOCUS_ADDR="$(hyprctl activewindow -j 2>/dev/null | jq -r '.address // empty')"
+LAUNCHED_ADDR=""
 
-webapp 'Dialpad' 3 "$WORK_PROFILE" 'https://dialpad.com/app/'
+webapp 'Dialpad' 2 "$WORK_PROFILE" 'https://dialpad.com/app/'
+DIALPAD_LAUNCHED_ADDR="$LAUNCHED_ADDR"
 
 if work_dir="$(profile_dir "$WORK_PROFILE")"; then
   launch 'Work browser' "$BROWSER_CLASS" 1 \
     chromium --profile-directory="$work_dir"
 fi
 
-webapp 'FC Gmail' 3 "$WORK_PROFILE" 'https://mail.google.com/mail/u/0/#inbox'
-webapp 'FC Chat' 3 "$CHAT_PROFILE" 'https://console.fleetchaser.com/chats'
+webapp 'FC Gmail' 2 "$WORK_PROFILE" 'https://mail.google.com/mail/u/0/#inbox'
+webapp 'FC Chat' 2 "$CHAT_PROFILE" 'https://console.fleetchaser.com/chats'
 
-webapp 'FC Tasks' 5 "$TASKS_PROFILE" 'https://console.fleetchaser.com/tasks'
-webapp 'Linear' 5 "$WORK_PROFILE" 'https://linear.app/fleetchaser/agent'
+# A newly inserted Dialpad otherwise splits whichever workspace-2 window
+# Hyprland last considered active. Promoting only that new window to the root
+# deterministically produces Dialpad on the left and Gmail/Chat stacked on the
+# right. Existing sessions are never normalized or rearranged.
+if [[ -n "$DIALPAD_LAUNCHED_ADDR" ]]; then
+  dispatch "hl.dsp.layout(\"movetoroot address:$DIALPAD_LAUNCHED_ADDR\")"
+fi
+
+webapp 'FC Tasks' 3 "$TASKS_PROFILE" 'https://console.fleetchaser.com/tasks'
+webapp 'Linear' 3 "$WORK_PROFILE" 'https://linear.app/fleetchaser/agent'
 
 launch 'Spotify' "$SPOTIFY_CLASS" 'special:spotify' \
   spotify
