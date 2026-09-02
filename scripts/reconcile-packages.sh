@@ -6,7 +6,9 @@ set -euo pipefail
 
 source_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 profile="$(chezmoi data | jq -er '.profile | ascii_downcase')"
-work="$(chezmoi data | jq -er '.work // false')"
+# NOT jq -e: it exits 1 when the output value is false, which under set -e
+# aborted this script silently on every non-work machine.
+work="$(chezmoi data | jq -r '.work // false')"
 
 case "$profile" in
   omarchy|server|mac) ;;
