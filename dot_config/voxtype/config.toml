@@ -48,7 +48,7 @@ mode = "type"
 fallback_to_clipboard = true
 
 # 0 = fastest possible, increase if characters are dropped
-type_delay_ms = 0
+type_delay_ms = 2
 auto_submit = false
 shift_enter_newlines = false
 
@@ -63,7 +63,7 @@ driver_order = ["dotool", "clipboard"]
 
 # Keep the current small buffer before typing begins. The persistent dotoold
 # daemon avoids device churn; 25 ms still gives the focused client time to settle.
-pre_type_delay_ms = 25
+pre_type_delay_ms = 2
 
 [output.notification]
 on_recording_start = false
@@ -109,7 +109,7 @@ model = "parakeet-unified-en-0.6b"
 # keep model resident for low latency
 on_demand_loading = false
 streaming = true
-# Encoder frame = 80 ms (subsampling_factor = 8) -> keep values as multiples of 0.08.
+# Enablencoder frame = 80 ms (subsampling_factor = 8) -> keep values as multiples of 0.08.
 # Floor latency ~= chunk + right + one forward pass = 0.64 + 2.0 = ~2.6 s.
 # CHUNK is the latency-only knob: it's how much new audio is swallowed per inference
 # step, NOT the model's context. Every output frame still sees the full left+right
