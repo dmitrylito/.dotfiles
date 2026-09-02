@@ -59,7 +59,7 @@ shift_enter_newlines = false
 
 # Preferred driver order: prioritize dotool (via persistent dotoold daemon)
 # to avoid Wayland device-churn and focus jitter under streaming mode.
-driver_order = ["dotool", "clipboard"]
+driver_order = ["wtype", "clipboard"]
 
 # Keep the current small buffer before typing begins. The persistent dotoold
 # daemon avoids device churn; 25 ms still gives the focused client time to settle.
@@ -96,7 +96,7 @@ icon_theme = "omarchy"
 [whisper]
 gpu_isolation = false
 on_demand_loading = false
-flash_attention = true
+flash_attention = false
 eager_processing = true
 model = ""
 mode = "local"
@@ -123,6 +123,8 @@ streaming = true
 # length and exposes no cache tensors, so each pass re-encodes the whole left+chunk+right
 # window from scratch. Redundant work scales as window/chunk (~16x here) -- if the GPU ever
 # falls behind, raise chunk first, since that divides the pass count.
+# Required, not optional: with these unset the built-in defaults fail the model's
+# "mel-frame count divisible by 8" check and the daemon exits 1 at startup.
 streaming_chunk_secs = 0.64
 streaming_left_context_secs = 8.0
 streaming_right_context_secs = 2.0
