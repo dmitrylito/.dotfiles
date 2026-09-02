@@ -59,7 +59,7 @@ shift_enter_newlines = false
 
 # Preferred driver order: prioritize dotool (via persistent dotoold daemon)
 # to avoid Wayland device-churn and focus jitter under streaming mode.
-driver_order = ["wtype", "clipboard"]
+driver_order = ["dotool", "clipboard"]
 
 # Keep the current small buffer before typing begins. The persistent dotoold
 # daemon avoids device churn; 25 ms still gives the focused client time to settle.
@@ -127,7 +127,7 @@ streaming = true
 # "mel-frame count divisible by 8" check and the daemon exits 1 at startup.
 streaming_chunk_secs = 0.64
 streaming_left_context_secs = 8.0
-streaming_right_context_secs = 2.0
+streaming_right_context_secs = 0.08
 
 [osd]
 enabled = false
