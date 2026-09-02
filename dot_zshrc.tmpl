@@ -56,6 +56,19 @@ cache_zsh_completion codex "$XDG_DATA_HOME/mise/installs/codex/latest/bin/codex"
 cache_zsh_completion herdr "$commands[herdr]" completion zsh
 unfunction cache_zsh_completion
 
+# Debounce zsh-autocomplete so it doesn't complete+redraw on every keystroke
+# (must be set BEFORE the plugin is sourced). Without this it floods Herdr/Ghostty
+# with redraws badly enough to kill the window.
+zstyle ':autocomplete:*' delay 0.15
+zstyle ':autocomplete:*' min-input 2
+zstyle ':autocomplete:*' list-lines 8
+# Must be a whole number: the zpty worker reads it into a `local -i`.
+zstyle ':autocomplete:*' timeout 5
+
+# Sourced here, not via the plugins array: the plugin array loads after Oh My Zsh
+# has already run compinit/compdef, which is too late for zsh-autocomplete.
+source_if_exists "$ZSH_CUSTOM/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
+
 plugins=(
   git
   github
