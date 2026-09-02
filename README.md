@@ -10,7 +10,6 @@ managed targets in `$HOME` directly.
 ```bash
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply dmitrylito
 cd "$(chezmoi source-path)"
-scripts/reconcile-packages.sh    # installs Oh My Zsh and Zsh Sage
 chezmoi apply
 chezmoi status
 chezmoi diff
@@ -37,7 +36,10 @@ is the single deployment boundary for both profile and role.
 
 ## Package reconciliation
 
-Package changes are explicit and separate from dotfile deployment:
+Package reconciliation runs automatically after `chezmoi init` or `apply` when
+the playbook, reconciliation script, active profile, role, or active machine's
+actionable package lists change. A no-op apply does not rerun Ansible. You can
+also invoke it explicitly:
 
 ```bash
 scripts/update_package_lists.sh   # regenerate the current Omarchy host inventory
@@ -45,7 +47,8 @@ scripts/reconcile-packages.sh --check
 scripts/reconcile-packages.sh     # install declared and remove removed.txt entries
 ```
 
-`chezmoi apply` never invokes sudo or changes packages. The Ansible playbook:
+When automatic reconciliation is triggered on Linux, chezmoi may ask for sudo.
+The Ansible playbook:
 
 - installs packages listed for the active profile;
 - installs Oh My Zsh and clones Zsh Sage plus the other external plugins;

@@ -1,8 +1,9 @@
 # Package inventory
 
-Package deployment is intentionally decoupled from `chezmoi apply`. Run
-`scripts/reconcile-packages.sh` explicitly after reviewing the current profile's
-lists. On Linux, use `--check` first when package state has changed substantially.
+Package deployment runs from a chezmoi `run_onchange` hook when the active
+machine's actionable inputs change. A no-op apply does not rerun Ansible. Run
+`scripts/reconcile-packages.sh` explicitly for an audit; on Linux, use `--check`
+first when package state has changed substantially.
 
 ## Ownership
 
@@ -28,8 +29,8 @@ removed automatically.
 - Review the diff before committing; generation is not package policy.
 - Do not hand-edit Omarchy base/other snapshots.
 
-The previous pacman hook, auto-commit/push script, and package onchange runner
-were removed. Package transactions no longer mutate the dotfiles repository.
+The previous pacman hook and auto-commit/push script remain removed. Package
+transactions do not mutate the dotfiles repository.
 
 ## Deliberate exclusions
 

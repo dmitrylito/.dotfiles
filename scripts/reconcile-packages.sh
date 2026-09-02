@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Explicit package reconciliation. Unlike the old run_onchange script, ordinary
-# `chezmoi apply` never invokes sudo or changes installed packages.
+# Package reconciliation entry point. Chezmoi's run_onchange hook invokes this
+# after relevant declarations change; it can also be run directly for audits.
 
 set -euo pipefail
 

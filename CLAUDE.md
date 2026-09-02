@@ -47,12 +47,17 @@ do not copy Omarchy's entrypoint back into the repository.
 
 ## Package management architecture
 
-Package reconciliation is explicit and independent of Chezmoi deployment:
+Package reconciliation is automatic when its active inputs change and remains
+available as an explicit command:
 
-- **`scripts/reconcile-packages.sh`** is the only entry point. It reads the current profile/role and runs the Ansible playbook; Linux uses sudo, macOS does not. Always use `--check` before a real run when lists changed substantially.
+- **`run_onchange_executable_reconcile-packages.sh.tmpl`** hashes the playbook, reconciliation script, profile/role, and only the active machine's actionable lists. It bootstraps Ansible when needed, then runs after `chezmoi init` or `apply`; unchanged applies are no-ops.
+- **`scripts/reconcile-packages.sh`** is the shared entry point used by the hook and manual audits. It reads the current profile/role and runs the Ansible playbook; Linux uses sudo, macOS does not. Always use `--check` before a manual real run when lists changed substantially.
 - **`playbook.yml`** installs declared packages and removes only names explicitly present in an Omarchy host's `removed.txt`. It never infers deletion from absence and never sweeps orphan dependencies. The AUR block's temporary sudoers rule is restricted to `/usr/bin/pacman *` and removed in `always`.
 - **`packages/omarchy/<hostname>/`** contains host-specific desired additions, explicit removals, and reference snapshots. `base.packages`, `other.packages`, and `drivers.txt` are never installed. There is no `untracked.regex` because there is no automatic prune.
 - **`packages/server/`** and **`packages/mac/`** hold the corresponding desired sets.
 - **`scripts/update_package_lists.sh`** and **`scripts/update_server_package_lists.sh`** regenerate inventories manually. Review their diffs; generation is observation, not policy.
 
-The pacman post-transaction hook, automatic list commit/push, and package `run_onchange` script were intentionally removed. If paths under `packages/` change, update the playbook and generator scripts together. `packages/README.md` is the canonical ownership summary.
+The pacman post-transaction hook and automatic list commit/push remain removed.
+If paths under `packages/` change, update the playbook, run-on-change hashes, and
+generator scripts together. `packages/README.md` is the canonical ownership
+summary.
