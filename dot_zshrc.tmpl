@@ -75,6 +75,14 @@ plugins=(
 
 source "$ZSH/oh-my-zsh.sh"
 
+# Carapace must be sourced AFTER Oh My Zsh: it needs compdef, and it deliberately
+# claims commands that already have an fpath completion. Sourcing it earlier also
+# forces a second compinit, which writes a stray ~/.zcompdump.
+# Bridges are limited to what is installed here (no fish, no inshellisense).
+export CARAPACE_BRIDGES='zsh,bash'
+zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
+source <(carapace _carapace)
+
 # Cap syntax-highlighting work: without this, zsh-syntax-highlighting re-parses
 # the whole buffer on every keystroke, so long lines / big pastes flood the
 # terminal with redraws and crash the window (zsh-syntax-highlighting #295).
