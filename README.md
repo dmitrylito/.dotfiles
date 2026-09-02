@@ -9,6 +9,9 @@ managed targets in `$HOME` directly.
 
 ```bash
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply dmitrylito
+cd "$(chezmoi source-path)"
+scripts/reconcile-packages.sh    # installs Oh My Zsh and Zsh Sage
+chezmoi apply
 chezmoi status
 chezmoi diff
 chezmoi apply --dry-run -v
@@ -45,6 +48,7 @@ scripts/reconcile-packages.sh     # install declared and remove removed.txt entr
 `chezmoi apply` never invokes sudo or changes packages. The Ansible playbook:
 
 - installs packages listed for the active profile;
+- installs Oh My Zsh and clones Zsh Sage plus the other external plugins;
 - removes only names explicitly placed in an Omarchy host's `removed.txt`;
 - never prunes undeclared packages or sweeps orphan dependencies;
 - treats Omarchy base/other/driver snapshots as reference data only;

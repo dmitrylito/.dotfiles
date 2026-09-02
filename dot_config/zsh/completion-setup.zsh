@@ -4,8 +4,6 @@ mkdir -p "$ZCOMPDUMP_DIR" "$HOME/.zsh/completions" \
   "$HOME/.local/share/zsh/site-functions"
 export ZSH_COMPDUMP="$ZCOMPDUMP_DIR/.zcompdump-${HOST:-local}-${ZSH_VERSION}"
 
-zstyle ':completion:*' menu select
-
 fpath=(
   "$HOME/.zsh/completions"
   "$HOME/.local/share/zsh/site-functions"

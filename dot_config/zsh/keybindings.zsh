@@ -2,8 +2,10 @@
 # wrapper bug (`_sage_orig_fzf-completion`), so restore Zsh's standard widget.
 bindkey '^I' expand-or-complete
 
-bindkey '^[[A' fzf-history-widget
-bindkey '^[OA' fzf-history-widget
+if (( ${+widgets[fzf-history-widget]} )); then
+  bindkey '^[[A' fzf-history-widget
+  bindkey '^[OA' fzf-history-widget
+fi
 
 # At a prompt, Ctrl-C clears the editor buffer. Restore the terminal's normal
 # SIGINT character immediately before executing a command.

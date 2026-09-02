@@ -22,6 +22,7 @@
     # `dest` is relative to the user's home; `only` restricts an entry to one
     # profile.
     git_repos:
+      # Shell suggestion engine; .zshrc tolerates the first launch until cloned.
       - { repo: 'https://github.com/UtsavMandal2022/zsh-sage.git', dest: '.oh-my-zsh/custom/plugins/zsh-sage' }
       - { repo: 'https://github.com/MichaelAquilina/zsh-you-should-use.git', dest: '.oh-my-zsh/custom/plugins/you-should-use' }
       - { repo: 'https://github.com/zsh-users/zsh-syntax-highlighting.git', dest: '.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' }
@@ -34,6 +35,7 @@
     common_linux_packages:
       - git
       - zsh
+      - sqlite
       - ripgrep
       - fzf
       - bat

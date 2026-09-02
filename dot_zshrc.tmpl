@@ -49,12 +49,21 @@ plugins=(
   gcloud
   uv
   fzf
-  zsh-sage
-  you-should-use
-  zsh-syntax-highlighting
 )
 
-source "$ZSH/oh-my-zsh.sh"
+# Ansible owns external plugin installation. Skip plugins until the first
+# reconciliation finishes instead of making a fresh machine's shell error.
+for plugin in zsh-sage you-should-use zsh-syntax-highlighting; do
+  [[ -d "$ZSH_CUSTOM/plugins/$plugin" ]] && plugins+=("$plugin")
+done
+unset plugin
+
+if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
+  source "$ZSH/oh-my-zsh.sh"
+else
+  autoload -Uz compinit
+  compinit -d "$ZSH_COMPDUMP"
+fi
 source_if_exists "$XDG_CONFIG_HOME/zsh/carapace.zsh"
 
 # Interactive shell behavior.
