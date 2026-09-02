@@ -113,10 +113,6 @@ setopt GLOB_DOTS
 setopt PROMPT_SUBST
 setopt EXTENDED_GLOB
 
-source_if_exists() {
-  [[ -f "$1" ]] && source "$1"
-}
-
 source_if_exists "$HOME/Projects/fc-cli/zsh_completion.sh"
 
 bindkey '^[[A' fzf-history-widget
