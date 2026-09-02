@@ -14,9 +14,10 @@ encryption = "age"
     recipient = "age1dwdeg394lmtkmp5wn682kqpx7jjrtkl6mcgfn6pzggklj6xm3d2sqv3chk"
 
 [git]
-    # Keep source changes reviewable. Commit and push explicitly after validation.
-    autoCommit = false
-    autoPush = false
+    # Publish source changes made through chezmoi. Plain editor writes remain
+    # manual so partially written files are not pushed on every save.
+    autoCommit = true
+    autoPush = true
 
 # chezmoi appends the destination/source/target files automatically when
 # args contains no template placeholders

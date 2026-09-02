@@ -76,7 +76,7 @@ BASELINE = {
     "autoMode": {
         "allow": [
             "$defaults",
-            "Bash(chezmoi *) \u2014 chezmoi edit/apply/add is the routine dotfiles workflow on this host per CLAUDE.md; the auto-commit-and-push to the private dotfiles repo is intended, not a leak",
+            "Bash(chezmoi *) \u2014 chezmoi edit/apply/add is the routine dotfiles workflow on this host per CLAUDE.md; auto-commit-and-push to the public dotfiles repo is intended, but secrets must remain age-encrypted",
             "Bash(make deploy:*), bash docker/deploy-build.sh, and docker compose build/up \u2014 Dmitry's own deploy path for his own services; explicitly authorized",
             "Read-only inspection of this host: docker/podman ps|logs|inspect, zfs list|get|status, systemctl status, journalctl",
             "gcloud storage read operations against fleetchaser-production-sql \u2014 this is the nightly import-db refresh pulling prod into local dev, and is routine",

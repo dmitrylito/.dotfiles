@@ -65,14 +65,13 @@ path=(
   $path
 )
 
-# Auth for GitHub MCP clients. Prefer the gh keyring because machine-local
-# tokens can expire without the managed shell configuration changing.
-_github_token=""
-if command -v gh >/dev/null 2>&1; then
+# Auth for GitHub MCP clients. Prefer an inherited or machine-local token.
+# Never invoke the Mise bootstrap shim from .zshenv: this file runs for every
+# Zsh process, and installing a missing gh version here can block shell startup.
+_github_token="${GITHUB_PERSONAL_ACCESS_TOKEN:-${GITHUB_MCP_PAT:-}}"
+_gh_path="${commands[gh]:-}"
+if [[ -z "$_github_token" && -n "$_gh_path" && "$_gh_path" != "$HOME/.local/bin/gh" ]]; then
   _github_token="$(gh auth token 2>/dev/null)"
-fi
-if [[ -z "$_github_token" && -n "${GITHUB_MCP_PAT:-}" ]]; then
-  _github_token="$GITHUB_MCP_PAT"
 fi
 if [[ -z "$_github_token" && "$OSTYPE" == darwin* ]] && command -v git >/dev/null 2>&1; then
   _github_token="$(printf 'protocol=https\nhost=github.com\n\n' \
@@ -82,7 +81,7 @@ fi
 # Exporting an empty value expands the MCP Authorization header to a bare
 # "Bearer " and the server answers 400, so leave it unset instead.
 [[ -n "$_github_token" ]] && export GITHUB_PERSONAL_ACCESS_TOKEN="$_github_token"
-unset _github_token
+unset _github_token _gh_path
 
 if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"

@@ -16,8 +16,9 @@ chezmoi apply --dry-run -v
 
 Initialization asks for a platform profile and whether the machine has the work
 role. `ce <target>` is the shell alias for `chezmoi edit --apply <target>`.
-Chezmoi Git auto-commit and auto-push are deliberately disabled so an apply
-cannot publish unreviewed configuration or rewritten history.
+Chezmoi auto-commits and pushes source changes made through its commands. Plain
+editor writes remain dirty until committed deliberately; package reconciliation
+does not generate commits.
 
 ## Configuration dimensions
 

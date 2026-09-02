@@ -22,8 +22,7 @@
     # `dest` is relative to the user's home; `only` restricts an entry to one
     # profile.
     git_repos:
-      - { repo: 'https://github.com/marlonrichert/zsh-autocomplete.git', dest: '.oh-my-zsh/custom/plugins/zsh-autocomplete' }
-      - { repo: 'https://github.com/zsh-users/zsh-autosuggestions.git', dest: '.oh-my-zsh/custom/plugins/zsh-autosuggestions' }
+      - { repo: 'https://github.com/UtsavMandal2022/zsh-sage.git', dest: '.oh-my-zsh/custom/plugins/zsh-sage' }
       - { repo: 'https://github.com/MichaelAquilina/zsh-you-should-use.git', dest: '.oh-my-zsh/custom/plugins/you-should-use' }
       - { repo: 'https://github.com/zsh-users/zsh-syntax-highlighting.git', dest: '.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' }
       # Omarchy shell plugin; shell.json (chezmoi-managed) references it by id.
@@ -480,5 +479,15 @@
           exit $rc
       register: upstream_sync
       changed_when: upstream_sync.stdout | trim | length > 0
+      become: "{{ as_user }}"
+      become_user: "{{ non_root_user }}"
+
+    # Sage stores complete commands in this SQLite database. The directory mode
+    # protects the database and its transient WAL files regardless of their mode.
+    - name: Secure Zsh Sage state directory
+      ansible.builtin.file:
+        path: "{{ st.home }}/.zsh-sage"
+        state: directory
+        mode: "0700"
       become: "{{ as_user }}"
       become_user: "{{ non_root_user }}"

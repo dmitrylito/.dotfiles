@@ -38,7 +38,7 @@ were removed. Package transactions no longer mutate the dotfiles repository.
 - Herdr is the supported multiplexer; its package/vendor installer owns it.
 - `claude`, `codex`, GitHub CLI, Hey, Grok, Pi, Node, and Gemini-style npm tools
   belong to the managed mise configuration, not duplicate distro packages.
-- `zsh-autocomplete` and the other shell plugins are cloned by `playbook.yml`;
+- `zsh-sage` and the other shell plugins are cloned by `playbook.yml`;
   do not add duplicate distro packages.
 - distro Neovim stays off the desired lists because Bob owns `nvim`.
 - `stow` is obsolete; Chezmoi owns dotfiles.
