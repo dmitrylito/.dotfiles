@@ -69,12 +69,6 @@ return {
         win = {
           config = function(terminal) end,
         },
-        tools = {
-          antigravity = {
-            cmd = { "agy" },
-            is_proc = "\\<agy\\>",
-          },
-        },
       },
     },
   },
