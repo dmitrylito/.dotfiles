@@ -66,6 +66,10 @@ return {
     "folke/sidekick.nvim",
     opts = {
       cli = {
+        mux = {
+          enable = true,
+          backend = "herdr",
+        },
         win = {
           config = function(terminal) end,
         },
