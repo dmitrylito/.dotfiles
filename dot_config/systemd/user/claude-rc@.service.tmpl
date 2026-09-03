@@ -1,12 +1,12 @@
 [Unit]
-Description=Claude Code Remote Control server for ~ (dotfiles / server ops)
+Description=Claude Code Remote Control server for ~/Projects/%i
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-WorkingDirectory={{ .chezmoi.homeDir }}
+WorkingDirectory={{ .chezmoi.homeDir }}/Projects/%i
 Environment=PATH={{ .chezmoi.homeDir }}/.local/share/mise/shims:{{ .chezmoi.homeDir }}/.local/bin:/usr/local/bin:/usr/bin
-ExecStart={{ .chezmoi.homeDir }}/.local/bin/claude remote-control --name {{ .chezmoi.hostname }}-home --permission-mode auto
+ExecStart={{ .chezmoi.homeDir }}/.local/bin/claude remote-control --name {{ .chezmoi.hostname }}-%i --permission-mode auto
 # The TUI status line redraws every second; only stderr is worth keeping in the journal.
 StandardOutput=null
 StandardError=journal
