@@ -20,7 +20,7 @@ local lg_dual_mode_width = nil
 -- gives. The 4K side is pinned rather than "preferred" because preferred is
 -- 3840x2160@240.08 here; the 1080p EDID is only visible once the panel is in it.
 local lg_dual_mode_layout = {
-	[3840] = { mode = "3840x2160@144.05", scale = 1.3333334, position = "0x0" },
+	[3840] = { mode = "3840x2160@144.05", scale = 1.5, position = "0x0" },
 	[1920] = { mode = "preferred", scale = 1, position = "480x540" },
 }
 
