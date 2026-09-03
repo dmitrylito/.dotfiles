@@ -39,7 +39,12 @@ focus_pane_down = ["ctrl+j", "prefix+j"]
 focus_pane_up = "ctrl+k"
 focus_pane_right = ["ctrl+l", "prefix+l"]
 
-resize_mode = ["prefix+ctrl+left", "prefix+ctrl+down", "prefix+ctrl+up", "prefix+ctrl+right"]
+resize_mode = [
+  "prefix+ctrl+left",
+  "prefix+ctrl+down",
+  "prefix+ctrl+up",
+  "prefix+ctrl+right",
+]
 
 # Herdr's default prefix+shift+p is taken by previous workspace.
 rename_pane = "prefix+shift+o"
@@ -67,6 +72,18 @@ next_workspace = ["prefix+shift+n", "alt+down", "alt+j"]
 focus_agent = ["alt+shift+1..9", "ctrl+alt+1..9"]
 previous_agent = "alt+shift+k"
 next_agent = "alt+shift+j"
+
+[[keys.command]]
+key = "prefix+m"
+type = "plugin_action"
+command = "drovr.move-pane"
+description = "move pane to tab"
+
+[[keys.command]]
+key = "prefix+M"
+type = "plugin_action"
+command = "drovr.move-tab"
+description = "move tab to workspace"
 
 # Lazygit popup
 [[keys.command]]
