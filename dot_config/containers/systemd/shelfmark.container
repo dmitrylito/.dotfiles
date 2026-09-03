@@ -1,0 +1,39 @@
+[Unit]
+Description=Shelfmark (book search & request hub — downloads into the CWA ingest folder)
+After=network-online.target
+
+[Container]
+# Standard variant, not lite: the bundled browser is the only bypasser that clears
+# DDoS-Guard on annas-archive.gd. FlareSolverr solves Cloudflare but times out on every
+# DDoS-Guard challenge, which surfaced in the UI as "Error Loading Releases" (504).
+Image=ghcr.io/calibrain/shelfmark:latest
+AutoUpdate=registry
+Pod=media.pod
+
+Environment=TZ=America/New_York
+Environment=FLASK_PORT=8085
+# Same path inside and out: qBittorrent hands off torrents by absolute path, and
+# Shelfmark must see them at the exact path the download client reports.
+Environment=INGEST_DIR=/scratch/calibre-ingest
+Environment=USE_CF_BYPASS=true
+Environment=USING_EXTERNAL_BYPASSER=false
+
+HealthCmd=curl -fsS http://127.0.0.1:8085/
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=90s
+
+# No PUID/PGID: those select the image's root startup flow, which the pod's
+# UserNS=keep-id makes impossible. keep-id runs it as uid 1000 -> host dmitrylito,
+# and the entrypoint has a real non-root path (unlike the s6-based LSIO images).
+
+Volume=/home/dmitrylito/docker-appdata/shelfmark:/config:Z
+Volume=/scratch:/scratch:z
+Volume=/data/media:/data/media:z
+
+[Install]
+WantedBy=default.target
+
+[Service]
+Restart=always

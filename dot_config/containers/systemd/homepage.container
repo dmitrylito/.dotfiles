@@ -1,0 +1,44 @@
+[Unit]
+Description=Homepage Dashboard
+After=network-online.target
+
+[Container]
+Image=ghcr.io/gethomepage/homepage:latest
+Pod=media.pod
+AutoUpdate=registry
+
+# --- UPDATED NETWORK FIXES ---
+# Listen on all interfaces in the shared media pod.
+Environment=PORT=3000
+Environment=HOSTNAME=0.0.0.0
+
+# The healthcheck script specifically looks for this exact variable name
+Environment=HOMEPAGE_VAR_PORT=3000
+
+# Security allowance
+Environment=HOMEPAGE_ALLOWED_HOSTS=*
+# ------------------------------
+
+# Run as uid/gid 1000 so that under the pod's UserNS=keep-id this maps to
+# host user dmitrylito (1000) — the owner of the Podman socket. Running as
+# root (0) maps to a subuid that CANNOT read the socket, which breaks the
+# container status/stats integration in docker.yaml.
+Environment=PUID=1000
+Environment=PGID=1000
+
+HealthCmd=wget -q --spider http://192.168.0.2:3000/api/healthcheck
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=60s
+
+# ZFS Volumes
+Volume=/home/dmitrylito/docker-appdata/homepage/:/app/config:Z
+Volume=/data/pictures:/app/public/pictures:Z
+Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,26 @@
+[Unit]
+Description=Sonarr
+After=network-online.target
+
+[Container]
+Image=lscr.io/linuxserver/sonarr:latest
+AutoUpdate=registry
+Pod=media.pod
+Environment=PUID=0
+Environment=PGID=0
+Environment=TZ=America/New_York
+HealthCmd=curl -fsS http://127.0.0.1:8989/ping
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=60s
+Volume=/home/dmitrylito/docker-appdata/sonarr:/config:Z
+Volume=/scratch:/scratch:z
+Volume=/data/media:/data/media:z
+Volume=/data/media/tv:/data/tv:z
+
+[Install]
+WantedBy=default.target
+
+[Service]
+Restart=always

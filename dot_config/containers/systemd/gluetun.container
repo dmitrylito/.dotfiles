@@ -1,0 +1,38 @@
+[Unit]
+Description=Gluetun VPN Router
+After=network-online.target
+
+[Container]
+Image=docker.io/qmcgaw/gluetun:latest
+ContainerName=gluetun
+
+# Network Permissions
+AddCapability=NET_ADMIN
+AddDevice=/dev/net/tun
+
+# Publish the qBittorrent WebUI only on this host's Tailscale address.
+PublishPort=100.82.212.87:8181:8181
+
+# Proton VPN settings. The private key is supplied by the encrypted chezmoi file.
+Environment="VPN_SERVICE_PROVIDER=protonvpn"
+Environment="VPN_TYPE=wireguard"
+EnvironmentFile=/home/dmitrylito/.config/containers/systemd/secrets/gluetun.env
+Environment="VPN_PORT_FORWARDING=on"
+
+# ProtonVPN's forwarded port is dynamic. Push it into qBittorrent's listen port
+# whenever it changes, otherwise qBittorrent gets no inbound peers and downloads
+# stall even with seeds available. qBittorrent shares this netns (127.0.0.1).
+Volume=/home/dmitrylito/docker-appdata/gluetun/qbt-port-sync.sh:/scripts/qbt-port-sync.sh:ro,z
+Environment="VPN_PORT_FORWARDING_UP_COMMAND=/bin/sh /scripts/qbt-port-sync.sh {{PORTS}}"
+
+HealthCmd=/gluetun-entrypoint healthcheck
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=30s
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

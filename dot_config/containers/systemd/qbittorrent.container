@@ -1,0 +1,42 @@
+[Unit]
+Description=qBittorrent
+# Do not start until the VPN is securely running
+Requires=gluetun.service
+After=gluetun.service
+
+[Container]
+# Was pinned to 4.6.7 to dodge Prowlarr failing to add a qBittorrent download
+# client (NullReferenceException in DownloadClientBase.ValidateCategories). That
+# was a Prowlarr bug, not a qbit one -- it failed identically on 4.6.7 and 5.2.1 --
+# and Prowlarr 2.5.2 no longer throws it (verified 2026-08-17 against this box).
+# Unpinned back to :latest, matching every other unit here.
+Image=lscr.io/linuxserver/qbittorrent:latest
+ContainerName=qbittorrent
+AutoUpdate=registry
+Environment=S6_READINESS_CHECK_DISABLED=1
+
+# THE MAGIC TRICK: Evict from the pod, trap in the VPN
+Network=container:gluetun
+
+# Rootless container UID/GID 0 maps to the host user, keeping download ownership
+# aligned with the media pod while retaining Gluetun's network namespace.
+Environment=PUID=0
+Environment=PGID=0
+Environment=TZ=America/New_York
+Environment=WEBUI_PORT=8181
+
+HealthCmd=curl -fsS http://127.0.0.1:8181/api/v2/app/version
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=60s
+
+Volume=/home/dmitrylito/docker-appdata/qbittorrent:/config:Z
+Volume=/scratch:/scratch:z
+Volume=/data/media:/data/media:z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

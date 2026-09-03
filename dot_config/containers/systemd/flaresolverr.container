@@ -1,0 +1,26 @@
+[Unit]
+Description=FlareSolverr Proxy
+After=network-online.target
+
+[Container]
+Image=ghcr.io/flaresolverr/flaresolverr:latest
+Pod=media.pod
+AutoUpdate=registry
+
+# Environment Variables
+Environment=TZ=America/New_York
+Environment=LOG_LEVEL=info
+# Port FlareSolverr listens on internally
+Environment=PORT=8191
+
+HealthCmd=curl -fsS http://127.0.0.1:8191/health
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=60s
+
+[Install]
+WantedBy=default.target
+
+[Service]
+Restart=always

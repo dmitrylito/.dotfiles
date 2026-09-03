@@ -1,0 +1,37 @@
+[Unit]
+Description=Plex Media Server
+After=network-online.target
+
+[Container]
+Image=lscr.io/linuxserver/plex:latest
+AutoUpdate=registry
+Pod=media.pod
+
+# Environment Variables
+Environment=PUID=1000
+Environment=PGID=1000
+Environment=VERSION=docker
+
+# Hardware Acceleration (Intel/AMD)
+# If this causes an error, remove the Device lines
+AddDevice=/dev/dri:/dev/dri
+
+HealthCmd=curl -fsS http://127.0.0.1:32400/identity
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=90s
+
+# Volumes (ZFS Paths)
+# 1. Config
+Volume=/home/dmitrylito/docker-appdata/plex:/config:Z
+# 2. Media
+Volume=/data/media:/data/media:Z
+# 3. Transcode Temp (RAM disk is faster)
+Volume=/dev/shm:/transcode:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

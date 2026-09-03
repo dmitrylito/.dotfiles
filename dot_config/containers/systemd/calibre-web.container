@@ -1,0 +1,47 @@
+[Unit]
+Description=Calibre-Web Automated (ebook library, Kobo sync, auto-ingest, send-to-Kindle)
+After=network-online.target
+
+[Container]
+Image=docker.io/crocodilestick/calibre-web-automated:latest
+AutoUpdate=registry
+Pod=media.pod
+
+# Overrides the pod's UserNS=keep-id, which is NOT survivable for this image. CWA is s6-based
+# like the LSIO images: keep-id makes podman run it as User=1000:1000, which disables
+# /custom-cont-init.d while s6-applyuidgid fatal-loops on setgroups, so the Kobo patch is
+# silently dropped and the app never binds its port. UserNS=host keeps the pod's network
+# namespace but gives container root, which under rootless podman still maps to host
+# dmitrylito (1000) - same file ownership as before.
+UserNS=host
+# Must be 0 under UserNS=host: container root maps to host dmitrylito, so /config and the
+# library stay host-owned. PUID=1000 would map to an unmapped subuid and lock the host out.
+Environment=PUID=0
+Environment=PGID=0
+Environment=TZ=America/New_York
+
+HealthCmd=curl -fsS http://127.0.0.1:8083/
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=180s
+
+# No DOCKER_MODS: CWA's own calibre-binaries-setup service installs calibre into
+# /app/calibre + /usr/bin symlinks, so universal-calibre is redundant here.
+
+Volume=/home/dmitrylito/docker-appdata/calibre-web:/config:Z
+# Re-applies the Kobo cover-template patch on every start, including after an AutoUpdate
+# image pull. CWA still ships the lowercase {width} bug; dropping this mount loses the fix.
+Volume=/home/dmitrylito/docker-appdata/calibre-web-init:/custom-cont-init.d:ro
+Volume=/data/media/calibre-library:/calibre-library:z
+# Drop a book here and CWA imports, converts and applies metadata, then deletes the source.
+Volume=/scratch/calibre-ingest:/cwa-book-ingest:z
+Volume=/data/media:/data/media:z
+
+[Install]
+WantedBy=default.target
+
+[Service]
+Restart=always
+# CWA installs calibre on first start after an image pull, which far exceeds the default 90s.
+TimeoutStartSec=900

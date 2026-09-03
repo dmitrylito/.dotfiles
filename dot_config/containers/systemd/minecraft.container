@@ -1,0 +1,32 @@
+[Unit]
+Description=All The Mods 10 Server
+After=network-online.target
+
+[Container]
+Image=docker.io/itzg/minecraft-server:latest
+ContainerName=minecraft
+AutoUpdate=registry
+
+Environment=EULA=TRUE
+Environment=TYPE=NEOFORGE
+Environment=VERSION=1.21.1
+Environment=MEMORY=16G
+Environment=USE_AIKAR_FLAGS=true
+
+# Allow jetpacks and gliders without getting kicked!
+Environment=ALLOW_FLIGHT=true
+
+HealthCmd=mc-health
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=5
+HealthStartPeriod=300s
+
+PublishPort=25565:25565/tcp
+Volume=/home/dmitrylito/minecraft:/data
+
+# No [Install] section: this unit is intentionally NOT wired into
+# default.target, so it will not start on boot. Start it on demand with:
+#   systemctl --user start minecraft.service
+[Service]
+Restart=on-failure
