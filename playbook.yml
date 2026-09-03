@@ -134,6 +134,17 @@
       # --check; otherwise `st` is undefined and a dry run cannot work at all.
       check_mode: false
 
+    # The old package-list auto-sync feature installed this hook for both Linux
+    # profiles. Its worker script was later removed, leaving pacman/yay to call
+    # a nonexistent command after every transaction. Keep the cleanup in the
+    # playbook so every Omarchy and server host removes the stale root-owned
+    # file on its next reconciliation.
+    - name: Remove obsolete package-list auto-sync pacman hook
+      ansible.builtin.file:
+        path: /etc/pacman.d/hooks/zz-chezmoi-package-sync.hook
+        state: absent
+      when: is_linux
+
     # Resolve the package lists and diff them against the probe's installed set
     # ONCE. Every package action below is gated on these, so a synced machine
     # never invokes the pacman module at all — each invocation otherwise spends
@@ -303,6 +314,17 @@
     #
     # update_cache lives on this task rather than one of its own, so mirrors are
     # contacted only when there is genuinely something to install.
+    #
+    # The server is deliberately different: every playbook run is also its
+    # maintenance run. Upgrade repository packages first (pacman -Syu), then
+    # upgrade AUR packages below after yay is known to exist. Splitting the two
+    # lets a new server bootstrap yay without attempting to run it as root.
+    - name: Upgrade all repository packages (server)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: p == 'server'
+
     - name: Install missing native packages ({{ pacman_missing | default([]) | join(', ') }})
       community.general.pacman:
         name: "{{ pacman_missing }}"
@@ -310,11 +332,13 @@
         update_cache: true
       when: pacman_missing | default([]) | length > 0
 
-    # Everything missing is installed in ONE yay run with --batchinstall so ALPM
-    # hooks (MIME/desktop/icon-cache database updates) fire once per run instead
-    # of once per package — this was the big AUR slowdown.
-    - name: Install missing AUR packages
-      when: aur_missing | default([]) | length > 0
+    # Install missing AUR packages independently so one broken PKGBUILD or
+    # conflict cannot prevent the remaining packages or later playbook sections
+    # from running. --useask lets yay automatically confirm package conflicts;
+    # each non-zero result is reported below without failing the play.
+    - name: Install or upgrade AUR packages
+      when:
+        - p == 'server' or aur_missing | default([]) | length > 0
       block:
         - name: Ensure base-devel is installed (required for makepkg)
           community.general.pacman:
@@ -371,16 +395,67 @@
           become: true
           become_user: "{{ non_root_user }}"
 
-        # A hard async timeout so a stalled build/keyserver can never
-        # hang the playbook forever.
-        - name: Install AUR packages ({{ aur_missing | default([]) | join(', ') }})
+        # A hard async timeout per package so a stalled build/keyserver can
+        # never hang the playbook forever.
+        - name: Install missing AUR package
           ansible.builtin.command:
-            cmd: "yay -S --needed --noconfirm --noprogressbar --batchinstall {{ aur_missing | join(' ') }}"
+            argv:
+              - yay
+              - -S
+              - --needed
+              - --noconfirm
+              - --noprogressbar
+              - --batchinstall
+              - --useask
+              - "{{ item }}"
           become: true
           become_user: "{{ non_root_user }}"
           async: 7200
           poll: 15
-          changed_when: true
+          loop: "{{ aur_missing | default([]) }}"
+          loop_control:
+            label: "{{ item }}"
+          register: aur_install_attempts
+          failed_when: false
+          changed_when: aur_install_attempts.rc == 0
+
+        - name: Report AUR package install failure and continue
+          ansible.builtin.debug:
+            msg: >-
+              WARNING: failed to install AUR package {{ item.item }}
+              (rc={{ item.rc }}):
+              {{ (item.stderr | default(item.stdout, true)) | trim }}
+          loop: "{{ aur_install_attempts.results | default([]) }}"
+          loop_control:
+            label: "{{ item.item | default('unknown') }}"
+          when: item.rc | default(0) != 0
+
+        # Repository packages were upgraded above. -Sua limits this pass to
+        # AUR/foreign packages instead of repeating pacman's full upgrade.
+        - name: Upgrade installed AUR packages (server)
+          ansible.builtin.command:
+            cmd: yay -Sua --noconfirm --noprogressbar --batchinstall --useask
+          become: true
+          become_user: "{{ non_root_user }}"
+          async: 7200
+          poll: 15
+          register: aur_upgrade_attempt
+          failed_when: false
+          changed_when: >-
+            aur_upgrade_attempt.rc == 0 and
+            'there is nothing to do' not in aur_upgrade_attempt.stdout | lower
+          when: p == 'server'
+
+        - name: Report AUR upgrade failure and continue
+          ansible.builtin.debug:
+            msg: >-
+              WARNING: failed to upgrade installed AUR packages
+              (rc={{ aur_upgrade_attempt.rc }}):
+              {{ (aur_upgrade_attempt.stderr |
+                  default(aur_upgrade_attempt.stdout, true)) | trim }}
+          when:
+            - p == 'server'
+            - aur_upgrade_attempt.rc | default(0) != 0
 
       always:
         - name: Revoke passwordless sudo
