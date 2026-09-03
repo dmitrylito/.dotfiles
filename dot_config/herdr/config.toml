@@ -77,15 +77,6 @@ description = "lazygit"
 width = "90%"
 height = "90%"
 
-# URL picker popup
-[[keys.command]]
-key = "prefix+u"
-type = "popup"
-command = "~/.config/herdr/url_picker.sh"
-description = "open a URL from scrollback"
-width = "80%"
-height = "60%"
-
 [ui]
 accent = "blue"
 sidebar_width = 18
