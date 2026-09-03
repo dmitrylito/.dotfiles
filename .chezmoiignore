@@ -89,3 +89,8 @@ Projects/fleetchaser/
 # macOS has launchd, not systemd — the whole user-units tree is Linux-only.
 .config/systemd/
 {{ end }}
+
+{{ if ne $profile "server" }}
+# Remote Control daemon only makes sense on the always-on server.
+.config/systemd/user/claude-rc.service
+{{ end }}
