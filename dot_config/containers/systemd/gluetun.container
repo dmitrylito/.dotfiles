@@ -10,8 +10,8 @@ ContainerName=gluetun
 AddCapability=NET_ADMIN
 AddDevice=/dev/net/tun
 
-# Publish the qBittorrent WebUI only on this host's Tailscale address.
-PublishPort=100.82.212.87:8181:8181
+# Gluetun claims port 8181 so the existing protected proxy path can reach qBittorrent.
+PublishPort=8181:8181
 
 # Proton VPN settings. The private key is supplied by the encrypted chezmoi file.
 Environment="VPN_SERVICE_PROVIDER=protonvpn"

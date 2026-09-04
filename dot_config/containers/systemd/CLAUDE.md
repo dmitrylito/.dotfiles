@@ -79,10 +79,11 @@ demand: `systemctl --user start minecraft.service`.
   failing to add a qBittorrent download client, but that was a Prowlarr bug, not a qbit
   one -- it threw the same `NullReferenceException` in `ValidateCategories` on 4.6.7 and
   5.2.1 alike. Prowlarr 2.5.2 no longer throws it, verified against this box, so the unit
-  is back on `:latest` (now 5.2.3). The qBittorrent WebUI is published only on the
-  host's Tailscale address at `100.82.212.87:8181`; Radarr and Sonarr use that address.
-  Authentication bypass is limited to the host's own `100.82.212.87/32`, which keeps
-  Homepage's local widgets working while remote Tailscale clients still authenticate.
+  is back on `:latest` (now 5.2.3). Gluetun publishes the qBittorrent WebUI on host
+  port `8181` for the existing protected proxy path. Radarr, Sonarr, Shelfmark, and
+  other local integrations reach it at `172.17.0.1:8181` or `192.168.0.2:8181`.
+  The `WebUI\AuthSubnetWhitelist` covers only `192.168.0.2/32`; remote clients still
+  authenticate through the existing front-end access controls.
 - **Storage layout**: app config under `/home/dmitrylito/docker-appdata/<svc>`,
   media under `/data/media`, download scratch under `/scratch`. Plex transcodes to
   `/dev/shm` (RAM). ZFS volume mounts use `:Z` (private relabel) for config and
