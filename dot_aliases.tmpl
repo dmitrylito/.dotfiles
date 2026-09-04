@@ -55,8 +55,13 @@ fi
 if command -v fzf >/dev/null; then
   # Functions, not aliases: ff has to be callable inside $(...) and pipelines below.
   ff() {
-    local preview='bat --style=numbers --color=always {}'
-    command -v bat >/dev/null || preview='cat {}'
+    local text_preview='bat --style=numbers --color=always {}'
+    command -v bat >/dev/null || text_preview='cat {}'
+    local preview=$text_preview
+    if command -v chafa >/dev/null; then
+      # Ghostty speaks the kitty graphics protocol, so chafa -f kitty draws real pixels.
+      preview='case $(file --mime-type -b {}) in image/*) chafa -f kitty -s "${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}" {} ;; *) '$text_preview' ;; esac'
+    fi
     fzf --preview "$preview" \
       --header 'enter print path · ctrl-y copy path · ctrl-o open · ctrl-e edit' \
       --bind 'ctrl-y:execute-silent(printf %s {} | wl-copy)+abort' \
