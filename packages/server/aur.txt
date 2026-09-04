@@ -1,6 +1,10 @@
 # Explicitly installed AUR/foreign packages (auto-generated, do not edit by hand)
 # Regenerate with: scripts/update_server_package_lists.sh
+carapace-bin
+claude-code
+cockpit-compose
+cockpit-pacman
 cockpit-sensors
 gogcli
-llama.cpp-cuda
+pacsea-bin
 yay-bin

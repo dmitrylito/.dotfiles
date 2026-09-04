@@ -19,6 +19,7 @@ from pathlib import Path
 
 SOURCE_DIR = Path({{ .chezmoi.sourceDir | quote }})
 BASELINE_PATH = SOURCE_DIR / "scripts/codex-config-baseline.toml.age"
+RETIRED_MCP_SERVERS = {"node_repl"}
 
 
 def read_baseline():
@@ -31,6 +32,24 @@ def read_baseline():
     return result.stdout
 
 
+def strip_retired_servers(text):
+    """Remove retired MCP tables without requiring a TOML writer."""
+    output = []
+    skipping = False
+    for line in text.splitlines(keepends=True):
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            table = stripped.strip("[]").strip()
+            skipping = any(
+                table == f"mcp_servers.{server}"
+                or table.startswith(f"mcp_servers.{server}.")
+                for server in RETIRED_MCP_SERVERS
+            )
+        if not skipping:
+            output.append(line)
+    return "".join(output)
+
+
 def fill_defaults(live, baseline):
     for key, value in baseline.items():
         if key not in live:
@@ -39,8 +58,17 @@ def fill_defaults(live, baseline):
             fill_defaults(live[key], value)
 
 
-live_text = sys.stdin.read()
-baseline_text = read_baseline()
+def remove_retired_servers(config):
+    servers = config.get("mcp_servers")
+    if isinstance(servers, MutableMapping):
+        # This server belongs to the packaged ChatGPT desktop runtime. The
+        # standalone Codex installation has no such binary, so retaining the
+        # registration makes every Codex process report a startup failure.
+        servers.pop("node_repl", None)
+
+
+live_text = strip_retired_servers(sys.stdin.read())
+baseline_text = strip_retired_servers(read_baseline())
 
 if not live_text.strip():
     sys.stdout.write(baseline_text)
@@ -60,4 +88,5 @@ except Exception as error:
     raise SystemExit(1)
 
 fill_defaults(live, baseline)
+remove_retired_servers(live)
 sys.stdout.write(tomlkit.dumps(live))

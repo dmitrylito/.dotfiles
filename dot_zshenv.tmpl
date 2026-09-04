@@ -65,14 +65,18 @@ path=(
   $path
 )
 
-# Auth for GitHub MCP clients. Prefer an inherited or machine-local token.
+# Auth for GitHub MCP clients. Prefer the token currently authenticated by gh;
+# inherited values can outlive a logout/login and become invalid.
 # Never invoke the Mise bootstrap shim from .zshenv: this file runs for every
 # Zsh process, and installing a missing gh version here can block shell startup.
-_github_token="${GITHUB_PERSONAL_ACCESS_TOKEN:-${GITHUB_MCP_PAT:-}}"
 _gh_path="${commands[gh]:-}"
-if [[ -z "$_github_token" && -n "$_gh_path" && "$_gh_path" != "$HOME/.local/bin/gh" ]]; then
-  _github_token="$(gh auth token 2>/dev/null)"
+if [[ "$_gh_path" == "$HOME/.local/bin/gh" ]]; then
+  [[ -x /usr/bin/gh ]] && _gh_path=/usr/bin/gh
 fi
+if [[ -n "$_gh_path" ]]; then
+  _github_token="$("$_gh_path" auth token 2>/dev/null)"
+fi
+_github_token="${_github_token:-${GITHUB_PERSONAL_ACCESS_TOKEN:-${GITHUB_MCP_PAT:-}}}"
 if [[ -z "$_github_token" && "$OSTYPE" == darwin* ]] && command -v git >/dev/null 2>&1; then
   _github_token="$(printf 'protocol=https\nhost=github.com\n\n' \
     | git credential-osxkeychain get 2>/dev/null \
