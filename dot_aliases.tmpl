@@ -52,6 +52,11 @@ if command -v mise >/dev/null; then
   alias mup='MISE_MINIMUM_RELEASE_AGE=0 mise up'
 fi
 
+if command -v systemctl >/dev/null; then
+  alias scu="systemctl --user"
+  alias sc="sudo systemctl"
+fi
+
 if command -v fzf >/dev/null; then
   # Functions, not aliases: ff has to be callable inside $(...) and pipelines below.
   ff() {
