@@ -23,7 +23,14 @@ mkdir -p "$state_dir" "$ansible_tmp"
 chmod 700 "$state_dir" "$ansible_tmp"
 exec 9>/run/lock/chezmoi-server-package-converge.lock
 flock -n 9 || exit 0
-exec 8>"$git_lock"
+# The user's autoupdater owns this predictable lock in sticky /tmp. With
+# fs.protected_regular enabled, root cannot reopen that user-owned file for
+# writing even though it is root. flock only needs an open descriptor, so have
+# the user create it when absent and let root open it read-only.
+if [[ ! -e $git_lock ]]; then
+  runuser -u "$login_user" -- touch "$git_lock"
+fi
+exec 8<"$git_lock"
 flock -n 8 || exit 0
 
 if [[ -n $(git -C "$source_dir" status --porcelain) ]]; then
