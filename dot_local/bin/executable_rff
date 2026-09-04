@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Fuzzy rsync: pick source(s), pick an SSH host, type a destination, review a
+# dry run, then transfer with `rsync -avP`.
+# Usage: rff [SOURCE...]   (no args = fzf picker over cwd, newest first)
+# Needs: fzf, rsync locally AND on the remote; host list comes from
+# herdr-remote-picker --list (~/.ssh/config + known_hosts, minus its ignore file).
+
+set -u
+
+for tool in fzf rsync; do
+  command -v "$tool" >/dev/null 2>&1 || { printf 'rff: %s is required\n' "$tool" >&2; exit 1; }
+done
+
+sources=("$@")
+
+if [ ${#sources[@]} -eq 0 ]; then
+  mapfile -t sources < <(
+    find . -mindepth 1 \( -name .git -o -name node_modules -o -name .venv \) -prune -o \
+      \( -type f -o -type d \) -printf '%T@\t%p\n' 2>/dev/null |
+      sort -rn | cut -f2- |
+      fzf --multi --height=60% --layout=reverse --border \
+        --prompt='rsync what > ' \
+        --header='tab select multiple · enter confirm' \
+        --preview 'if [ -d {} ]; then ls -A {}; else bat --style=numbers --color=always {} 2>/dev/null || head -50 {}; fi'
+  )
+fi
+
+[ ${#sources[@]} -gt 0 ] || { printf 'rff: nothing selected\n' >&2; exit 1; }
+
+host_list=$(herdr-remote-picker --list 2>/dev/null)
+host=$(
+  printf '%s\n' "$host_list" | fzf --height=40% --layout=reverse --border \
+    --prompt='host > ' --header='enter select · or type any SSH target' \
+    --print-query | tail -2 | grep -v '^$' | tail -1
+)
+
+[ -n "${host:-}" ] || { printf 'rff: no host selected\n' >&2; exit 1; }
+
+printf 'destination path on %s [~/]: ' "$host"
+read -r dest
+dest=${dest:-'~/'}
+
+printf '\n--- dry run ---\n'
+rsync -avP --dry-run -- "${sources[@]}" "$host:$dest" || exit $?
+
+printf '\nTransfer %d source(s) to %s:%s? [y/N] ' "${#sources[@]}" "$host" "$dest"
+read -r reply
+case $reply in
+  [yY]*) ;;
+  *) printf 'rff: aborted\n' >&2; exit 1 ;;
+esac
+
+rsync -avP -- "${sources[@]}" "$host:$dest"
