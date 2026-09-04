@@ -51,3 +51,28 @@ if command -v mise >/dev/null; then
   # Bypasses mise's built-in 24h minimum_release_age quarantine.
   alias mup='MISE_MINIMUM_RELEASE_AGE=0 mise up'
 fi
+
+if command -v fzf >/dev/null; then
+  # Functions, not aliases: ff has to be callable inside $(...) and pipelines below.
+  ff() {
+    if command -v bat >/dev/null; then
+      fzf --preview 'bat --style=numbers --color=always {}' "$@"
+    else
+      fzf "$@"
+    fi
+  }
+
+  eff() {
+    local file
+    file=$(ff) && [ -n "$file" ] && "$EDITOR" "$file"
+  }
+
+  sff() {
+    if [ $# -eq 0 ]; then
+      echo "Usage: sff <destination> (e.g. sff dlco:/tmp/)"
+      return 1
+    fi
+    local file
+    file=$(find . -type f -printf '%T@\t%p\n' | sort -rn | cut -f2- | ff) && [ -n "$file" ] && scp "$file" "$1"
+  }
+fi
