@@ -79,8 +79,9 @@ prevents reconciliation transactions from being published back as new intent.
   Tmuxifier, and sesh are intentionally retired.
 - `dot_local/bin/moshi-*`, Moshi hook modifiers, and Linux user units: keep
   Claude/Codex conversations bound to the correct Herdr pane. macOS receives
-  the guards and config, but vendor pairing/service setup remains platform
-  specific.
+  the guards and config. Linux bootstraps the vendor binary, agent hooks,
+  encrypted pairing token, and systemd user service during `chezmoi apply`;
+  macOS service setup remains Homebrew-owned.
 - `dot_config/nvim/`: LazyVim configuration, including the Sidekick `agy`
   adapter and one canonical remote clipboard implementation.
 - `dot_config/hypr/` and `dot_config/omarchy/`: Omarchy-only desktop behavior.

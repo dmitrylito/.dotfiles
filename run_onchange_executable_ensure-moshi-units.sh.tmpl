@@ -12,9 +12,9 @@
 # chezmoi only layers the Restart=always drop-in on top, so the vendor installer
 # can rewrite the base unit without discarding it.
 #
-# Still manual per machine, and not automatable here: installing the moshi-hook
-# binary, and `moshi-hook pair --token <token>` (a secret). Without the binary
-# this script prints a hint and does nothing.
+# The vendor binary and pairing are bootstrapped here as well. The reusable
+# pairing token is committed only as age ciphertext; it is decrypted directly
+# into the pair process environment and is never rendered into this script.
 #
 # No-ops where no systemd user manager is reachable — mac, which has no
 # `moshi-hook service` support at all, or a `chezmoi apply` from cron/ssh with no
@@ -28,9 +28,11 @@
 #   {{ include "dot_config/systemd/user/moshi-reguard.path.tmpl" | sha256sum }}
 #   {{ include "dot_config/systemd/user/moshi-reguard.service.tmpl" | sha256sum }}
 #   {{ include "dot_codex/modify_hooks.json.tmpl" | sha256sum }}
+#   Moshi pairing token ciphertext: {{ include "scripts/moshi-pairing-token.age" | sha256sum }}
 set -eu
 
 MOSHI_HOOK="{{ .chezmoi.homeDir }}/.local/bin/moshi-hook"
+PAIR_TOKEN_FILE="{{ joinPath .chezmoi.sourceDir "scripts/moshi-pairing-token.age" }}"
 GUARD="{{ .chezmoi.homeDir }}/.local/bin/moshi-hook-claude-guard"
 SETTINGS="{{ .chezmoi.homeDir }}/.claude/settings.json"
 CODEX_HOOKS="{{ .chezmoi.homeDir }}/.codex/hooks.json"
@@ -44,15 +46,47 @@ if ! systemctl --user show-environment >/dev/null 2>&1; then
 fi
 
 if [ ! -x "$MOSHI_HOOK" ]; then
-	echo "ensure-moshi-units: no moshi-hook binary at $MOSHI_HOOK — install it, then 'moshi-hook pair --token <token>'"
-	exit 0
+	echo "ensure-moshi-units: installing the moshi-hook vendor binary"
+	command -v curl >/dev/null 2>&1 || {
+		echo "ensure-moshi-units: curl is required to install moshi-hook" >&2
+		exit 1
+	}
+	curl -fsSL https://getmoshi.app/install.sh |
+		MOSHI_HOOK_SKIP_FIRST_RUN=1 INSTALL_DIR="$(dirname "$MOSHI_HOOK")" sh
+	[ -x "$MOSHI_HOOK" ] || {
+		echo "ensure-moshi-units: vendor installer did not create $MOSHI_HOOK" >&2
+		exit 1
+	}
 fi
 
-installed_now=""
+if ! "$MOSHI_HOOK" status --json 2>/dev/null |
+	grep -Eq '"paired"[[:space:]]*:[[:space:]]*true'; then
+	echo "ensure-moshi-units: pairing this host from the encrypted chezmoi token"
+	pair_token=$(chezmoi decrypt "$PAIR_TOKEN_FILE") || {
+		echo "ensure-moshi-units: could not decrypt the Moshi pairing token" >&2
+		exit 1
+	}
+	[ -n "$pair_token" ] || {
+		echo "ensure-moshi-units: decrypted Moshi pairing token is empty" >&2
+		exit 1
+	}
+	if MOSHI_PAIRING_TOKEN="$pair_token" "$MOSHI_HOOK" pair; then
+		unset pair_token
+	else
+		unset pair_token
+		exit 1
+	fi
+fi
+
+# Refresh every supported agent from the current vendor schema. The guarded
+# Claude/Codex commands are restored below; other agents retain vendor wiring.
+"$MOSHI_HOOK" install
+installed_now=1
+
 if [ ! -f "$UNIT" ]; then
 	echo "ensure-moshi-units: no vendor unit yet, running 'moshi-hook service install'"
 	if "$MOSHI_HOOK" service install; then
-		installed_now=1
+		:
 	else
 		echo "ensure-moshi-units: 'moshi-hook service install' failed; continuing"
 	fi
