@@ -1,0 +1,12 @@
+[Unit]
+Description=Check GitHub for CER production updates
+
+[Timer]
+OnBootSec=1min
+OnUnitInactiveSec=2min
+RandomizedDelaySec=15s
+Persistent=true
+Unit=cer-production-watch.service
+
+[Install]
+WantedBy=timers.target
