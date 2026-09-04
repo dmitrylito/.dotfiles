@@ -53,12 +53,20 @@ The Ansible playbook:
 - installs packages listed for the active profile;
 - installs Oh My Zsh and clones Zsh Sage plus the other external plugins;
 - removes only names explicitly placed in an Omarchy host's `removed.txt`;
-- never prunes undeclared packages or sweeps orphan dependencies;
+- on `server`, removes undeclared explicit packages while retaining required
+  dependencies and canonicalizing their install reason;
+- on `omarchy`, never infers removals from absence or sweeps dependencies;
 - treats Omarchy base/other/driver snapshots as reference data only;
 - temporarily permits the AUR build user to invoke `/usr/bin/pacman`, not an
   unrestricted root command.
 
 See `packages/README.md` for list ownership and regeneration rules.
+
+Server profiles also install a Pacman post-transaction publisher and two
+15-minute retry/convergence timers. A manual install or removal is regenerated,
+committed, and pushed after the transaction; the other server pulls the
+committed declarations and converges under a root-owned worker. A runtime marker
+prevents reconciliation transactions from being published back as new intent.
 
 ## Major subsystems
 

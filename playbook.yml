@@ -121,6 +121,7 @@
           printf '{'
           printf '"home":"%s",' "$home"
           printf '"host":"%s",' "$host"
+          printf '"uid":"%s",' "$(id -u {{ non_root_user | quote }})"
           printf '"host_lists":%s,' "$(yn test -f "$host_lists")"
           printf '"installed":"%s",' "$installed"
           printf '"omz":%s,' "$(yn test -f "$home/.oh-my-zsh/oh-my-zsh.sh")"
@@ -134,16 +135,13 @@
       # --check; otherwise `st` is undefined and a dry run cannot work at all.
       check_mode: false
 
-    # The old package-list auto-sync feature installed this hook for both Linux
-    # profiles. Its worker script was later removed, leaving pacman/yay to call
-    # a nonexistent command after every transaction. Keep the cleanup in the
-    # playbook so every Omarchy and server host removes the stale root-owned
-    # file on its next reconciliation.
-    - name: Remove obsolete package-list auto-sync pacman hook
+    # Omarchy remains deliberately host-specific and does not publish package
+    # transactions. Server hosts install the guarded replacement below.
+    - name: Remove obsolete package-list auto-sync pacman hook (Omarchy)
       ansible.builtin.file:
         path: /etc/pacman.d/hooks/zz-chezmoi-package-sync.hook
         state: absent
-      when: is_linux
+      when: p == 'omarchy'
 
     # Resolve the package lists and diff them against the probe's installed set
     # ONCE. Every package action below is gated on these, so a synced machine
@@ -463,6 +461,35 @@
             path: /etc/sudoers.d/99-chezmoi-aur-temp
             state: absent
 
+    - name: Preview server package removals and install-reason changes
+      ansible.builtin.command:
+        argv:
+          - "{{ chezmoi_source_dir }}/scripts/reconcile-server-package-set.sh"
+          - --check
+          - "{{ server_pacman_file }}"
+          - "{{ server_aur_file }}"
+      register: server_package_preview
+      changed_when: "'already canonical' not in server_package_preview.stdout"
+      check_mode: false
+      when:
+        - p == 'server'
+        - ansible_check_mode
+
+    - name: Remove undeclared server packages and canonicalize install reasons
+      ansible.builtin.command:
+        argv:
+          - "{{ chezmoi_source_dir }}/scripts/reconcile-server-package-set.sh"
+          - "{{ server_pacman_file }}"
+          - "{{ server_aur_file }}"
+      register: server_package_reconcile
+      changed_when: >-
+        'Removing undeclared' in server_package_reconcile.stdout or
+        'Marking retained dependencies' in server_package_reconcile.stdout or
+        'marking ' in server_package_reconcile.stdout | lower
+      when:
+        - p == 'server'
+        - not ansible_check_mode
+
     # Intersected with the installed set first: `state: absent` against an
     # already-clean list still pays the module's full ~350ms inventory build to
     # discover there is nothing to remove.
@@ -558,6 +585,105 @@
       changed_when: upstream_sync.stdout | trim | length > 0
       become: "{{ as_user }}"
       become_user: "{{ non_root_user }}"
+
+    # =========================================================================
+    # SECTION 7: SERVER PACKAGE PUBLICATION AND CONVERGENCE
+    # =========================================================================
+    - name: Configure automatic server package synchronization
+      when: p == 'server'
+      block:
+        - name: Install root-owned package convergence worker
+          ansible.builtin.copy:
+            src: "{{ chezmoi_source_dir }}/scripts/converge-server-packages.sh"
+            dest: /usr/local/libexec/chezmoi-server-package-converge
+            owner: root
+            group: root
+            mode: '0755'
+
+        - name: Ensure the pacman hook directory exists
+          ansible.builtin.file:
+            path: /etc/pacman.d/hooks
+            state: directory
+            owner: root
+            group: root
+            mode: '0755'
+
+        - name: Install server package-list pacman hook
+          ansible.builtin.copy:
+            dest: /etc/pacman.d/hooks/zz-chezmoi-package-sync.hook
+            owner: root
+            group: root
+            mode: '0644'
+            content: |
+              [Trigger]
+              Operation = Install
+              Operation = Remove
+              Type = Package
+              Target = *
+
+              [Action]
+              Description = Scheduling server package-list synchronization...
+              When = PostTransaction
+              Exec = /usr/bin/runuser -u {{ non_root_user }} -- /usr/bin/env HOME={{ st.home }} XDG_RUNTIME_DIR=/run/user/{{ st.uid }} {{ chezmoi_source_dir }}/scripts/capture-server-package-lists.sh --schedule
+
+        - name: Install system package convergence service
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/chezmoi-server-package-converge.service
+            owner: root
+            group: root
+            mode: '0644'
+            content: |
+              [Unit]
+              Description=Converge committed chezmoi server packages
+              Wants=network-online.target
+              After=network-online.target
+
+              [Service]
+              Type=oneshot
+              ExecStart=/usr/local/libexec/chezmoi-server-package-converge {{ chezmoi_source_dir }} {{ non_root_user }} {{ st.uid }}
+
+        - name: Install system package convergence timer
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/chezmoi-server-package-converge.timer
+            owner: root
+            group: root
+            mode: '0644'
+            content: |
+              [Unit]
+              Description=Poll for committed chezmoi server package changes
+
+              [Timer]
+              OnActiveSec=5min
+              OnUnitActiveSec=15min
+              RandomizedDelaySec=30s
+              Persistent=true
+
+              [Install]
+              WantedBy=timers.target
+
+        - name: Keep the server user's systemd manager available after logout
+          ansible.builtin.command:
+            argv: [loginctl, enable-linger, "{{ non_root_user }}"]
+          changed_when: false
+
+        - name: Enable the user package publication retry timer
+          ansible.builtin.systemd_service:
+            name: chezmoi-package-capture.timer
+            scope: user
+            daemon_reload: true
+            enabled: true
+            state: started
+          become: true
+          become_user: "{{ non_root_user }}"
+          environment:
+            XDG_RUNTIME_DIR: "/run/user/{{ st.uid }}"
+
+        - name: Enable the root package convergence timer
+          ansible.builtin.systemd_service:
+            name: chezmoi-server-package-converge.timer
+            daemon_reload: true
+            enabled: true
+            state: started
 
     # Sage stores complete commands in this SQLite database. The directory mode
     # protects the database and its transient WAL files regardless of their mode.

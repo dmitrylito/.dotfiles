@@ -15,22 +15,28 @@ first when package state has changed substantially.
   packages; reference only.
 - `omarchy/<hostname>/drivers.txt`: hardware-specific reference; never
   installed automatically.
-- `server/{pacman,aur}.txt`: desired headless Arch package set.
+- `server/{pacman,aur}.txt`: canonical explicit package set shared by all
+  server-profile Arch machines.
 - `mac/{brew,casks,taps}.txt`: desired Homebrew set.
 
-The old `untracked.regex` files were only safety rails for automatic pruning.
-They are gone because undeclared packages and orphan dependencies are no longer
-removed automatically.
+The old `untracked.regex` files are unnecessary. Omarchy does not prune by
+absence. Server pruning is constrained to the shared declarations plus the ZFS
+packages provisioned separately by the playbook; required undeclared packages
+are retained and marked as dependencies.
 
 ## Regeneration
 
 - Run `scripts/update_package_lists.sh` on an Omarchy host.
-- Run `scripts/update_server_package_lists.sh` on the server.
+- Run `scripts/update_server_package_lists.sh` manually for an audit; the server
+  Pacman hook normally schedules it after a successful transaction.
 - Review the diff before committing; generation is not package policy.
 - Do not hand-edit Omarchy base/other snapshots.
 
-The previous pacman hook and auto-commit/push script remain removed. Package
-transactions do not mutate the dotfiles repository.
+On server profiles, successful manual Pacman/yay transactions schedule a
+debounced user service. It regenerates only `packages/server/`, commits those two
+files, and pushes them. A pending marker makes its timer retry failures; a
+reconciliation marker prevents feedback loops. Omarchy transactions never
+mutate the dotfiles repository.
 
 ## Deliberate exclusions
 
@@ -47,8 +53,10 @@ transactions do not mutate the dotfiles repository.
 
 ## Reconciliation guarantees
 
-The playbook installs missing declared packages and removes only explicit
-`removed.txt` entries. It does not infer deletion from absence, does not remove
-orphans, and does not install `drivers.txt`. During an AUR build, its temporary
-sudoers entry permits only `/usr/bin/pacman *` and is removed in an `always`
-block.
+The playbook installs missing declarations everywhere. Omarchy removes only
+explicit `removed.txt` entries and never infers deletion from absence. Server
+profiles repeatedly remove undeclared explicit leaves, then mark any remaining
+undeclared hard dependencies non-explicit so both servers converge without
+breaking dependency chains. Neither profile sweeps unrelated orphans, and
+`drivers.txt` is never installed. During an AUR build, the temporary sudoers
+entry permits only `/usr/bin/pacman *` and is removed in an `always` block.

@@ -33,6 +33,11 @@ if [[ $profile == mac ]]; then
   ANSIBLE_CONFIG="$ansible_cfg" ANSIBLE_LOCAL_TEMP="$tmp_root" \
     ansible-playbook -i 'localhost,' -c local --extra-vars "$extra_vars" "$playbook" "$@"
 else
+  runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+  reconcile_marker="$runtime_dir/chezmoi-package-reconcile.active"
+  mkdir -p "$runtime_dir"
+  : >"$reconcile_marker"
+  trap 'rm -f -- "$reconcile_marker"' EXIT
   sudo ANSIBLE_CONFIG="$ansible_cfg" ANSIBLE_LOCAL_TEMP="$tmp_root" \
     ansible-playbook -i 'localhost,' -c local --extra-vars "$extra_vars" "$playbook" "$@"
 fi
