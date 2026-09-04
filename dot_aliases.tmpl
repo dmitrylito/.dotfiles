@@ -45,3 +45,8 @@ else
   alias ls="ls --color=auto"
   alias lsa="ls -a --color=auto"
 fi
+
+if command -v mise >/dev/null; then
+  # Bypasses mise's built-in 24h minimum_release_age quarantine.
+  alias mup='MISE_MINIMUM_RELEASE_AGE=0 mise up'
+fi
