@@ -40,7 +40,8 @@ compdef '_path_files -/ -W ~/Projects' cdp
 
 if command -v eza >/dev/null; then
   alias ls="eza -T -L=1 --group-directories-first --color=always --icons=always"
-  alias lsa="eza -a -T -L=1 --group-directories-first --color=always --icons=always"
+  alias lsa="eza -a -l --group-directories-first --color=always --icons=always --git --time-style=relative --no-user"
+  alias lt="eza -T -L=2 -l --group-directories-first --color=always --icons=always --git --no-user --no-permissions"
 else
   alias ls="ls --color=auto"
   alias lsa="ls -a --color=auto"
