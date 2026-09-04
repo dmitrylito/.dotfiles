@@ -126,8 +126,8 @@ streaming = true
 # Required, not optional: with these unset the built-in defaults fail the model's
 # "mel-frame count divisible by 8" check and the daemon exits 1 at startup.
 streaming_chunk_secs = 0.48
-streaming_left_context_secs = 8.0
-streaming_right_context_secs = 0.64
+streaming_left_context_secs = 9.04
+streaming_right_context_secs = 0.72
 model_type = "tdt"
 
 [osd]
