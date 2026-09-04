@@ -592,6 +592,14 @@
     - name: Configure automatic server package synchronization
       when: p == 'server'
       block:
+        - name: Ensure the local libexec directory exists
+          ansible.builtin.file:
+            path: /usr/local/libexec
+            state: directory
+            owner: root
+            group: root
+            mode: '0755'
+
         - name: Install root-owned package convergence worker
           ansible.builtin.copy:
             src: "{{ chezmoi_source_dir }}/scripts/converge-server-packages.sh"
